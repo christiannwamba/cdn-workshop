@@ -42,7 +42,10 @@ export default async function handler(req,res){
    if(!admin)return res.status(401).json({error:'unauthorized'});
    const cfg=JSON.parse(await body(req));
    if(!runOK(cfg.run)||!/^dpl_/.test(cfg.deploymentId)||cfg.environment!==env)return res.status(400).json({error:'environment or run mismatch'});
-   await save(`runs/${cfg.run}/config.json`,{...cfg,expires:Date.now()+3600000});return res.json({registered:true});
+   if(!/^[a-f0-9]{64}$/.test(cfg.rateKey||''))return res.status(400).end();
+   try{await save(`limits/${cfg.rateKey}.json`,{at:Date.now()});}catch(e){if(e.name==='BlobPathnameConflictError')return res.status(429).json({error:'Wait 15 seconds before another run'});throw e;}
+   const {rateKey,...registered}=cfg;
+   await save(`runs/${cfg.run}/config.json`,{...registered,expires:Date.now()+3600000});return res.json({registered:true});
   }
   if(!runOK(run))return res.status(400).json({error:'valid run required'});
   const cfg=await read(`runs/${run}/config.json`);if(!cfg)return res.status(404).json({error:'unknown run'});
@@ -62,7 +65,7 @@ export default async function handler(req,res){
   if(!equal(hash(bearer),cfg.capabilityHash))return res.status(401).json({error:'run capability required'});
   if(op==='evidence'){
    const data={run,environment:env,deploymentId:cfg.deploymentId,revision:cfg.revision,origins:await rows(`runs/${run}/origins/`),batches:await rows(`runs/${run}/batches/`),observations:await read(`runs/${run}/observations.json`)||[]};
-   return res.json({...analyze(data),...data});
+   return res.json({...analyze(data),...data,collectorRevision:process.env.VERCEL_GIT_COMMIT_SHA,collectorSourceMappings:sourceMappings});
   }
   return res.status(404).end();
  }catch(error){return res.status(500).json({error:'Collector operation failed; retry evidence without generating requests.',code:error.name});}

@@ -8,11 +8,11 @@ export default async function handler(req,res){
  if(req.method==='GET')return res.json({sourceMappings,service:'request',exerciseVersion:'delivery-proof-v2',environment:env,collectorUrl:collector,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
  if(req.method!=='POST')return res.status(405).end();
  const run=`run-${randomUUID()}`,capability=randomBytes(32).toString('hex');
- const post=async(op,data)=>{const r=await fetch(`${collector}/api/service?op=${op}&run=${run}`,{method:'POST',headers:{authorization:`Bearer ${process.env.SERVICE_SECRET}`,'content-type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error(`${op}: ${r.status}`);return r.json();};
+ const post=async(op,data)=>{const r=await fetch(`${collector}/api/service?op=${op}&run=${run}`,{method:'POST',headers:{authorization:`Bearer ${process.env.SERVICE_SECRET}`,'content-type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error(`${op}: ${r.status}${r.status===429?' — wait 15 seconds before another run':''}`);return r.json();};
  try{
   const version=await fetch(`${collector}/api/service?op=version`).then(r=>r.json());
   if(version.environment!==env)throw Error('Environment mismatch; refusing cross-environment mutation');
-  await post('register',{run,capabilityHash:createHash('sha256').update(capability).digest('hex'),deploymentId:process.env.VERCEL_DEPLOYMENT_ID,revision:process.env.VERCEL_GIT_COMMIT_SHA,environment:env});
+  await post('register',{run,capabilityHash:createHash('sha256').update(capability).digest('hex'),deploymentId:process.env.VERCEL_DEPLOYMENT_ID,revision:process.env.VERCEL_GIT_COMMIT_SHA,environment:env,rateKey:createHmac('sha256',process.env.SERVICE_SECRET).update(`${Math.floor(Date.now()/15000)}|${req.headers['x-forwarded-for']||'unknown'}`).digest('hex')});
   const expires=Date.now()+90000,ticket=`${expires}.${createHmac('sha256',process.env.FIXTURE_SECRET).update(`${run}|${expires}`).digest('hex')}`;
   const base=`https://${process.env.VERCEL_URL}`;
   const cookies=['workshop_choice=fixture-A; unrelated=NEVER_CAPTURE','workshop_choice=fixture-B; unrelated=NEVER_CAPTURE','unrelated=NEVER_CAPTURE','workshop_choice=INVALID_NEVER_CAPTURE'];
