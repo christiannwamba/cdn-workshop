@@ -123,22 +123,49 @@ export function createBrowserClient({ profile, live, onChange }) {
       const pending = correlation.accepted > 0 && !correlation.complete;
       const waiting = e.status === 'PENDING' || pending;
       const timedOut = waiting && Date.now() - waitStarted > 120000;
+      // Completion describes this A/B demonstration, not the full fixture-policy suite
+      // or the customer's overall requirement coverage. Keep raw collector status intact.
+      const demoComplete =
+        ['PASS', 'PARTIAL'].includes(e.status) &&
+        ['A', 'B'].every((name) =>
+          accepted.some(
+            (receipt) =>
+              receipt.case === name &&
+              e.rows.some(
+                (row) =>
+                  row.name === name &&
+                  row.status === 'PASS' &&
+                  row.slot === receipt.slot &&
+                  row.eventId === receipt.headers['x-workshop-event-id'],
+              ),
+          ),
+        ) &&
+        correlation.complete &&
+        fillMatches &&
+        [
+          'cache',
+          'origin',
+          'cookies',
+          'join',
+          'currentRequest',
+          'nativeCookieAbsent',
+          'noUnrelatedCookie',
+        ].every((check) => e.checks?.[check] === true);
       let logMessage =
-        e.status === 'PASS'
-          ? 'All four cookie states verified.'
-          : e.status === 'PARTIAL'
-            ? `${e.coveredCases.join(', ')} verified; optional cases remain.`
+        e.status === 'FAIL'
+          ? 'Verification failed: observed records differ from expectations.'
+          : demoComplete
+            ? 'A/B demonstration complete. Both requests and cookie logs verified.'
             : e.status === 'EMPTY'
               ? 'No accepted content requests yet.'
-              : e.status === 'FAIL'
-                ? 'Verification failed: observed records differ from expectations.'
-                : 'Waiting for signed log delivery.';
+              : ['PARTIAL', 'PASS'].includes(e.status)
+                ? 'Send both A and B, then check their matched log records.'
+                : 'Waiting for Vercel Log Drains to deliver the request and cookie records.';
       if (pending)
-        logMessage =
-          'Waiting for each browser response to match its own ticket slot and distinct platform event.';
+        logMessage = 'Waiting for each request to match its delivered cookie log.';
       if (timedOut)
         logMessage =
-          'Logs are still incomplete after two minutes. Refresh this session for late arrivals; do not infer cookie absence.';
+          'Logs are still incomplete after two minutes. Refresh to check for late arrivals.';
       logMessage += ` ${correlation.matched}/${correlation.accepted} browser responses matched. Content fill ${fillMatches ? 'matches the one recorded origin call' : 'not yet confirmed'}.`;
       update({ evidence: e, logMessage });
       clearTimeout(pollTimer);

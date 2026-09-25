@@ -45,7 +45,8 @@ test('live adapter preserves browser cookies, same URL, fresh tickets and reset 
     cookies = [],
     contentCalls = [],
     nextSlot = 0,
-    closed = false;
+    closed = false,
+    evidenceIssue = null;
   globalThis.document = {
     set cookie(value) {
       cookies.push(value);
@@ -87,12 +88,23 @@ test('live adapter preserves browser cookies, same URL, fresh tickets and reset 
     }
     if (url.startsWith('https://collector.example/'))
       return Response.json({
-        status: 'PARTIAL',
+        status: evidenceIssue === 'failure' ? 'FAIL' : 'PARTIAL',
+        checks: {
+          cache: true,
+          origin: true,
+          cookies: evidenceIssue !== 'cookie',
+          join: true,
+          currentRequest: true,
+          nativeCookieAbsent: true,
+          noUnrelatedCookie: true,
+        },
         coveredCases: nextSlot === 1 ? ['A'] : ['A', 'B'],
-        origins: [{ fillId: 'fill' }],
+        origins: [{ fillId: evidenceIssue === 'fill' ? 'wrong-fill' : 'fill' }],
         rows: Array.from({ length: nextSlot }, (_, i) => ({
           slot: i + 1,
-          eventId: `event-${i + 1}`,
+          name: ['A', 'B', 'Missing', 'Invalid'][i],
+          status: 'PASS',
+          eventId: evidenceIssue === 'join' ? 'unmatched' : `event-${i + 1}`,
           joined: true,
         })),
       });
@@ -109,6 +121,7 @@ test('live adapter preserves browser cookies, same URL, fresh tickets and reset 
     assert.equal(contentCalls.length, 0);
     assert.equal(nextSlot, 0);
     await client.sendWithCookie('A');
+    assert.doesNotMatch(state.logMessage, /demonstration complete/);
     await client.sendWithCookie('B');
     assert.equal(contentCalls.length, 2);
     assert.match(contentCalls[0].cookie, /^workshop_choice=fixture-A;/);
@@ -133,6 +146,17 @@ test('live adapter preserves browser cookies, same URL, fresh tickets and reset 
     );
     assert.equal(state.receipts.length, 2);
     assert.match(state.logMessage, /2\/2 browser responses matched/);
+    assert.match(state.logMessage, /A\/B demonstration complete/);
+    assert.equal(state.evidence.status, 'PARTIAL'); // Raw fixture-suite result stays honest.
+    assert.doesNotMatch(state.logMessage, /optional|four/);
+    for (const issue of ['cookie', 'fill', 'join', 'failure']) {
+      evidenceIssue = issue;
+      await client.refresh();
+      assert.doesNotMatch(state.logMessage, /demonstration complete/, issue);
+    }
+    evidenceIssue = null;
+    await client.refresh();
+    assert.match(state.logMessage, /A\/B demonstration complete/);
     await client.sendWithCookie('Missing');
     await client.sendWithCookie('Invalid');
     assert.match(contentCalls[2].cookie, /^workshop_choice=;.*Max-Age=0/);

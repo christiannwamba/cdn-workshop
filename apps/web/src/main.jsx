@@ -27,7 +27,7 @@ const original = `sequenceDiagram
   participant M as Routing Middleware
   participant C as CDN cache
   participant O as Owned origin
-  participant P as Platform log pipeline
+  participant P as Vercel Log Drains
   participant R as Signed collector
   V->>R: Start a fresh test via session API (no content request)
   V->>V: Send action sets or clears the test cookie
@@ -61,7 +61,7 @@ const catalog = [
     title: 'Can we log a cookie when the CDN serves a cached page?',
     status: 'workaround',
     category: 'Observability',
-    note: 'Log a selected test cookie before the cache lookup. Partial customer coverage.',
+    note: 'Cookie logging demonstrated with custom middleware and Vercel Log Drains. Other R32 fields remain to be mapped.',
     implemented: true,
   },
   {
@@ -110,10 +110,16 @@ function Diagram() {
       const saved = readLocal('r32-diagram');
       // Upgrade the saved former default, while preserving attendees' custom diagrams.
       const previousOriginal = original.replace(
+        'Vercel Log Drains',
+        'Platform log pipeline',
+      );
+      const earlierOriginal = previousOriginal.replace(
         '  V->>R: Start a fresh test via session API (no content request)\n  V->>V: Send action sets or clears the test cookie\n  V->>R: Obtain a fresh one-use ticket via session API',
         '  V->>R: Prepare session and obtain one-use ticket',
       );
-      return !saved || saved === previousOriginal ? original : saved;
+      return !saved || saved === previousOriginal || saved === earlierOriginal
+        ? original
+        : saved;
     }),
     [svg, setSvg] = useState(''),
     [error, setError] = useState(''),
@@ -157,8 +163,9 @@ function Diagram() {
         </button>
       </div>
       <p>
-        Middleware runs before the cache lookup. The cookie log and the platform’s own
-        request record arrive later, through signed log delivery.
+        Custom middleware reads the current request’s cookie before the cache lookup.
+        Vercel Log Drains delivers the cookie record and the native request log; the
+        collector verifies and matches them for display.
       </p>
       <div className="diagram-grid">
         <div
@@ -303,11 +310,7 @@ function Exercise({ profile }) {
         disabled={state.busy || !state.session}
         onClick={() => act('sendWithCookie', name)}
       >
-        {name === 'Missing'
-          ? 'Send request without the cookie'
-          : name === 'Invalid'
-            ? 'Send request with an invalid cookie'
-            : `Send request with cookie ${name}`}
+        Send request with cookie {name}
       </button>
     </div>
   );
@@ -331,7 +334,8 @@ function Exercise({ profile }) {
         <h2>Try it</h2>
         <p>
           The visitor already has a cookie from an earlier visit. This exercise uses
-          JavaScript to create that starting state before requesting the page.
+          JavaScript to create that starting state before requesting the page. A and B are
+          successive cookie values in this browser.
         </p>
         <ol className="exercise">
           <li>
@@ -403,11 +407,12 @@ function Exercise({ profile }) {
           <li>
             <h3>Match B’s request to its log record</h3>
             <p>
-              Refresh after sending A and B. Expect a separate record for each request: A
-              with <code>fixture-A</code>, B with <code>fixture-B</code> and a native
-              cache value of <code>HIT</code>. Expect one content-origin call overall.
-              “Matched” means the response event ID and signed log records identify the
-              same request.
+              Refresh logs reads the records delivered by Vercel Log Drains; it does not
+              request the page again. Each cookie log contains its own request’s value:
+              A’s log has <code>fixture-A</code>; B’s log has <code>fixture-B</code>, even
+              though B receives the shared content as a <code>HIT</code>. Expect one
+              content-origin call overall. “Matched” means the browser response and the
+              delivered cookie and native logs identify the same request.
             </p>
             <div className="buttons">
               <button
@@ -431,7 +436,8 @@ function Exercise({ profile }) {
             <p role="status">
               {!live
                 ? 'UI preview: no live logs. Run this exercise on the request host after an approved release.'
-                : state.logMessage || 'No logs loaded yet. Delivery is asynchronous.'}
+                : state.logMessage ||
+                  'No logs loaded yet. Vercel Log Drains delivery is asynchronous.'}
             </p>
             {e && (
               <>
@@ -478,32 +484,30 @@ function Exercise({ profile }) {
               Code: verify the log delivery signature
             </Source>
           </li>
-          <li>
-            <h3>Try missing or invalid values, then reset</h3>
-            <p>
-              Each button clears the selected cookie or sets an invalid value, then sends
-              the same page request. Expect <code>HIT</code> and <code>cookie=null</code>,
-              with the state recorded as <code>missing</code> or <code>invalid</code>.
-            </p>
-            {buttons('Missing')}
-            {result('Missing')}
-            {buttons('Invalid')}
-            {result('Invalid')}
-            <p>
-              Reset clears this browser’s test cookies and closes the session. The next
-              session gets a fresh content URL.
-            </p>
-            <button disabled={state.busy} onClick={() => act('reset')}>
-              Reset test
-            </button>
-          </li>
         </ol>
-        <details>
-          <summary>Session limits</summary>
+        <div className="reset-test">
+          <h3>Reset test</h3>
           <p>
-            Sessions last ten minutes and allow twelve requests. Each send obtains a fresh
-            one-use ticket. If the session expires, start a fresh test. Changing A to B
-            changes one browser’s cookie state; ordinary tabs share a cookie jar.
+            Clear this browser’s test cookies and close the session. Start a fresh test
+            when you’re ready to repeat A and B with a new content URL.
+          </p>
+          <button disabled={state.busy} onClick={() => act('reset')}>
+            Reset test
+          </button>
+        </div>
+        <details>
+          <summary>Implementation notes</summary>
+          <p>
+            This demo logs only synthetic values of <code>workshop_choice</code>. The
+            collector verifies signed delivery, stores evidence in private Vercel Blob,
+            and matches records by request identity. Delayed or incomplete delivery stays
+            unverified; a cache header alone does not establish a log match.
+          </p>
+          <p>
+            Sessions last ten minutes and allow twelve requests. Each send obtains a
+            one-use ticket. The ticket check calls the collector before the cache lookup;
+            it is separate from the content-origin count and is demo plumbing, not a
+            production cost benchmark. If the session expires, start a fresh test.
           </p>
         </details>
       </section>
@@ -585,37 +589,28 @@ function App() {
               ← All requirements
             </a>
             <div className="hero">
-              <span className="badge workaround">
-                R32 · Workaround · partial coverage
-              </span>
+              <span className="badge workaround">R32 · Workaround demonstrated</span>
               <h1>Can we log a cookie when the CDN serves a cached page?</h1>
               <p className="lede">
-                Change a test cookie, request the same page, and check the value in the
-                logs.
+                Akamai can include a selected request cookie in its logs. Here, custom
+                middleware logs the cookie before the cache lookup, and Vercel Log Drains
+                delivers that record alongside the request log.
               </p>
+              <p className="small">This example covers cookie logging within R32.</p>
             </div>
             <Diagram />
             <Exercise profile={p} />
             <section>
-              <h2>Limitations</h2>
+              <h2>Mapping and remaining work</h2>
               <ul className="limitations">
                 <li>
-                  Only the synthetic values of <code>workshop_choice</code> are logged.
-                  This does not establish customer cookie semantics or automatic cookie
-                  fields in native logs.
+                  The cookie is logged by middleware in a separate record and matched to
+                  the request log. It is not an automatic cookie field in the native
+                  request log.
                 </li>
                 <li>
-                  Log delivery can be delayed or incomplete. A browser cache label alone
-                  does not prove a new CDN request; require its own matched log record.
-                </li>
-                <li>
-                  Session-ticket checks add a collector call before the cache lookup. This
-                  is separate from the content-origin count and is not a production cost
-                  benchmark.
-                </li>
-                <li>
-                  Coverage remains partial: no universal correlation contract, delivery
-                  guarantee or independent-account setup has been established.
+                  Cookie logging is demonstrated. The customer's other required fields and
+                  downstream log format still need to be mapped and verified.
                 </li>
               </ul>
               <p className="related">
