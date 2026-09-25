@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-09-25T08:43:49.027Z",
+  "previewRunOnProductionStatus": 404,
+  "drains": [
+    {
+      "id": "drn_M8PrjIrYZGpbATV6",
+      "status": "enabled",
+      "projectIds": [
+        "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr"
+      ],
+      "environment": "production",
+      "endpoint": "https://cdn-workshop-pilot-collector.vercel.app/api/service?op=drain"
+    },
+    {
+      "id": "drn_hxlUMxkkgOkE4js9",
+      "status": "enabled",
+      "projectIds": [
+        "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr"
+      ],
+      "environment": "preview",
+      "endpoint": "https://cdn-workshop-pilot-collector-git-codex-fe1c47-cn-demos-vtest314.vercel.app/api/service?op=drain"
+    }
+  ]
+}

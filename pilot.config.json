@@ -1,1 +1,30 @@
-{"owner":"Christian Nwamba","repo":"https://github.com/christiannwamba/cdn-workshop-pilot","dashboard":"https://vercel.com","team":"cn-demos-vtest314","projects":{"web":"cdn-workshop-pilot","request":"cdn-workshop-pilot-request","collector":"cdn-workshop-pilot-collector"},"sources":{"middleware":"apps/request-demo/middleware.ts","driver":"apps/request-demo/api/run.mjs","collector":"apps/collector/api/service.mjs","verification":"apps/collector/lib/evidence.mjs","configuration":"pilot.config.json"},"environments":{"production":{"siteUrl":"https://cdn-workshop-pilot.vercel.app","requestUrl":"https://cdn-workshop-pilot-request.vercel.app","collectorUrl":"https://cdn-workshop-pilot-collector.vercel.app"},"preview":{"siteUrl":"https://cdn-workshop-pilot-git-codex-delivery-proof-cn-demos-vtest314.vercel.app","requestUrl":"https://cdn-workshop-pilot-request-git-codex-delivery-proof-cn-demos-vtest314.vercel.app","collectorUrl":"https://cdn-workshop-pilot-collector-git-codex-delivery-proof-cn-demos-vtest314.vercel.app"}}}
+{
+  "owner": "Christian Nwamba",
+  "repo": "https://github.com/christiannwamba/cdn-workshop-pilot",
+  "dashboard": "https://vercel.com",
+  "team": "cn-demos-vtest314",
+  "projects": {
+    "web": "cdn-workshop-pilot",
+    "request": "cdn-workshop-pilot-request",
+    "collector": "cdn-workshop-pilot-collector"
+  },
+  "sources": {
+    "middleware": "apps/request-demo/middleware.ts",
+    "driver": "apps/request-demo/api/run.mjs",
+    "collector": "apps/collector/api/service.mjs",
+    "verification": "apps/collector/lib/evidence.mjs",
+    "configuration": "pilot.config.json"
+  },
+  "environments": {
+    "production": {
+      "siteUrl": "https://cdn-workshop-pilot.vercel.app",
+      "requestUrl": "https://cdn-workshop-pilot-request.vercel.app",
+      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app"
+    },
+    "preview": {
+      "siteUrl": "https://cdn-workshop-pilot-git-codex-delivery-proof-cn-demos-vtest314.vercel.app",
+      "requestUrl": "https://cdn-workshop-pilot-request-git-codex-d-108a49-cn-demos-vtest314.vercel.app",
+      "collectorUrl": "https://cdn-workshop-pilot-collector-git-codex-fe1c47-cn-demos-vtest314.vercel.app"
+    }
+  }
+}

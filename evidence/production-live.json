@@ -1,0 +1,446 @@
+{
+  "status": "PASS",
+  "checks": {
+    "cache": true,
+    "origin": true,
+    "cookies": true,
+    "join": true,
+    "nativeCookieAbsent": true,
+    "currentMetadata": true,
+    "noUnrelatedCookie": true
+  },
+  "rows": [
+    {
+      "name": "A",
+      "status": 200,
+      "cache": "MISS",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "84b74094-0798-4e96-9928-9aede2c24763",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::svc4t-1790325557810-9f18db5c7cef",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/A",
+      "at": "2026-09-25T08:39:18.593Z",
+      "nativeCount": 1,
+      "emissionCount": 1,
+      "nativeRequestId": "svc4t-1790325557810-9f18db5c7cef",
+      "envelopeRequestId": "svc4t-1790325557810-9f18db5c7cef",
+      "joined": true,
+      "nativeCache": "MISS",
+      "nativeUserAgent": [
+        "Workshop/A"
+      ],
+      "cookieState": "valid",
+      "cookie": "fixture-A",
+      "nativeCookieAbsent": true,
+      "delayMs": 5977
+    },
+    {
+      "name": "B",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "84b99d38-e7fa-4269-a7dd-d725146f56c4",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::qjq5x-1790325558604-0374a0534c89",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/B",
+      "at": "2026-09-25T08:39:18.631Z",
+      "nativeCount": 1,
+      "emissionCount": 1,
+      "nativeRequestId": "qjq5x-1790325558604-0374a0534c89",
+      "envelopeRequestId": "qjq5x-1790325558604-0374a0534c89",
+      "joined": true,
+      "nativeCache": "HIT",
+      "nativeUserAgent": [
+        "Workshop/B"
+      ],
+      "cookieState": "valid",
+      "cookie": "fixture-B",
+      "nativeCookieAbsent": true,
+      "delayMs": 8195
+    },
+    {
+      "name": "Missing",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "406fa6e7-96bd-437f-ab90-0b2655e4c2a9",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::pzwb8-1790325558634-2f7825819be8",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Missing",
+      "at": "2026-09-25T08:39:18.661Z",
+      "nativeCount": 1,
+      "emissionCount": 1,
+      "nativeRequestId": "pzwb8-1790325558634-2f7825819be8",
+      "envelopeRequestId": "pzwb8-1790325558634-2f7825819be8",
+      "joined": true,
+      "nativeCache": "HIT",
+      "nativeUserAgent": [
+        "Workshop/Missing"
+      ],
+      "cookieState": "missing",
+      "cookie": null,
+      "nativeCookieAbsent": true,
+      "delayMs": 8164
+    },
+    {
+      "name": "Invalid",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "f9c0caf4-d88c-4d1b-bb02-a227dfef117b",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::475b9-1790325558666-ab6fc198caf7",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Invalid",
+      "at": "2026-09-25T08:39:18.698Z",
+      "nativeCount": 1,
+      "emissionCount": 1,
+      "nativeRequestId": "475b9-1790325558666-ab6fc198caf7",
+      "envelopeRequestId": "475b9-1790325558666-ab6fc198caf7",
+      "joined": true,
+      "nativeCache": "HIT",
+      "nativeUserAgent": [
+        "Workshop/Invalid"
+      ],
+      "cookieState": "invalid",
+      "cookie": null,
+      "nativeCookieAbsent": true,
+      "delayMs": 8128
+    }
+  ],
+  "originCount": 1,
+  "nativeCount": 4,
+  "emissionCount": 4,
+  "duplicateRecords": 0,
+  "unmatchedEmissions": 0,
+  "receivedBatches": 5,
+  "verifiedAt": "2026-09-25T08:39:34.127Z",
+  "run": "run-0728c257-ab33-4d98-b77f-523958ac70a0",
+  "environment": "production",
+  "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+  "revision": "9ec5d07780a9482345c366a724b969571f9952c3",
+  "origins": [
+    {
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "at": 1790325557983
+    }
+  ],
+  "batches": [
+    {
+      "signatureVerified": true,
+      "receivedAt": 1790325563474,
+      "records": [
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555784375600000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "svc4t-1790325557810-9f18db5c7cef",
+          "timestamp": 1790325557843,
+          "message": "{\"kind\":\"workshop-cookie-v1\",\"run\":\"run-0728c257-ab33-4d98-b77f-523958ac70a0\",\"eventId\":\"84b74094-0798-4e96-9928-9aede2c24763\",\"cookieState\":\"valid\",\"cookie\":\"fixture-A\"}",
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/A",
+            "userAgent": [
+              "Workshop/A"
+            ],
+            "vercelCache": "MISS"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555782001800000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "svc4t-1790325557810-9f18db5c7cef",
+          "timestamp": 1790325557820,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/A",
+            "userAgent": [
+              "Workshop/A"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 200
+          }
+        }
+      ]
+    },
+    {
+      "signatureVerified": true,
+      "receivedAt": 1790325564215,
+      "records": [
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555862672600000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "qjq5x-1790325558604-0374a0534c89",
+          "timestamp": 1790325558626,
+          "message": "{\"kind\":\"workshop-cookie-v1\",\"run\":\"run-0728c257-ab33-4d98-b77f-523958ac70a0\",\"eventId\":\"84b99d38-e7fa-4269-a7dd-d725146f56c4\",\"cookieState\":\"valid\",\"cookie\":\"fixture-B\"}",
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/B",
+            "userAgent": [
+              "Workshop/B"
+            ],
+            "vercelCache": "MISS"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555861270300000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "qjq5x-1790325558604-0374a0534c89",
+          "timestamp": 1790325558612,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/B",
+            "userAgent": [
+              "Workshop/B"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 200
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555865778300000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "pzwb8-1790325558634-2f7825819be8",
+          "timestamp": 1790325558657,
+          "message": "{\"kind\":\"workshop-cookie-v1\",\"run\":\"run-0728c257-ab33-4d98-b77f-523958ac70a0\",\"eventId\":\"406fa6e7-96bd-437f-ab90-0b2655e4c2a9\",\"cookieState\":\"missing\",\"cookie\":null}",
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Missing",
+            "userAgent": [
+              "Workshop/Missing"
+            ],
+            "vercelCache": "MISS"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555864306900000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "pzwb8-1790325558634-2f7825819be8",
+          "timestamp": 1790325558643,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Missing",
+            "userAgent": [
+              "Workshop/Missing"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 200
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555869430500000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "475b9-1790325558666-ab6fc198caf7",
+          "timestamp": 1790325558694,
+          "message": "{\"kind\":\"workshop-cookie-v1\",\"run\":\"run-0728c257-ab33-4d98-b77f-523958ac70a0\",\"eventId\":\"f9c0caf4-d88c-4d1b-bb02-a227dfef117b\",\"cookieState\":\"invalid\",\"cookie\":null}",
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Invalid",
+            "userAgent": [
+              "Workshop/Invalid"
+            ],
+            "vercelCache": "MISS"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555867388700000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "475b9-1790325558666-ab6fc198caf7",
+          "timestamp": 1790325558673,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Invalid",
+            "userAgent": [
+              "Workshop/Invalid"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 200
+          }
+        }
+      ]
+    },
+    {
+      "signatureVerified": true,
+      "receivedAt": 1790325564567,
+      "records": [
+        {
+          "nativeCookieFieldPresent": false,
+          "excludedValuePresent": false,
+          "id": "1790325558590115498081201330",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "external",
+          "requestId": "svc4t-1790325557810-9f18db5c7cef",
+          "timestamp": 1790325558590,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/A",
+            "userAgent": [
+              "Workshop/A"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 200
+          }
+        }
+      ]
+    },
+    {
+      "signatureVerified": true,
+      "receivedAt": 1790325565129,
+      "records": [
+        {
+          "nativeCookieFieldPresent": null,
+          "excludedValuePresent": false,
+          "id": "69052830400179032555964453800000",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "lambda",
+          "requestId": "xdv5z-1790325559642-4a5947a88dbf",
+          "timestamp": 1790325559644,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "userAgent": [
+              "node"
+            ],
+            "vercelCache": "MISS",
+            "statusCode": 403
+          }
+        }
+      ]
+    },
+    {
+      "signatureVerified": true,
+      "receivedAt": 1790325566823,
+      "records": [
+        {
+          "nativeCookieFieldPresent": false,
+          "excludedValuePresent": false,
+          "id": "1790325558628753832189273475",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "external",
+          "requestId": "qjq5x-1790325558604-0374a0534c89",
+          "timestamp": 1790325558628,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/B",
+            "userAgent": [
+              "Workshop/B"
+            ],
+            "vercelCache": "HIT",
+            "statusCode": 200,
+            "cacheId": "svc4t-1790325557810-9f18db5c7cef"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": false,
+          "excludedValuePresent": false,
+          "id": "1790325558695915925863498499",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "external",
+          "requestId": "475b9-1790325558666-ab6fc198caf7",
+          "timestamp": 1790325558695,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Invalid",
+            "userAgent": [
+              "Workshop/Invalid"
+            ],
+            "vercelCache": "HIT",
+            "statusCode": 200,
+            "cacheId": "svc4t-1790325557810-9f18db5c7cef"
+          }
+        },
+        {
+          "nativeCookieFieldPresent": false,
+          "excludedValuePresent": false,
+          "id": "1790325558659873680656566385",
+          "projectId": "prj_Q3wlwGlV6RX0nJjdK6G4MuroZXhr",
+          "deploymentId": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+          "source": "external",
+          "requestId": "pzwb8-1790325558634-2f7825819be8",
+          "timestamp": 1790325558659,
+          "proxy": {
+            "path": "/demo/run-0728c257-ab33-4d98-b77f-523958ac70a0",
+            "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Missing",
+            "userAgent": [
+              "Workshop/Missing"
+            ],
+            "vercelCache": "HIT",
+            "statusCode": 200,
+            "cacheId": "svc4t-1790325557810-9f18db5c7cef"
+          }
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "name": "A",
+      "status": 200,
+      "cache": "MISS",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "84b74094-0798-4e96-9928-9aede2c24763",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::svc4t-1790325557810-9f18db5c7cef",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/A",
+      "at": "2026-09-25T08:39:18.593Z"
+    },
+    {
+      "name": "B",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "84b99d38-e7fa-4269-a7dd-d725146f56c4",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::qjq5x-1790325558604-0374a0534c89",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/B",
+      "at": "2026-09-25T08:39:18.631Z"
+    },
+    {
+      "name": "Missing",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "406fa6e7-96bd-437f-ab90-0b2655e4c2a9",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::pzwb8-1790325558634-2f7825819be8",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Missing",
+      "at": "2026-09-25T08:39:18.661Z"
+    },
+    {
+      "name": "Invalid",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "b86954b9-ce0a-40d9-a63e-f6a33d3bf894",
+      "eventId": "f9c0caf4-d88c-4d1b-bb02-a227dfef117b",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::475b9-1790325558666-ab6fc198caf7",
+      "referer": "https://fixture.example/run-0728c257-ab33-4d98-b77f-523958ac70a0/Invalid",
+      "at": "2026-09-25T08:39:18.698Z"
+    }
+  ]
+}

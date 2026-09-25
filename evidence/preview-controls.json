@@ -1,0 +1,10 @@
+{
+  "unsignedDrain": 403,
+  "forgedSignature": 403,
+  "unauthorizedEvidence": 401,
+  "wrongCapability": 401,
+  "forgedFixture": 403,
+  "originProtected": 403,
+  "registrationProtected": 401,
+  "responseUUIDs": true
+}

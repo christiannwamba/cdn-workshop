@@ -1,0 +1,9 @@
+{
+  "verifiedAt": "2026-09-25T08:49:42.005Z",
+  "revision": "2329a30d40acb5fd3c7113cdb69b9da862347237",
+  "firstRegistration": 200,
+  "duplicateRateWindow": 429,
+  "wrongRunCapability": 401,
+  "previewAdminOnProduction": 401,
+  "wrongEnvironmentRegistration": 400
+}

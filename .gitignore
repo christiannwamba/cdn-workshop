@@ -7,3 +7,5 @@ dist/
 *.log
 
 apps/web/public/profile.json
+
+apps/*/service-metadata.json
