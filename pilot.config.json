@@ -13,7 +13,9 @@
     "driver": "apps/request-demo/api/run.mjs",
     "collector": "apps/collector/api/service.mjs",
     "verification": "apps/collector/lib/evidence.mjs",
-    "configuration": "pilot.config.json"
+    "configuration": "pilot.config.json",
+    "browserLab": "apps/request-demo/public/lab.js",
+    "browserSession": "apps/request-demo/api/browser.mjs"
   },
   "environments": {
     "production": {

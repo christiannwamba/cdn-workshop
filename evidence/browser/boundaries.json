@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-09-25T09:23:05.399Z",
+  "mode": "HTTP negative controls, not browser-transport proof",
+  "run": "run-b3880377-7f35-4e0c-9373-b6db9fa08262",
+  "revision": "3ca678e6f2f89833648669d687ff0eca38615920",
+  "unauthorizedTicket": 401,
+  "wrongCapability": 401,
+  "directOriginBeforeConsume": 403,
+  "validFixture": 200,
+  "privateOriginHeaderExposed": false,
+  "directOriginAfterConsume": 403,
+  "ticketReplay": 409,
+  "thirteenthTicket": 429,
+  "closed": 200,
+  "afterResetTicket": 410,
+  "afterResetContent": 410,
+  "crossEnvironmentRead": 404
+}
