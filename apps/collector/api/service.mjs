@@ -20,7 +20,7 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');
  if(req.method==='OPTIONS')return res.status(204).end();
  const u=new URL(req.url,'https://collector.invalid'),op=u.searchParams.get('op'),run=u.searchParams.get('run');
- const admin=equal(req.headers.authorization,`Bearer ${process.env.SERVICE_SECRET}`);
+ const admin=Boolean(process.env.SERVICE_SECRET)&&equal(req.headers.authorization,`Bearer ${process.env.SERVICE_SECRET}`);
  try{
   if(op==='version')return res.json({sourceMappings,service:'collector',environment:env,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
   if(op==='drain'){

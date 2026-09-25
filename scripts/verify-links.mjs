@@ -1,0 +1,3 @@
+import{load,save}from'./platform.mjs';const p=load('pilot.config.json'),out=[];
+for(const[service,url]of [['request',p.environments.preview.requestUrl+'/api/run'],['collector',p.environments.preview.collectorUrl+'/api/service?op=version']]){const v=await fetch(url).then(r=>r.json());for(const[key,map]of Object.entries(v.sourceMappings)){const target=`${p.repo}/blob/${v.revision}/${map.path}#L${map.first}-L${map.last}`;const r=await fetch(target);out.push({key,service,revision:v.revision,target,status:r.status,verifiedAt:new Date().toISOString()});}}
+save('evidence/source-links.json',out);console.log(out);

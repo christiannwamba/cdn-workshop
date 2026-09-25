@@ -1,0 +1,34 @@
+[
+  {
+    "key": "middleware",
+    "service": "request",
+    "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+    "target": "https://github.com/christiannwamba/cdn-workshop-pilot/blob/2020c00a5707c6e5a711018b3cebd8cb4690315a/apps/request-demo/middleware.ts#L1-L17",
+    "status": 200,
+    "verifiedAt": "2026-09-25T08:41:52.870Z"
+  },
+  {
+    "key": "driver",
+    "service": "request",
+    "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+    "target": "https://github.com/christiannwamba/cdn-workshop-pilot/blob/2020c00a5707c6e5a711018b3cebd8cb4690315a/apps/request-demo/api/run.mjs#L1-L28",
+    "status": 200,
+    "verifiedAt": "2026-09-25T08:41:53.324Z"
+  },
+  {
+    "key": "collector",
+    "service": "collector",
+    "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+    "target": "https://github.com/christiannwamba/cdn-workshop-pilot/blob/2020c00a5707c6e5a711018b3cebd8cb4690315a/apps/collector/api/service.mjs#L1-L72",
+    "status": 200,
+    "verifiedAt": "2026-09-25T08:41:53.857Z"
+  },
+  {
+    "key": "verification",
+    "service": "collector",
+    "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+    "target": "https://github.com/christiannwamba/cdn-workshop-pilot/blob/2020c00a5707c6e5a711018b3cebd8cb4690315a/apps/collector/lib/evidence.mjs#L1-L14",
+    "status": 200,
+    "verifiedAt": "2026-09-25T08:41:54.352Z"
+  }
+]
