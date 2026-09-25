@@ -1,1 +1,11 @@
-{"status":"PASS","checkout":"/var/folders/w0/l2mr4dkd1gngnqtyn5scf87w0000gn/T/cdn-pilot-bootstrap-d35VB6","revision":"b9f7c4bd67bab4d660f858618ec3b7fe94642ff2","checks":["npm ci","npm test","npm run build","both service metadata builds"],"verifiedAt":"2026-09-25T08:49:14.010Z"}
+{
+  "status": "PASS",
+  "revision": "b9f7c4bd67bab4d660f858618ec3b7fe94642ff2",
+  "checks": [
+    "npm ci",
+    "npm test",
+    "npm run build",
+    "both service metadata builds"
+  ],
+  "verifiedAt": "2026-09-25T08:49:14.010Z"
+}
