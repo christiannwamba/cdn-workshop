@@ -19,7 +19,7 @@ const original=`sequenceDiagram
   C-->>V: Content + current event UUID
   C-->>P: Native request metadata
   P-->>R: Asynchronous signed batches
-  Note over P,R: Exact envelope requestId joins; arrival may be delayed
+  Note over P,R: Exact envelope requestId joins, arrival may be delayed
   R-->>V: Run-scoped evidence via workshop page`;
 const catalog=[{id:'R20',title:'Can visitors share cached content?',status:'supported',category:'Caching',note:'Fully supported for bounded public shared content. Outside this pilot; no complete R20 runbook.',implemented:false},{id:'R32',title:'Can we capture a selected cookie on a cache hit?',status:'workaround',category:'Observability',note:'Pre-cache instrumentation captures an allowlisted synthetic cookie. Partial customer coverage.',implemented:true},{id:'R10',title:'Can application code inspect visitor TLS metadata?',status:'gap',category:'Transport',note:'Visitor TLS details needed by this requirement are not exposed here. Outside this pilot.',implemented:false}];
 const labels={supported:'✓ Fully supported',workaround:'△ Workaround',gap:'⊘ Gap'};
