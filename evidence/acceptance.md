@@ -10,7 +10,7 @@ Owner: Christian Nwamba. Public sample contains only newly authored synthetic fi
 | Privacy / boundaries | PASS | Unrelated and invalid cookie values excluded before logging; raw native-field absence checked before sanitization. Unsigned/forged ingestion 403; missing/wrong capability 401; forged fixture and unsigned origin 403. |
 | Run isolation | PASS | Wrong run capability 401; preview run queried on production 404. Separate Chrome/in-app runs and browser-local diagrams do not overwrite each other. |
 | Async evidence | PASS | Real missing-delivery timeout observed, followed by fresh-run recovery after preview Drain setup. Delayed/duplicate/missing/tampered-record analyzer controls use recorded genuine data and are explicitly offline tests, not fabricated platform deliveries. No delivery SLA claimed. |
-| Profile portability | PARTIAL | Browser-local override routes the production page to real preview services. Mixed environments blocked before mutation; imported JSON applied; defaults restored. JSON/Mermaid download buttons exist but automation did not confirm download completion. Independent attendee account not tested. |
+| Deployment configuration | PARTIAL | Historical profile-override tests predate the local cleanup. The editor and endpoint overrides are now removed; configuration is deployment-owned. Independent attendee account setup remains untested. |
 | GitHub writes | PASS | Personal public repository creation, clean-source audit, commits, push, branch and PR creation succeeded. GitGuardian checks passed. |
 | Git integration | PASS | All three projects linked to the repository with distinct roots. Observed deployments report source=git and exact commit SHAs; no CLI-only deployment is counted. |
 | Repeated updates | PASS | Multiple main and codex/delivery-proof pushes produced independent deployments for all three services. |
@@ -24,7 +24,7 @@ Owner: Christian Nwamba. Public sample contains only newly authored synthetic fi
 
 ## Important limitations
 
-R32 remains a workaround with partial customer coverage even when the fixture passes. The public button invokes four hosted synthetic HTTP sessions; it does not read real browser visitor cookies or prove third-party browser-cookie behavior. Customer cookie semantics, a universal production correlation contract, native automatic named-cookie fields, lossless telemetry, cost at scale, sustained throughput and delivery guarantees are not established.
+R32 remains a workaround with partial customer coverage even when the fixture passes. The initial public button used hosted synthetic HTTP sessions. The later real-browser flow verified actual same-origin cookie transport and cache/log correlation (see [browser controls](browser/controls.md)). The current local UI consolidation has not been deployed or freshly verified against CDN/log delivery. Third-party cookie behavior is not established. Customer cookie semantics, a universal production correlation contract, native automatic named-cookie fields, lossless telemetry, cost at scale, sustained throughput and delivery guarantees are not established.
 
 Raw external TLS origins, WebSocket hosting/session limits, every framework cache topology, other account plans and all customer requirements are outside this pilot. Existing earlier failed and pending evidence is retained alongside the passing runs.
 

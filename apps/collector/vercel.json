@@ -1,9 +1,7 @@
 {
   "framework": null,
   "outputDirectory": "public",
-  "regions": [
-    "lhr1"
-  ],
+  "regions": ["lhr1"],
   "functions": {
     "api/*.mjs": {
       "maxDuration": 60

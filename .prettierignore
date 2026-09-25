@@ -1,0 +1,14 @@
+# Dependencies, generated builds and deployment metadata
+node_modules/
+**/dist/
+**/.vercel/
+.private/
+package-lock.json
+apps/web/public/profile.json
+apps/request-demo/public/lab-profile.json
+apps/*/service-metadata.json
+# Immutable recorded observations and extracted design tokens
+evidence/
+manifest.json
+apps/web/public/recorded.json
+apps/web/src/tokens.css

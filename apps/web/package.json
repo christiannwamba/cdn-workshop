@@ -3,14 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "node scripts/profile.mjs && vite --host 127.0.0.1",
     "build": "node scripts/profile.mjs && vite build"
   },
   "dependencies": {
     "dompurify": "3.4.15",
     "mermaid": "11.17.2",
+    "monaco-editor": "^0.56.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "6.1.1",

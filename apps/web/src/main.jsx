@@ -1,7 +1,29 @@
-import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';import mermaid from'mermaid';import DOMPurify from'dompurify';import './tokens.css';import './style.css';
-mermaid.initialize({startOnLoad:false,securityLevel:'strict',suppressErrorRendering:true,theme:'neutral',flowchart:{htmlLabels:false},maxTextSize:15000,secure:['secure','securityLevel','startOnLoad','maxTextSize','suppressErrorRendering']});
-const original=`sequenceDiagram
-  participant V as Browser lab (first-party cookie)
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
+import { createBrowserClient } from './browser-client.js';
+import { CodeBlock } from './code-block.jsx';
+import './tokens.css';
+const MermaidEditor = lazy(() => import('./mermaid-editor.jsx'));
+import './style.css';
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'strict',
+  suppressErrorRendering: true,
+  theme: 'neutral',
+  flowchart: { htmlLabels: false },
+  maxTextSize: 15000,
+  secure: [
+    'secure',
+    'securityLevel',
+    'startOnLoad',
+    'maxTextSize',
+    'suppressErrorRendering',
+  ],
+});
+const original = `sequenceDiagram
+  participant V as Your browser
   participant M as Routing Middleware
   participant C as CDN cache
   participant O as Owned origin
@@ -10,7 +32,7 @@ const original=`sequenceDiagram
   V->>R: Prepare session and obtain one-use ticket
   V->>M: Browser fetch, same URL and actual Cookie header
   M->>R: Consume bounded ticket (not a content-origin call)
-  M-->>P: Cookie emission + generated event UUID
+  M-->>P: Log selected cookie + event ID
   M->>C: Continue to public content
   alt First request: MISS
     C->>O: Fetch shared content
@@ -22,31 +44,662 @@ const original=`sequenceDiagram
   C-->>P: Native request metadata
   P-->>R: Asynchronous signed batches
   Note over P,R: Arrival may be delayed
-  R-->>V: Run-scoped evidence via workshop page`;
-const catalog=[{id:'R20',title:'Can visitors share cached content?',status:'supported',category:'Caching',note:'Fully supported for bounded public shared content. Outside this pilot; no complete R20 runbook.',implemented:false},{id:'R32',title:'Can we capture a selected cookie on a cache hit?',status:'workaround',category:'Observability',note:'Pre-cache instrumentation captures an allowlisted synthetic cookie. Partial customer coverage.',implemented:true},{id:'R10',title:'Can application code inspect visitor TLS metadata?',status:'gap',category:'Transport',note:'Visitor TLS details needed by this requirement are not exposed here. Outside this pilot.',implemented:false}];
-const labels={supported:'✓ Fully supported',workaround:'△ Workaround',gap:'⊘ Gap'};
-const readLocal=k=>{try{return localStorage.getItem(k);}catch{return null;}};
-const writeLocal=(k,v)=>{try{localStorage.setItem(k,v);}catch{}};
-const jsonFetch=async(url,init={})=>{const r=await fetch(url,{...init,signal:AbortSignal.timeout(25000)});if(!r.ok)throw Error(`HTTP ${r.status}: ${await r.text()}`);return r.json();};
-function download(name,text){const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function validate(p){if(/"[^"]*(?:secret|token|password|capability)[^"]*"\s*:/i.test(JSON.stringify(p)))throw Error('Profiles cannot contain credentials or capabilities');for(const k of ['siteUrl','requestUrl','collectorUrl','repo','dashboard']){const u=new URL(p[k]);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)throw Error(`${k} must be a clean HTTPS URL`);}if(!/^[a-f0-9]{40}$/.test(p.revision))throw Error('revision must be a full commit SHA');if(!p.environment||!p.team||!p.projects||!p.sources)throw Error('Environment, team, projects and source mappings are required');for(const s of Object.values(p.sources))if(!s.path||s.path.includes('..')||!Number.isInteger(s.first)||!Number.isInteger(s.last)||s.last<s.first)throw Error('Invalid source mapping');return p;}
-function Diagram(){const[text,setText]=useState(()=>readLocal('r32-diagram')||original),[svg,setSvg]=useState(''),[error,setError]=useState(''),[large,setLarge]=useState(false),[notice,setNotice]=useState(''),[rendering,setRendering]=useState(false);const seq=useRef(0);
- async function apply(value=text){const id=++seq.current;setRendering(true);try{if(value.includes('%%{')||/^---/m.test(value))throw Error('Configuration directives are disabled; edit diagram content only.');await mermaid.parse(value);const out=await mermaid.render(`diagram${id}`,value);if(id===seq.current){setSvg(DOMPurify.sanitize(out.svg,{USE_PROFILES:{svg:true,svgFilters:true}}));setError('');writeLocal('r32-diagram',value);}}catch(e){setError(String(e.message||e));}finally{if(id===seq.current)setRendering(false);}}
- useEffect(()=>{apply();},[]);
- return <section className={large?'diagram teaching':'diagram'} id="diagram"><div className="section-head"><div><p className="eyebrow">01 / Follow the request</p><h2>One response. Two evidence paths.</h2></div><button onClick={()=>setLarge(!large)}>{large?'Exit teaching view':'Teaching view ↗'}</button></div><p>Middleware runs before the cache lookup. The cookie emission and native request record arrive later, through the platform’s signed log pipeline.</p><div className="diagram-grid"><div className="drawing" aria-label="Rendered request sequence" dangerouslySetInnerHTML={{__html:svg}}/><div className="editor"><label htmlFor="mermaid">Editable Mermaid source</label><textarea id="mermaid" value={text} onChange={e=>setText(e.target.value)} spellCheck="false"/><div className="buttons"><button onClick={()=>apply()}>Apply diagram</button><button onClick={()=>{setText(original);apply(original);}}>Reset original</button><button onClick={async()=>{await navigator.clipboard.writeText(text);setNotice('Copied Mermaid.');}}>Copy</button><button onClick={()=>download('r32.mmd',text)}>Download .mmd</button></div><p className="small">Valid applied drafts persist only in this browser. A saved draft may describe an earlier deployment; Reset original loads the current browser-request diagram. Diagram edits never change backend code or configuration.</p><p role="status">{rendering?'Rendering edit; previous diagram remains visible…':notice}</p></div></div>{error&&<div className="notice error" role="alert"><strong>Invalid edit · last valid diagram is stale</strong><pre>{error}</pre></div>}</section>;
+  R-->>V: Logs for this session`;
+const catalog = [
+  {
+    id: 'R20',
+    title: 'Can visitors share cached content?',
+    status: 'supported',
+    category: 'Caching',
+    note: 'Fully supported for bounded public shared content. No R20 exercise yet.',
+    implemented: false,
+  },
+  {
+    id: 'R32',
+    title: 'Can we log a cookie when the CDN serves a cached page?',
+    status: 'workaround',
+    category: 'Observability',
+    note: 'Log a selected test cookie before the cache lookup. Partial customer coverage.',
+    implemented: true,
+  },
+  {
+    id: 'R10',
+    title: 'Can application code inspect visitor TLS metadata?',
+    status: 'gap',
+    category: 'Transport',
+    note: 'Visitor TLS details needed by this requirement are not exposed here. No R10 exercise yet.',
+    implemented: false,
+  },
+];
+const labels = {
+  supported: '✓ Fully supported',
+  workaround: '△ Workaround',
+  gap: '⊘ Gap',
+};
+const readLocal = (k) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
+const writeLocal = (k, v) => {
+  try {
+    localStorage.setItem(k, v);
+  } catch {}
+};
+const jsonFetch = async (url, init = {}) => {
+  const r = await fetch(url, { ...init, signal: AbortSignal.timeout(25000) });
+  if (!r.ok) throw Error(`HTTP ${r.status}: ${await r.text()}`);
+  return r.json();
+};
+function download(name, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function Profile({profile,onApply,defaults}){const[text,setText]=useState(JSON.stringify(profile,null,2)),[message,setMessage]=useState('');useEffect(()=>setText(JSON.stringify(profile,null,2)),[profile]);return <section><p className="eyebrow">Deployment profile</p><h1>Bring your own environment.</h1><p>Change public URLs and source mappings after deployment. Overrides persist only in this browser. Committed defaults live in <code>pilot.config.json</code>; server secrets stay in Vercel environment variables.</p><div className="notice">Changing a profile clears the current run. Before sending requests, the site checks that request and collector services agree on environment and destination. Never put credentials here.</div><label htmlFor="profile">Public deployment profile (JSON)</label><textarea className="profile-editor" id="profile" value={text} onChange={e=>setText(e.target.value)}/><div className="buttons"><button className="primary" onClick={()=>{try{const p=validate(JSON.parse(text));writeLocal('workshop-profile',JSON.stringify(p));onApply(p);setMessage('Profile applied. Previous run cleared.');}catch(e){setMessage(e.message);}}}>Validate & apply</button><button onClick={()=>download('workshop-profile.json',text)}>Export JSON</button><label className="file-button">Import JSON<input type="file" accept="application/json" onChange={async e=>{if(e.target.files[0])setText(await e.target.files[0].text());}}/></label><button onClick={()=>{localStorage.removeItem('workshop-profile');onApply(defaults);setMessage('Deployed defaults restored.');}}>Restore defaults</button></div><p role="status">{message}</p><p><a href={profile.siteUrl}>Open this profile’s site ↗</a></p><h2>Self-deployment</h2><p>Clone the public repository, install with <code>npm ci</code>, and follow the setup guide. You need permission to create three Vercel projects, private Blob storage, a project-scoped Log Drain and a GitHub integration. These capabilities and costs depend on your account. An independent attendee account has not been tested.</p><a href={`${profile.repo}/blob/${profile.revision}/README.md`}>Open setup guide ↗</a></section>;}
-function App(){const[defaults,setDefaults]=useState(null),[p,setP]=useState(null),[page,setPage]=useState(location.hash.slice(1)||'index'),[status,setStatus]=useState('all'),[category,setCategory]=useState('all'),[run,setRun]=useState(null),[evidence,setEvidence]=useState(null),[phase,setPhase]=useState('empty'),[message,setMessage]=useState(''),[saved,setSaved]=useState(null),[versions,setVersions]=useState(null);const generation=useRef(0),started=useRef(0),pollSequence=useRef(0);
- useEffect(()=>{jsonFetch('/profile.json').then(d=>{setDefaults(d);try{setP(validate(JSON.parse(readLocal('workshop-profile'))||d));}catch{setP(d);}}).catch(e=>setMessage(e.message));const h=()=>setPage(location.hash.slice(1)||'index');window.addEventListener('hashchange',h);return()=>window.removeEventListener('hashchange',h);},[]);
- function reset(){generation.current++;setRun(null);setEvidence(null);setSaved(null);setPhase('empty');setMessage('Ready for a fresh namespace. Previous durable evidence is retained privately.');}
- async function checkProfile(){const[r,c]=await Promise.all([jsonFetch(`${p.requestUrl}/api/run`),jsonFetch(`${p.collectorUrl}/api/service?op=version`)]);if(r.environment!==p.environment||c.environment!==p.environment||r.collectorUrl.replace(/\/$/,'')!==p.collectorUrl.replace(/\/$/,''))throw Error('Profile mismatch: services do not belong to the selected environment. No run started.');return{r,c};}
- async function start(){reset();const g=generation.current;setPhase('loading');setMessage('Checking service boundaries, then sending four bounded synthetic requests…');try{const checked=await checkProfile();if(g!==generation.current)return;setVersions({request:checked.r,collector:checked.c});const r=await jsonFetch(`${p.requestUrl}/api/run`,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});if(g!==generation.current)return;setRun(r);started.current=Date.now();setPhase('pending');setMessage('Requests finished. Waiting for signed platform delivery; no new requests are sent while polling…');}catch(e){if(g===generation.current){setPhase('error');setMessage(e.message);}}}
- async function refresh(r=run){if(!r)return;const g=generation.current,poll=++pollSequence.current;try{const result=await jsonFetch(`${p.collectorUrl}/api/service?op=evidence&run=${encodeURIComponent(r.run)}`,{headers:{authorization:`Bearer ${r.capability}`}});if(g!==generation.current||poll!==pollSequence.current)return;setEvidence(result);if(result.collectorRevision)setVersions(v=>({...v,collector:{...v?.collector,revision:result.collectorRevision,sourceMappings:result.collectorSourceMappings}}));if(result.status==='PASS'){setPhase('complete');setMessage('Fresh live verification passed. This is still a workaround with partial customer coverage.');}else if(result.status==='FAIL'){setPhase('failed');setMessage('Records arrived, but a verification check failed. Inspect the comparison below.');}else if(Date.now()-started.current>120000){setPhase('timeout');setMessage('Delivery window ended with incomplete evidence. This is not proof of cookie absence. Refresh to recover late arrivals.');}else{setPhase('pending');setMessage(`${result.nativeCount}/4 native records · ${result.emissionCount}/4 cookie emissions. Delivery is asynchronous.`);}}catch(e){if(g!==generation.current||poll!==pollSequence.current)return;setPhase('error');setMessage(`Evidence unavailable: ${e.message}. Refresh retries this same run.`);}}
- useEffect(()=>{if(phase!=='pending'||!run)return;const id=setTimeout(()=>refresh(),5000);return()=>clearTimeout(id);},[phase,run,evidence]);
- if(!p)return <main><h1>Loading workshop…</h1><p role="alert">{message}</p></main>;
- const source=(key)=>{const service=['middleware','driver'].includes(key)?'request':['collector','verification'].includes(key)?'collector':'web';const s=versions?.[service]?.sourceMappings?.[key]||p.sources[key];const rev=versions?.[service]?.revision||p.revision;return`${p.repo.replace(/\/$/,'')}/blob/${rev}/${s.path}#L${s.first}-L${s.last}`;};
- const dashboard=(key,view='')=>`${p.dashboard.replace(/\/$/,'')}/${encodeURIComponent(p.team)}/${encodeURIComponent(p.projects[key])}${view}`;
- const data=saved||evidence;const selected=catalog.filter(r=>(status==='all'||r.status===status)&&(category==='all'||r.category===category));
- return <><header><a className="brand" href="#index"><span className="brand-mark">◈</span> CDN / Workshop <span className="pilot">PILOT</span></a><nav><a href="#index">Requirements</a><a href="#r32">Live lab</a><a href="#setup">Setup & profile</a><button aria-label="Toggle theme" onClick={()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;writeLocal('theme',t);}}>◐</button></nav></header><main>{page==='setup'?<Profile profile={p} defaults={defaults} onApply={v=>{reset();setVersions(null);setP(v);}}/>:page==='r32'?<><a className="back" href="#index">← All requirements</a><div className="hero"><p className="eyebrow">R32 / Observability / Interactive runbook</p><span className="badge workaround">△ Workaround · partial coverage</span><h1>Can we capture a selected cookie<br className="desktop"/> on a cache hit?</h1><p className="lede">Yes, with pre-cache instrumentation. A shared response can come from cache while Middleware captures the current request’s selected synthetic cookie.</p><div className="orientation"><strong>What you’ll prove</strong><p>A fills one shared URL. B sends a different cookie to that same URL. Compare a genuine <code>HIT</code>, one origin call, and two distinct current-request records.</p><strong>What “live” means here</strong><p>Open the browser lab on the request service’s own host. Its JavaScript sets a synthetic first-party cookie, and your browser sends the actual requests. The optional hosted regression exercise below still uses server-generated HTTP visitors. Both collect genuine signed Vercel events.</p></div><a className="button primary" href={`${p.requestUrl}/lab.html`} target="_blank" rel="noopener">Open real-browser lab ↗</a> <a className="button" href="#scenario" onClick={e=>{e.preventDefault();document.getElementById('scenario').scrollIntoView({behavior:'smooth'});}}>Optional hosted regression ↓</a></div><Diagram/><section id="scenario"><p className="eyebrow">02 / Real-browser exercise</p><h2>Set a first-party cookie. Inspect its actual request.</h2><p>Open the lab in a top-level tab and Developer Tools → Network. Leave Disable cache unchecked and filter by <code>/demo/run-</code>. Prepare a session, then Set cookie A → Send request. Inspect Request Headers → Cookie and Response Headers → <code>x-vercel-cache</code>, <code>x-workshop-event-id</code>, and <code>x-workshop-fill-id</code>.</p><p>Set B and send the same URL. Expect a CDN HIT, a shared fill ID and one independent origin call, plus B’s current cookie emission. Clear the selected cookie and test Missing; set Invalid and verify exclusion. Refresh evidence after each step. Reset clears the scoped test cookies and closes that session.</p><p>Run all cases performs those same actions inside the browser. Changing A to B represents changing cookie state, not two people. The lab also offers joining a shared session from another isolated browser context. Ordinary tabs share a cookie jar.</p><a className="button primary" href={`${p.requestUrl}/lab.html`} target="_blank" rel="noopener">Open browser controls and Network guide ↗</a><p className="small">Browser memory/disk caching is distinct from a CDN HIT: require a new event UUID and delivered native record for every intended request. Ten-minute teaching sessions have a twelve-request budget, with one-use tickets and explicit expiry recovery. Backend signing secrets remain server-side.</p><hr/><p className="eyebrow">Optional / Hosted regression exercise</p><h2>Same content. Different visitor context.</h2><div className="scenarios">{[['A · Fill','workshop_choice=fixture-A','First request should be MISS. Creates the cached representation.'],['B · Hit','workshop_choice=fixture-B','Same URL; should be HIT. Cookie emission should change to B.'],['Missing cookie','No selected cookie','Should be HIT; cookieState=missing and cookie=null.'],['Invalid cookie','Rejected synthetic value','Should be HIT; cookieState=invalid and cookie=null.']].map(([a,b,c])=><article key={a}><h3>{a}</h3><code>{b}</code><p>{c}</p></article>)}</div><p>All four requests also test exclusion of unrelated cookies or rejection of an invalid value. The driver sends a forged event header; Middleware must replace it with a fresh UUID.</p><div className="buttons"><button className="primary" disabled={phase==='loading'||phase==='pending'} onClick={start}>{phase==='loading'?'Starting…':'Start live run →'}</button><button disabled={!run} onClick={()=>refresh()}>Refresh evidence</button><button onClick={reset}>Reset run</button><button onClick={async()=>{try{const r=await jsonFetch('/recorded.json');setSaved(r);}catch{setMessage('No recorded fallback published yet. Start a live run.');}}}>View recorded fallback</button>{saved&&<button onClick={()=>setSaved(null)}>Return to live evidence</button>}</div><p className="small">One click sends exactly four requests. Allow up to two minutes for this UI’s initial wait window; this is not a delivery SLA. Reset clears this view and the next run gets a new URL.</p><div className={`notice ${phase==='error'||phase==='failed'?'error':''}`} role="status" aria-live="polite"><strong>{saved?'RECORDED FALLBACK':phase==='empty'?'NO RUN YET':`LIVE · ${phase.toUpperCase()}`}</strong><p>{saved?'Recorded fallback selected. This is not the current live run.':message||'Start when ready. Saved results never count as a fresh live pass.'}</p>{run&&<code>{run.run}</code>}</div></section><section><p className="eyebrow">03 / Verify what happened</p><h2>Evidence, with the join exposed.</h2><p>Use this inline view for native records and origin counts. Browser Network shows the run request and evidence polls; the four visitor requests happen in the hosted driver. In Vercel logs, look for <code>workshop-cookie-v1</code>.</p>{data?<><div className="metrics"><div><b>{data.originCount}</b><span>origin calls · expect 1</span></div><div><b>{data.nativeCount}/4</b><span>native records</span></div><div><b>{data.emissionCount}/4</b><span>cookie emissions</span></div><div><b>{data.duplicateRecords}</b><span>duplicate records</span></div></div><p className="small">{saved?'Recorded':'Observed'} at {data.verifiedAt} · {data.environment} · request revision <code>{data.revision?.slice(0,12)}</code></p><div className="table-wrap"><table><thead><tr><th>Visitor</th><th>Response / native cache</th><th>Cookie capture</th><th>Exact requestId join</th></tr></thead><tbody>{data.rows.map(r=><tr key={r.name}><td>{r.name}</td><td><code>{r.cache} / {r.nativeCache||'pending'}</code></td><td>{r.cookieState||'pending'}<br/><code>{r.cookie??'null'}</code></td><td>{r.joined?'✓ Matched':'… Awaiting / unmatched'}</td></tr>)}</tbody></table></div><div className="checks">{Object.entries(data.checks).map(([k,v])=><span key={k} className={`badge ${v?'supported':'workaround'}`}>{v?'✓':'…'} {k}</span>)}</div><details><summary>Raw response headers, native records and cookie envelopes</summary><pre>{JSON.stringify(data,null,2)}</pre></details></>:<div className="empty">No evidence selected. A fresh live run or a clearly labeled recorded fallback will appear here.</div>}<ol className="verify-list"><li><strong>Cache:</strong> compare response <code>x-vercel-cache</code> with native <code>proxy.vercelCache</code>. B should be HIT in both.</li><li><strong>Origin:</strong> compare <code>x-workshop-fill-id</code> across visitors with the durable origin record. Expect one fill, one origin call.</li><li><strong>Correlation:</strong> response <code>x-workshop-event-id</code> equals the emitted UUID; that envelope’s <code>requestId</code> equals the native record’s <code>requestId</code>. No suffix guessing.</li><li><strong>Current visitor:</strong> B’s native <code>proxy.userAgent</code> and <code>proxy.referer</code> differ from A, while the fill ID stays the same.</li><li><strong>Coverage:</strong> native cookie fields remain absent in this fixture; a separate emission contains only <code>workshop_choice</code>’s permitted synthetic value.</li></ol><div className="link-grid"><a href={source('middleware')}>Middleware source ↗</a><a href={source('driver')}>Hosted visitor driver ↗</a><a href={source('collector')}>Signed collector ↗</a><a href={source('verification')}>Verification logic ↗</a><a href={dashboard('request','/logs')}>Request project logs ↗</a><a href={dashboard('request','/settings')}>Request configuration ↗</a><a href={`${p.dashboard}/${p.team}/~/settings/drains`}>Team Drains ↗</a><a href={dashboard('collector')}>Collector project ↗</a></div><p className="small">Dashboard access needs account permission. Public code, diagrams and sanitized evidence remain available without it. Source links use each service’s observed revision after the profile handshake.</p></section><section><p className="eyebrow">04 / Failure, recovery & conclusion</p><h2>A passing fixture does not close the customer requirement.</h2><div className="scenarios"><article><h3>Delayed or missing delivery</h3><p>Pending means incomplete evidence. At timeout, use Refresh evidence to recover later arrivals without sending more visitor requests. Duplicate record IDs are counted and deduplicated.</p></article><article><h3>Wrong environment or inaccessible service</h3><p>A profile mismatch blocks the run before registration. Restore defaults in Setup, then reset. A 401 or 403 may indicate deployment protection or a missing capability.</p></article><article><h3>Expected negative controls</h3><p>Unsigned Drain posts and forged fixture tickets must receive 403. Another run’s capability must not read this run. These controls are documented in the verification record.</p></article><article><h3>Bounded conclusion</h3><p>Selected-cookie enrichment can run before a cache HIT. Customer cookie semantics, cost, delivery guarantees and a universal cross-record join contract remain unproven.</p></article></div><p>This pilot does not validate raw external TLS origins, WebSocket hosting or session limits, every framework cache topology, other account plans, or all customer requirements.</p><div className="buttons"><a className="button" href="#index">Related: R20 shared caching</a><a className="button" href="#index">Related: R10 TLS metadata</a><a className="button" href={`${p.repo}/blob/${p.revision}/evidence/acceptance.md`}>Dated acceptance record ↗</a><button onClick={()=>window.print()}>Print runbook</button></div></section></>:<><div className="hero index-hero"><p className="eyebrow">Architecture you can inspect</p><h1>From requirement<br/>to observable behavior.</h1><p className="lede">A shared workshop for the CDN questions that matter. Read the behavior, follow the request, then inspect the evidence.</p><p className="small">Vertical pilot · 3 catalog entries · 1 complete live exercise</p></div><div className="filters"><div className="tabs" aria-label="Status filters">{[['all','All requirements'],...Object.entries(labels)].map(([k,v])=><button key={k} aria-pressed={status===k} onClick={()=>setStatus(k)}>{v} <span>{k==='all'?3:catalog.filter(r=>r.status===k).length}</span></button>)}</div><label>Category <select value={category} onChange={e=>setCategory(e.target.value)}><option value="all">All categories</option>{['Caching','Observability','Transport'].map(v=><option key={v}>{v}</option>)}</select></label></div><p className="small" role="status">{selected.length} requirement{selected.length===1?'':'s'} shown</p>{['supported','workaround','gap'].map(s=>{const rows=selected.filter(r=>r.status===s);return rows.length>0&&<section className="catalog-group" key={s}><h2 className={s}>{labels[s]} <span className="count">{rows.length}</span></h2>{rows.map(r=><article className="requirement" key={r.id}><div><p className="eyebrow">{r.category} <span> / {r.id}</span></p><h3>{r.title}</h3><p>{r.note}</p></div>{r.implemented?<a className="button primary" href="#r32">Open live runbook ↗</a>:<span className="badge neutral">Outside pilot</span>}</article>)}</section>})}{!selected.length&&<div className="empty">No requirements match both filters. Select All requirements and All categories.</div>}<aside className="notice"><strong>Status describes requirement coverage.</strong><p>A test can pass while the requirement still needs a workaround. Only R32 is implemented in this pilot; the other entries exercise catalog navigation.</p></aside></>}</main><footer><span>CDN Workshop / owned synthetic fixtures</span><span>{p.environment} · <code>{p.revision.slice(0,8)}</code> · <a href="#setup">Edit profile</a></span></footer></>;
+function Diagram() {
+  const [text, setText] = useState(() => readLocal('r32-diagram') || original),
+    [svg, setSvg] = useState(''),
+    [error, setError] = useState(''),
+    [large, setLarge] = useState(false),
+    [notice, setNotice] = useState(''),
+    [rendering, setRendering] = useState(false),
+    [editorOpen, setEditorOpen] = useState(false);
+  const seq = useRef(0);
+  async function apply(value = text) {
+    const id = ++seq.current;
+    setRendering(true);
+    try {
+      if (value.includes('%%{') || /^---/m.test(value))
+        throw Error('Configuration directives are disabled; edit diagram content only.');
+      await mermaid.parse(value);
+      const out = await mermaid.render(`diagram${id}`, value);
+      if (id === seq.current) {
+        setSvg(
+          DOMPurify.sanitize(out.svg, { USE_PROFILES: { svg: true, svgFilters: true } }),
+        );
+        setError('');
+        writeLocal('r32-diagram', value);
+      }
+    } catch (e) {
+      setError(String(e.message || e));
+    } finally {
+      if (id === seq.current) setRendering(false);
+    }
+  }
+  useEffect(() => {
+    apply();
+  }, []);
+  return (
+    <section className={large ? 'diagram teaching' : 'diagram'} id="diagram">
+      <div className="section-head">
+        <div>
+          <h2>Request flow</h2>
+        </div>
+        <button onClick={() => setLarge(!large)}>
+          {large ? 'Close enlarged view' : 'Enlarge diagram'}
+        </button>
+      </div>
+      <p>
+        Middleware runs before the cache lookup. The cookie log and the platform’s own
+        request record arrive later, through signed log delivery.
+      </p>
+      <div className="diagram-grid">
+        <div
+          className="drawing"
+          aria-label="Rendered request sequence"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+        <details className="editor" onToggle={(e) => setEditorOpen(e.currentTarget.open)}>
+          <summary>Edit Mermaid</summary>
+          {editorOpen && (
+            <Suspense fallback={<p role="status">Loading editor…</p>}>
+              <MermaidEditor value={text} onChange={setText} />
+            </Suspense>
+          )}
+          <div className="buttons">
+            <button onClick={() => apply()}>Apply diagram</button>
+            <button
+              onClick={() => {
+                setText(original);
+                apply(original);
+              }}
+            >
+              Reset original
+            </button>
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(text);
+                setNotice('Copied Mermaid.');
+              }}
+            >
+              Copy
+            </button>
+            <button onClick={() => download('r32.mmd', text)}>Download .mmd</button>
+          </div>
+          <p className="small">
+            Diagram edits stay in this browser and do not change the demo.
+          </p>
+          <p role="status">
+            {rendering ? 'Rendering edit; previous diagram remains visible…' : notice}
+          </p>
+        </details>
+      </div>
+      {error && (
+        <div className="notice error" role="alert">
+          <strong>Invalid edit · last valid diagram is stale</strong>
+          <pre>{error}</pre>
+        </div>
+      )}
+    </section>
+  );
 }
-document.documentElement.dataset.theme=readLocal('theme')||'light';createRoot(document.getElementById('root')).render(<App/>);
+
+function Source({ profile, name, children }) {
+  const [open, setOpen] = useState(false);
+  const source = profile.sources[name];
+  const revision = source?.revision || profile.revision;
+  if (!source) return null;
+  return (
+    <details className="source" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{children}</summary>
+      <p className="small">
+        {profile.localPreview
+          ? 'Local source · unpublished'
+          : 'Source at this deployment'}{' '}
+        ·{' '}
+        <code>
+          {source.path}:{source.first}–{source.last}
+        </code>
+      </p>
+      {open && <CodeBlock source={source} />}
+      {!profile.localPreview && (
+        <a
+          href={`${profile.repo}/blob/${revision}/${source.path}#L${source.first}-L${source.last}`}
+          target="_blank"
+          rel="noopener"
+        >
+          Open these lines on GitHub ↗
+        </a>
+      )}
+      {profile.localPreview && source.committed && (
+        <a
+          className="small"
+          href={`${profile.repo}/blob/${profile.revision}/${source.committed.path}#L${source.committed.first}-L${source.committed.last}`}
+          target="_blank"
+          rel="noopener"
+        >
+          Compare committed source at {profile.revision.slice(0, 8)} (before these local
+          edits) ↗
+        </a>
+      )}
+    </details>
+  );
+}
+function Exercise({ profile }) {
+  const [state, setState] = useState({
+    receipts: [],
+    evidence: null,
+    busy: false,
+    message: 'Prepare a session to begin.',
+  });
+  const client = useRef(null);
+  const live =
+    profile.surface === 'request' &&
+    !profile.localPreview &&
+    location.protocol === 'https:';
+  useEffect(() => {
+    const c = createBrowserClient({ profile, live, onChange: setState });
+    client.current = c;
+    return () => c.dispose();
+  }, [profile, live]);
+  const act = (method, ...args) => client.current?.[method](...args);
+  const receipt = (name) => state.receipts.filter((r) => r.case === name).at(-1);
+  const result = (name) => {
+    const r = receipt(name);
+    if (!r) return null;
+    return (
+      <div className="step-result" role="status">
+        {r.preview ? (
+          <p>UI preview: {name} action complete. No content request was sent.</p>
+        ) : (
+          <>
+            <p>
+              Observed: HTTP {r.status} ·{' '}
+              <code>{r.headers['x-vercel-cache'] || 'no cache header'}</code>.{' '}
+              {r.status === 200
+                ? 'Check the logs below to verify this request.'
+                : 'Request rejected; no successful content request counted.'}
+            </p>
+            <details>
+              <summary>Response headers and timing</summary>
+              <pre>{JSON.stringify(r, null, 2)}</pre>
+            </details>
+          </>
+        )}
+      </div>
+    );
+  };
+  const buttons = (name) => (
+    <div className="buttons">
+      <button
+        disabled={state.busy || !state.session}
+        aria-pressed={state.selected === name}
+        onClick={() => act('choose', name)}
+      >
+        {name === 'Missing'
+          ? 'Clear selected cookie'
+          : name === 'Invalid'
+            ? 'Set invalid cookie'
+            : `Set cookie ${name}`}
+      </button>
+      <button
+        className="primary"
+        disabled={state.busy || state.selected !== name}
+        onClick={() => act('send')}
+      >
+        Send request {name === 'A' || name === 'B' ? name : ''}
+      </button>
+    </div>
+  );
+  const e = state.evidence;
+  const sourceProfile = { ...profile, sources: { ...profile.sources } };
+  if (live) {
+    for (const [mappings, revision] of [
+      [state.session?.sourceMappings, state.session?.revision],
+      [e?.collectorSourceMappings, e?.collectorRevision],
+    ]) {
+      if (!mappings || !revision) continue;
+      for (const [key, mapping] of Object.entries(mappings))
+        sourceProfile.sources[key] =
+          mapping.last - mapping.first < 30 ? { ...mapping, revision } : null;
+    }
+  }
+
+  return (
+    <>
+      <section id="try">
+        <h2>Try it</h2>
+        <ol className="exercise">
+          <li>
+            <h3>Open Network and prepare a session</h3>
+            <p>
+              Open Developer Tools → Network. Leave{' '}
+              <strong>Disable cache unchecked</strong> and filter by{' '}
+              <code>/demo/run-</code>. Preparation gives every request in this exercise
+              the same URL; it does not fetch the page.
+            </p>
+            <button disabled={state.busy} onClick={() => act('prepare')}>
+              {state.session ? 'Start a fresh session' : 'Prepare session'}
+            </button>
+            <p className="small" role="status">
+              {state.session ? (
+                <>
+                  Content URL: <code>{state.session.contentPath}</code>
+                </>
+              ) : (
+                'No session prepared.'
+              )}
+            </p>
+            <Source profile={sourceProfile} name="browserSession">
+              Code: prepare without fetching content
+            </Source>
+          </li>
+          <li>
+            <h3>Set A and request the page</h3>
+            <p>
+              Set <code>workshop_choice=fixture-A</code>, then send. Open that request in
+              Network → Request Headers and check the outgoing Cookie. Under Response
+              Headers, expect <code>x-vercel-cache: MISS</code> on this first request.
+            </p>
+            {buttons('A')}
+            {result('A')}
+            <Source profile={sourceProfile} name="browserLab">
+              Code: this browser sends the request
+            </Source>
+          </li>
+          <li>
+            <h3>Set B and request the same page</h3>
+            <p>
+              Check the outgoing cookie is now <code>fixture-B</code>. Expect{' '}
+              <code>x-vercel-cache: HIT</code> and the same{' '}
+              <code>x-workshop-fill-id</code> (the identifier of the cached content). The{' '}
+              <code>x-workshop-event-id</code> should be new for this request.
+            </p>
+            {buttons('B')}
+            {result('B')}
+            <Source profile={sourceProfile} name="middleware">
+              Code: log this request’s cookie before the cache lookup
+            </Source>
+          </li>
+        </ol>
+        <p className="action-status" role="status" aria-live="polite">
+          {state.busy ? 'Working…' : state.message}
+        </p>
+      </section>
+      <section id="logs">
+        <h2>Check the logs</h2>
+        <ol className="exercise" start="4">
+          <li>
+            <h3>Match B’s request to its log record</h3>
+            <p>
+              Refresh after sending A and B. Expect a separate record for each request: A
+              with <code>fixture-A</code>, B with <code>fixture-B</code> and a native
+              cache value of <code>HIT</code>. Expect one content-origin call overall.
+              “Matched” means the response event ID and signed log records identify the
+              same request.
+            </p>
+            <div className="buttons">
+              <button
+                disabled={state.busy || !state.session}
+                onClick={() => act('refresh')}
+              >
+                Refresh logs
+              </button>
+              <a
+                href={`${profile.dashboard}/${profile.team}/${profile.projects.request}/logs`}
+                target="_blank"
+                rel="noopener"
+              >
+                Open request project logs ↗
+              </a>
+            </div>
+            <p className="small">
+              In the dashboard, search for <code>workshop-cookie-v1</code>. Dashboard
+              access requires project permission.
+            </p>
+            <p role="status">
+              {!live
+                ? 'UI preview: no live logs. Run this exercise on the request host after an approved release.'
+                : state.logMessage || 'No logs loaded yet. Delivery is asynchronous.'}
+            </p>
+            {e && (
+              <>
+                <p>
+                  {e.originCount} content-origin calls · {e.nativeCount} request records ·{' '}
+                  {e.emissionCount} cookie records
+                </p>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Case</th>
+                        <th>Cache</th>
+                        <th>Cookie</th>
+                        <th>Request match</th>
+                        <th>Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {e.rows.map((r) => (
+                        <tr key={r.slot}>
+                          <td>{r.name}</td>
+                          <td>{r.nativeCache || 'Pending'}</td>
+                          <td>
+                            {r.cookieState} / {r.cookie ?? 'null'}
+                          </td>
+                          <td>{r.joined ? 'Matched' : 'Waiting'}</td>
+                          <td>{r.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <details>
+                  <summary>Raw signed log evidence</summary>
+                  <pre>{JSON.stringify(e, null, 2)}</pre>
+                </details>
+              </>
+            )}
+            <Source profile={sourceProfile} name="verification">
+              Code: match the cookie log to the native request record
+            </Source>
+            <Source profile={sourceProfile} name="collector">
+              Code: verify the log delivery signature
+            </Source>
+          </li>
+          <li>
+            <h3>Try missing or invalid values, then reset</h3>
+            <p>
+              Optional: clear the selected cookie, send, then repeat with an invalid
+              value. Expect <code>HIT</code> and <code>cookie=null</code>, with the state
+              recorded as <code>missing</code> or <code>invalid</code>.
+            </p>
+            {buttons('Missing')}
+            {result('Missing')}
+            {buttons('Invalid')}
+            {result('Invalid')}
+            <p>
+              Reset clears this browser’s test cookies and closes the session. The next
+              session gets a fresh content URL.
+            </p>
+            <button disabled={state.busy} onClick={() => act('reset')}>
+              Reset session
+            </button>
+          </li>
+        </ol>
+        <details>
+          <summary>Session limits</summary>
+          <p>
+            Sessions last ten minutes and allow twelve requests. Each send obtains a fresh
+            one-use ticket. If the session expires, reset and prepare again. Changing A to
+            B changes one browser’s cookie state; ordinary tabs share a cookie jar.
+          </p>
+        </details>
+      </section>
+    </>
+  );
+}
+function App() {
+  const [p, setP] = useState(null),
+    [message, setMessage] = useState(''),
+    [page, setPage] = useState(
+      location.pathname === '/lab.html' ? 'r32' : location.hash.slice(1) || 'index',
+    ),
+    [status, setStatus] = useState('all'),
+    [category, setCategory] = useState('all');
+  useEffect(() => {
+    // Deployment-owned configuration only. Old browser overrides are never read.
+    try {
+      localStorage.removeItem('workshop-profile');
+    } catch {}
+    jsonFetch('/profile.json')
+      .then(setP)
+      .catch((e) => setMessage(e.message));
+    const h = () => {
+      setPage(location.hash.slice(1) || 'index');
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('hashchange', h);
+    return () => window.removeEventListener('hashchange', h);
+  }, []);
+  const openLiveExercise =
+    p && !p.localPreview && p.surface !== 'request' && page === 'r32';
+  useEffect(() => {
+    if (openLiveExercise) location.replace(`${p.requestUrl}/#r32`);
+  }, [openLiveExercise, p]);
+  if (openLiveExercise)
+    return (
+      <main>
+        <p>Opening exercise…</p>
+      </main>
+    );
+  if (!p)
+    return (
+      <main>
+        <h1>Loading workshop…</h1>
+        <p role="alert">{message}</p>
+      </main>
+    );
+  const exerciseUrl =
+    p.localPreview || p.surface === 'request' ? '#r32' : `${p.requestUrl}/#r32`;
+  const selected = catalog.filter(
+    (r) =>
+      (status === 'all' || r.status === status) &&
+      (category === 'all' || r.category === category),
+  );
+  return (
+    <>
+      <header>
+        <a className="brand" href="#index">
+          <span className="brand-mark">◈</span> CDN Workshop
+        </a>
+        <nav aria-label="Appearance">
+          <button
+            aria-label="Toggle theme"
+            onClick={() => {
+              const t =
+                document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+              document.documentElement.dataset.theme = t;
+              writeLocal('theme', t);
+            }}
+          >
+            ◐
+          </button>
+        </nav>
+      </header>
+      <main>
+        {page === 'r32' ? (
+          <>
+            <a className="back" href="#index">
+              ← All requirements
+            </a>
+            <div className="hero">
+              <span className="badge workaround">
+                R32 · Workaround · partial coverage
+              </span>
+              <h1>Can we log a cookie when the CDN serves a cached page?</h1>
+              <p className="lede">
+                Change a test cookie, request the same page, and check the value in the
+                logs.
+              </p>
+            </div>
+            <Diagram />
+            <Exercise profile={p} />
+            <section>
+              <h2>Limitations</h2>
+              <ul className="limitations">
+                <li>
+                  Only the synthetic values of <code>workshop_choice</code> are logged.
+                  This does not establish customer cookie semantics or automatic cookie
+                  fields in native logs.
+                </li>
+                <li>
+                  Log delivery can be delayed or incomplete. A browser cache label alone
+                  does not prove a new CDN request; require its own matched log record.
+                </li>
+                <li>
+                  Session-ticket checks add a collector call before the cache lookup. This
+                  is separate from the content-origin count and is not a production cost
+                  benchmark.
+                </li>
+                <li>
+                  Coverage remains partial: no universal correlation contract, delivery
+                  guarantee or independent-account setup has been established.
+                </li>
+              </ul>
+              <p className="related">
+                <a href="#index">
+                  ← Requirements: shared caching (R20) and TLS metadata (R10)
+                </a>
+              </p>
+            </section>
+          </>
+        ) : (
+          <>
+            <div className="hero index-hero">
+              <p className="eyebrow">CDN workshop</p>
+              <h1>Explore the CDN requirements.</h1>
+              <p className="lede">
+                Choose a requirement to see its status and try the available exercise.
+              </p>
+              <p className="small">3 requirements · 1 exercise</p>
+            </div>
+            <div className="filters">
+              <div className="tabs" aria-label="Status filters">
+                {[['all', 'All requirements'], ...Object.entries(labels)].map(
+                  ([k, v]) => (
+                    <button
+                      key={k}
+                      aria-pressed={status === k}
+                      onClick={() => setStatus(k)}
+                    >
+                      {v}{' '}
+                      <span>
+                        {k === 'all' ? 3 : catalog.filter((r) => r.status === k).length}
+                      </span>
+                    </button>
+                  ),
+                )}
+              </div>
+              <label>
+                Category{' '}
+                <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="all">All categories</option>
+                  {['Caching', 'Observability', 'Transport'].map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p className="small" role="status">
+              {selected.length} requirement{selected.length === 1 ? '' : 's'} shown
+            </p>
+            {['supported', 'workaround', 'gap'].map((s) => {
+              const rows = selected.filter((r) => r.status === s);
+              return (
+                rows.length > 0 && (
+                  <section className="catalog-group" key={s}>
+                    <h2 className={s}>
+                      {labels[s]} <span className="count">{rows.length}</span>
+                    </h2>
+                    {rows.map((r) => (
+                      <article className="requirement" key={r.id}>
+                        <div>
+                          <p className="eyebrow">
+                            {r.category} <span> / {r.id}</span>
+                          </p>
+                          <h3>{r.title}</h3>
+                          <p>{r.note}</p>
+                        </div>
+                        {r.implemented ? (
+                          <a className="button primary" href={exerciseUrl}>
+                            Open exercise →
+                          </a>
+                        ) : (
+                          <span className="badge neutral">No exercise yet</span>
+                        )}
+                      </article>
+                    ))}
+                  </section>
+                )
+              );
+            })}
+            {!selected.length && (
+              <div className="empty">
+                No requirements match both filters. Select All requirements and All
+                categories.
+              </div>
+            )}
+          </>
+        )}
+      </main>
+      <footer>
+        <span>CDN Workshop · synthetic test data</span>
+        <span>
+          {p.localPreview ? 'Local UI preview' : p.environment} ·{' '}
+          {p.localPreview ? 'base ' : ''}
+          <code>{p.revision.slice(0, 8)}</code>
+        </span>
+      </footer>
+    </>
+  );
+}
+document.documentElement.dataset.theme = readLocal('theme') || 'light';
+createRoot(document.getElementById('root')).render(<App />);

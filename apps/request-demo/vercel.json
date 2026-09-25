@@ -1,13 +1,17 @@
 {
   "framework": null,
-  "outputDirectory": "public",
-  "regions": [
-    "lhr1"
-  ],
+  "outputDirectory": "dist",
+  "regions": ["lhr1"],
   "functions": {
     "api/*.mjs": {
       "maxDuration": 60
     }
   },
-  "buildCommand": "node ../../scripts/service-metadata.mjs request"
+  "buildCommand": "node ../../scripts/service-metadata.mjs request && node ../../scripts/build-request-ui.mjs",
+  "rewrites": [
+    {
+      "source": "/lab.html",
+      "destination": "/index.html"
+    }
+  ]
 }

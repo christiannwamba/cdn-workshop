@@ -1,3 +1,8 @@
-import {defineConfig} from 'vite';
-// Immutable deployment asset URLs keep an open workshop usable during a new Git deployment.
-export default defineConfig({base:process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}/`:'/'});
+import { defineConfig } from 'vite';
+export default defineConfig({
+  // Monaco workers and browser exercise assets must stay on the serving origin.
+  base: '/',
+  build: process.env.WORKSHOP_REQUEST_UI
+    ? { outDir: '../request-demo/dist', emptyOutDir: true }
+    : {},
+});

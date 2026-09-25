@@ -1,27 +1,27 @@
 {
   "owner": "Christian Nwamba",
-  "repo": "https://github.com/christiannwamba/cdn-workshop-pilot",
+  "repo": "https://github.com/christiannwamba/cdn-workshop",
   "dashboard": "https://vercel.com",
   "team": "cn-demos-vtest314",
   "projects": {
-    "web": "cdn-workshop-pilot",
-    "request": "cdn-workshop-pilot-request",
-    "collector": "cdn-workshop-pilot-collector"
+    "web": "cdn-workshop",
+    "request": "cdn-workshop-request",
+    "collector": "cdn-workshop-collector"
   },
   "sources": {
     "middleware": "apps/request-demo/middleware.ts",
     "driver": "apps/request-demo/api/run.mjs",
     "collector": "apps/collector/api/service.mjs",
     "verification": "apps/collector/lib/evidence.mjs",
-    "configuration": "pilot.config.json",
-    "browserLab": "apps/request-demo/public/lab.js",
+    "configuration": "workshop.config.json",
+    "browserLab": "apps/web/src/browser-client.js",
     "browserSession": "apps/request-demo/api/browser.mjs"
   },
   "environments": {
     "production": {
-      "siteUrl": "https://cdn-workshop-pilot.vercel.app",
-      "requestUrl": "https://cdn-workshop-pilot-request.vercel.app",
-      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app"
+      "siteUrl": "https://cdn-workshop.vercel.app",
+      "requestUrl": "https://cdn-workshop-request.vercel.app",
+      "collectorUrl": "https://cdn-workshop-collector.vercel.app"
     },
     "preview": {
       "siteUrl": "https://cdn-workshop-pilot-git-codex-delivery-proof-cn-demos-vtest314.vercel.app",
