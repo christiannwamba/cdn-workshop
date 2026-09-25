@@ -45,7 +45,7 @@ export default async function handler(req,res){
    const cfg=JSON.parse(await body(req));
    if(!runOK(cfg.run)||!/^dpl_/.test(cfg.deploymentId)||cfg.environment!==env)return res.status(400).json({error:'environment or run mismatch'});
    if(!/^[a-f0-9]{64}$/.test(cfg.rateKey||''))return res.status(400).end();
-   try{await save(`limits/${cfg.rateKey}.json`,{at:Date.now()});}catch(e){if(e.name==='BlobPathnameConflictError')return res.status(429).json({error:'Wait 15 seconds before another run'});throw e;}
+   try{await save(`limits/${cfg.rateKey}.json`,{at:Date.now()});}catch(e){if(await read(`limits/${cfg.rateKey}.json`))return res.status(429).json({error:'Wait 15 seconds before another run'});throw e;}
    const {rateKey,...registered}=cfg;
    await save(`runs/${cfg.run}/config.json`,{...registered,expires:Date.now()+3600000});return res.json({registered:true});
   }
