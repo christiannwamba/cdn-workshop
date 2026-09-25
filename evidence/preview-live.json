@@ -1,0 +1,171 @@
+{
+  "status": "PENDING",
+  "checks": {
+    "cache": false,
+    "origin": true,
+    "cookies": false,
+    "join": false,
+    "nativeCookieAbsent": false,
+    "currentMetadata": false,
+    "noUnrelatedCookie": false
+  },
+  "rows": [
+    {
+      "name": "A",
+      "status": 200,
+      "cache": "MISS",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "cdee71fc-03c5-4f15-ad93-ffed5b9bfb52",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325786223-09f73088b2ee",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/A",
+      "at": "2026-09-25T08:43:06.984Z",
+      "nativeCount": 0,
+      "emissionCount": 0,
+      "nativeRequestId": null,
+      "envelopeRequestId": null,
+      "joined": false,
+      "nativeCache": null,
+      "nativeUserAgent": null,
+      "cookieState": null,
+      "cookie": null,
+      "nativeCookieAbsent": false,
+      "delayMs": null
+    },
+    {
+      "name": "B",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "8a3fc00e-b5ce-45c5-8146-dc987ffb746b",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787001-5d3c4ee27e8a",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/B",
+      "at": "2026-09-25T08:43:07.044Z",
+      "nativeCount": 0,
+      "emissionCount": 0,
+      "nativeRequestId": null,
+      "envelopeRequestId": null,
+      "joined": false,
+      "nativeCache": null,
+      "nativeUserAgent": null,
+      "cookieState": null,
+      "cookie": null,
+      "nativeCookieAbsent": false,
+      "delayMs": null
+    },
+    {
+      "name": "Missing",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "9b34e8d1-4879-400e-a59d-cc366270d19c",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787046-376116c1b36b",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/Missing",
+      "at": "2026-09-25T08:43:07.095Z",
+      "nativeCount": 0,
+      "emissionCount": 0,
+      "nativeRequestId": null,
+      "envelopeRequestId": null,
+      "joined": false,
+      "nativeCache": null,
+      "nativeUserAgent": null,
+      "cookieState": null,
+      "cookie": null,
+      "nativeCookieAbsent": false,
+      "delayMs": null
+    },
+    {
+      "name": "Invalid",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "59bc9fd1-8c40-468b-aaeb-213500162c89",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787098-6f7b36f06f15",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/Invalid",
+      "at": "2026-09-25T08:43:07.154Z",
+      "nativeCount": 0,
+      "emissionCount": 0,
+      "nativeRequestId": null,
+      "envelopeRequestId": null,
+      "joined": false,
+      "nativeCache": null,
+      "nativeUserAgent": null,
+      "cookieState": null,
+      "cookie": null,
+      "nativeCookieAbsent": false,
+      "delayMs": null
+    }
+  ],
+  "originCount": 1,
+  "nativeCount": 0,
+  "emissionCount": 0,
+  "duplicateRecords": 0,
+  "unmatchedEmissions": 0,
+  "receivedBatches": 0,
+  "verifiedAt": "2026-09-25T08:43:41.480Z",
+  "run": "run-e5172286-d52b-4c7a-9bc5-230675363ede",
+  "environment": "preview",
+  "deploymentId": "dpl_613qGxb3sAC6Q2ZmPqQke6mYQU2T",
+  "revision": "9464bd141852053d66ba0393448e05ae75674734",
+  "origins": [
+    {
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "at": 1790325786607
+    }
+  ],
+  "batches": [],
+  "observations": [
+    {
+      "name": "A",
+      "status": 200,
+      "cache": "MISS",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "cdee71fc-03c5-4f15-ad93-ffed5b9bfb52",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325786223-09f73088b2ee",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/A",
+      "at": "2026-09-25T08:43:06.984Z"
+    },
+    {
+      "name": "B",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "8a3fc00e-b5ce-45c5-8146-dc987ffb746b",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787001-5d3c4ee27e8a",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/B",
+      "at": "2026-09-25T08:43:07.044Z"
+    },
+    {
+      "name": "Missing",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "9b34e8d1-4879-400e-a59d-cc366270d19c",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787046-376116c1b36b",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/Missing",
+      "at": "2026-09-25T08:43:07.095Z"
+    },
+    {
+      "name": "Invalid",
+      "status": 200,
+      "cache": "HIT",
+      "fillId": "0b2a515e-3245-4c3d-bc00-b6c4d1af8689",
+      "eventId": "59bc9fd1-8c40-468b-aaeb-213500162c89",
+      "platformId": "lhr1:lhr1:lhr1:lhr1::lhr1::nfp42-1790325787098-6f7b36f06f15",
+      "referer": "https://fixture.example/run-e5172286-d52b-4c7a-9bc5-230675363ede/Invalid",
+      "at": "2026-09-25T08:43:07.154Z"
+    }
+  ],
+  "collectorRevision": "9464bd141852053d66ba0393448e05ae75674734",
+  "collectorSourceMappings": {
+    "collector": {
+      "path": "apps/collector/api/service.mjs",
+      "first": 1,
+      "last": 72
+    },
+    "verification": {
+      "path": "apps/collector/lib/evidence.mjs",
+      "first": 1,
+      "last": 14
+    }
+  }
+}

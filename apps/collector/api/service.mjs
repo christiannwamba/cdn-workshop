@@ -27,15 +27,17 @@ export default async function handler(req,res){
    if(req.method!=='POST')return res.status(405).end();
    const raw=await body(req),expected=createHmac('sha1',process.env.DRAIN_SECRET).update(raw).digest('hex');
    if(!equal(req.headers['x-vercel-signature'],expected))return res.status(403).json({error:'invalid signature'});
-   const parsed=JSON.parse(raw),groups=new Map();
+   const parsed=JSON.parse(raw),groups=new Map(),audit=[];
    for(const e of Array.isArray(parsed)?parsed:[parsed]){
     if(e.projectId!==process.env.SOURCE_PROJECT_ID)continue;
     const match=(e.proxy?.path||e.path||'').match(/\/demo\/(run-[a-f0-9-]{36})(?:\?|$)/)||e.message?.match(/"run":"(run-[a-f0-9-]{36})"/);
     if(!match)continue;const r=match[1],cfg=await read(`runs/${r}/config.json`);
+    audit.push({run:r,eventDeployment:e.deploymentId,registeredDeployment:cfg?.deploymentId||null});
     if(!cfg||cfg.deploymentId!==e.deploymentId||Date.now()>cfg.expires)continue;
     if(!groups.has(r))groups.set(r,[]);groups.get(r).push(sanitize(e));
    }
    for(const[r,records]of groups)await save(`runs/${r}/batches/${Date.now()}-${randomUUID()}.json`,{signatureVerified:true,receivedAt:Date.now(),records});
+   console.log(JSON.stringify({kind:'drain-audit',environment:env,signatureVerified:true,count:Array.isArray(parsed)?parsed.length:1,matchedRuns:[...groups.keys()],audit:audit.slice(0,12)}));
    return res.json({accepted:true});
   }
   if(op==='register'&&req.method==='POST'){
