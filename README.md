@@ -53,3 +53,9 @@ This is bounded demonstration code, not a production telemetry ingestion service
 - [Vite](https://vite.dev/guide/)
 
 Owner: Christian Nwamba. Review deployment/storage/Drain retention after the workshop; no automatic destructive cleanup is configured.
+
+## Verified delivery
+
+Both [implementation PR #1](https://github.com/christiannwamba/cdn-workshop-pilot/pull/1) and [recovery PR #2](https://github.com/christiannwamba/cdn-workshop-pilot/pull/2) were merged after successful Git previews/checks. The temporary frontend/backend version marker reached production, was reverted through PR #2, and the restored production exercise passed again. `manifest.json` is a dated observation; current `/profile.json`, request `/api/run` (GET), and collector `/api/service?op=version` provide live revision metadata.
+
+Browser automation verified JSON import, but could not independently confirm clipboard/file-download completion. If an embedded browser blocks downloads, the editable Mermaid and profile text remains available to copy manually. This limitation is retained as PARTIAL in the acceptance record.

@@ -20,3 +20,6 @@ Final observations:
 - Keyboard: Tab from Reset run reached View recorded fallback. Controls are native buttons, selects, links, textareas and summary elements with visible focus rings.
 - Chrome print preview loaded a five-page PDF, with the current edited diagram, scenario labels, pending evidence state, verification steps and limitations. The preview's first page was visually checked; no clipping or overlap was observed. The print dialog was canceled.
 - Authenticated dashboard pages resolved to the correct request-project Logs view and team Log Drains view. Anonymous public source links returned HTTP 200; dashboard access is explicitly documented as permission-dependent.
+
+- Final production run after PR #2 merge: `run-04c1e9fa-5bc8-47d3-a1c6-be64bfb729e2` showed LIVE · COMPLETE. A MISS/MISS, B/missing/invalid HIT/HIT, all exact joins matched. Marker removed in production revision `ccf73bcf5ccf9193672ee1331c3417e5face9b2a`.
+- Mermaid configuration override (`securityLevel: loose`) was rejected with a readable error, preserving the last valid drawing. Final teaching layout uses full width with source below; the note was shortened to avoid clipping.

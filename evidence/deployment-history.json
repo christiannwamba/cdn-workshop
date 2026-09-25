@@ -1,0 +1,470 @@
+{
+  "verifiedAt": "2026-09-25T08:54:22.713Z",
+  "history": {
+    "web": [
+      {
+        "id": "dpl_HcD6Ha3yvmo1z4SA2gLAoKnYXLLo",
+        "url": "https://cdn-workshop-pilot-pue1vziup-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_4MvTEEusFWRintfxD5BcbvQ261La",
+        "url": "https://cdn-workshop-pilot-dy28bhwc6-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ff2ff1fad24857662793982caf49b8efe01ea917",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_Acy6fXWUQrKTicxVLmmEbm24qx2C",
+        "url": "https://cdn-workshop-pilot-52e5wjqdq-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "e6b1bc8a3fbbecba73d66b7fc44755bb51be98f8",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_8xfQ1ty5JdNyGFGXdVZS52fSPcCV",
+        "url": "https://cdn-workshop-pilot-nyd9d1zo7-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_HNiL87aSem1z6VTHsZXh9aRsMbWY",
+        "url": "https://cdn-workshop-pilot-lmjj1g0lt-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ca67a52d88cccafd6b5c0ff9a75ddad94d68a1cb",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_51TF6vexZcUA51UbTYvvyz9w1zzC",
+        "url": "https://cdn-workshop-pilot-khgqwmt4e-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2329a30d40acb5fd3c7113cdb69b9da862347237",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_J2jA5VTsSM1Kok8wAY2GKdfJtRVh",
+        "url": "https://cdn-workshop-pilot-1kaxtf7ui-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b9f7c4bd67bab4d660f858618ec3b7fe94642ff2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_7sqxroyJZCLZSxJfdC6mX8UE5N3h",
+        "url": "https://cdn-workshop-pilot-n1j23fhuh-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "6868f816cf79ab87db92faa663237b1897cbc614",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_BHGpxYyoKs5f7PzTwpahCHdKsXUV",
+        "url": "https://cdn-workshop-pilot-hjufv7eh1-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b7f9f85da9d9ee7141e234d1039e4abb013012e2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_AhX5PBg7irqZU9TEGEmTNqUFRfKZ",
+        "url": "https://cdn-workshop-pilot-7xly90pwg-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "9464bd141852053d66ba0393448e05ae75674734",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_7qEMuKfHCGvgqopNiLLdJRuUFqTC",
+        "url": "https://cdn-workshop-pilot-ixprsj1fj-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_AgQA6mPbBpfJSpFvNsoswwyxy9Ys",
+        "url": "https://cdn-workshop-pilot-36sgifvys-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "73e762d608fc9c80835ee480b83a308b8ee17468",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_APD1hqzaTyWPK9zoDHJeTmagu1Lf",
+        "url": "https://cdn-workshop-pilot-cibcz9ntg-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "525c23565b15006af2aba13ea7f0c00566ba9957",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_E1AYfkXsE77zo6XPDo5c2Rp84HNP",
+        "url": "https://cdn-workshop-pilot-6ri2hh4xx-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "5b6d809688978b4ccaa1d53b479f29f2e86739e3",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_7L8YHNrKWZzYgDhSXL64aUGgKTM5",
+        "url": "https://cdn-workshop-pilot-2cgga4em7-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "9ec5d07780a9482345c366a724b969571f9952c3",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_GbzKKrM1a4ppCygvDQ3pTDcvFtMg",
+        "url": "https://cdn-workshop-pilot-jdw8jzgkk-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "a72353d55e7af6b7589d50b415ce9173eeadfdc2",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_AE5B8uXGtg3GT35QfcwXUUu6h8kr",
+        "url": "https://cdn-workshop-pilot-l1kq8tkjy-cn-demos-vtest314.vercel.app",
+        "state": "ERROR",
+        "target": "production",
+        "source": "git",
+        "revision": "dcf41bbee4d4217d49a010527d7558cbe4a59975",
+        "branch": "main"
+      }
+    ],
+    "request": [
+      {
+        "id": "dpl_GSuHV6K4xnqXLEWBU23vRJatZ4Xd",
+        "url": "https://cdn-workshop-pilot-request-10hq411se-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_Hp4tXB2nW345d4SmjUCiW65FZL1h",
+        "url": "https://cdn-workshop-pilot-request-ci1ztqggx-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ff2ff1fad24857662793982caf49b8efe01ea917",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_F62q2hPhkVaZW6eWiqSPxxcToyhS",
+        "url": "https://cdn-workshop-pilot-request-imh33oj6b-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "e6b1bc8a3fbbecba73d66b7fc44755bb51be98f8",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_9ZZmsPaA7fojQVYuNxxEDM7bfgtQ",
+        "url": "https://cdn-workshop-pilot-request-jai9suxsb-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_DfgHAKYiFtLv5pRgvQDUEsf3dBGS",
+        "url": "https://cdn-workshop-pilot-request-jhpotwfgo-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ca67a52d88cccafd6b5c0ff9a75ddad94d68a1cb",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_8z5BHswFFCXMqqDNuZToSWyB1cce",
+        "url": "https://cdn-workshop-pilot-request-8nutg41zi-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2329a30d40acb5fd3c7113cdb69b9da862347237",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_932MBDse9bNrBTDUcP65dKFn7mt2",
+        "url": "https://cdn-workshop-pilot-request-gnqtq1lqr-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b9f7c4bd67bab4d660f858618ec3b7fe94642ff2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_EQR7aDwjgCKrF3kFuaMhUn99E1wT",
+        "url": "https://cdn-workshop-pilot-request-lhia78oma-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "6868f816cf79ab87db92faa663237b1897cbc614",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_7oGwCU6Rv3JA4LQnes1fLNmdhFtR",
+        "url": "https://cdn-workshop-pilot-request-h6xjlprnu-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b7f9f85da9d9ee7141e234d1039e4abb013012e2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_613qGxb3sAC6Q2ZmPqQke6mYQU2T",
+        "url": "https://cdn-workshop-pilot-request-k7qy9rjrg-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "9464bd141852053d66ba0393448e05ae75674734",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_DbDv41jdHEqWS3AjUPh2MYiWgkP3",
+        "url": "https://cdn-workshop-pilot-request-dc9x2qze0-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_CJq567X2dj179k3mccMoM7xescPm",
+        "url": "https://cdn-workshop-pilot-request-eo7g0k0hd-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "73e762d608fc9c80835ee480b83a308b8ee17468",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_4uwNtUHDut9gTRXry3x1dvCvETzg",
+        "url": "https://cdn-workshop-pilot-request-19uat32px-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "525c23565b15006af2aba13ea7f0c00566ba9957",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_BtDHLfdtUpTz9838Z6JKqg9yk19Y",
+        "url": "https://cdn-workshop-pilot-request-37uygnl5y-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "5b6d809688978b4ccaa1d53b479f29f2e86739e3",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_GVkMAzFxiuyDC55PXrGEHMqGTfzo",
+        "url": "https://cdn-workshop-pilot-request-293wic5u4-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "9ec5d07780a9482345c366a724b969571f9952c3",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_DE6uMsBDHyrYuiRZ8egVrTXrSdFS",
+        "url": "https://cdn-workshop-pilot-request-mk6ytfl7d-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "a72353d55e7af6b7589d50b415ce9173eeadfdc2",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_28fTd5Nr2AEwd2EWJkGSyjfJKDFH",
+        "url": "https://cdn-workshop-pilot-request-ia7fq2i9s-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "dcf41bbee4d4217d49a010527d7558cbe4a59975",
+        "branch": "main"
+      }
+    ],
+    "collector": [
+      {
+        "id": "dpl_EgCMDEi67vEELsPKMyHmaERPFj5S",
+        "url": "https://cdn-workshop-pilot-collector-4woqfnkq5-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_72GWGKy7J2sjuzYM5U3aEfakkgdQ",
+        "url": "https://cdn-workshop-pilot-collector-nciuakoh8-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ff2ff1fad24857662793982caf49b8efe01ea917",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_86GEwY5JcnQAiFpkqzdGEyxFWNcT",
+        "url": "https://cdn-workshop-pilot-collector-cdjhkdefm-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "e6b1bc8a3fbbecba73d66b7fc44755bb51be98f8",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_Bh7YEP3TDeiZRdZjga2yypxmxbza",
+        "url": "https://cdn-workshop-pilot-collector-jlr6y0zkf-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_GniavoDLRMX4zM8iCS46mDFPfwUW",
+        "url": "https://cdn-workshop-pilot-collector-phgkwpdld-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "ca67a52d88cccafd6b5c0ff9a75ddad94d68a1cb",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_6HWM3UFCgKQwyXp3tLvRVcvorBNP",
+        "url": "https://cdn-workshop-pilot-collector-dfjft7xbd-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2329a30d40acb5fd3c7113cdb69b9da862347237",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_6CaDwbokF5RbMMT4dzKoFTnZE5ez",
+        "url": "https://cdn-workshop-pilot-collector-aymfniefb-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b9f7c4bd67bab4d660f858618ec3b7fe94642ff2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_D3S9r1qE2tnYsCWReCSjs44G5R2N",
+        "url": "https://cdn-workshop-pilot-collector-4r9e3cpls-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "6868f816cf79ab87db92faa663237b1897cbc614",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_9jp61mrqp2bvuFh6xoZFw6eqNw9V",
+        "url": "https://cdn-workshop-pilot-collector-ipfxavyny-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "b7f9f85da9d9ee7141e234d1039e4abb013012e2",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_6iaxK4XCbcr9csSXeE59HRmLXfpf",
+        "url": "https://cdn-workshop-pilot-collector-cnq8johwo-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "9464bd141852053d66ba0393448e05ae75674734",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_DbTZwYD2fCjXjkdZb29KQXGrhtrt",
+        "url": "https://cdn-workshop-pilot-collector-n6azk9aud-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "2020c00a5707c6e5a711018b3cebd8cb4690315a",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_BFCuzPCGaSWvQKqbvwKeRRixkqxE",
+        "url": "https://cdn-workshop-pilot-collector-l4p9zu05y-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "73e762d608fc9c80835ee480b83a308b8ee17468",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_JBrSh2sVPvhhEHKrn27ga1vL3h8N",
+        "url": "https://cdn-workshop-pilot-collector-iz0zm4jmj-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "525c23565b15006af2aba13ea7f0c00566ba9957",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_7CEi2XeAwEPGhZcTpY4AYHWTgXYe",
+        "url": "https://cdn-workshop-pilot-collector-hy60h2blz-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": null,
+        "source": "git",
+        "revision": "5b6d809688978b4ccaa1d53b479f29f2e86739e3",
+        "branch": "codex/delivery-proof"
+      },
+      {
+        "id": "dpl_JBDAubUE4kgqiUJKuWjJfT2mzrLE",
+        "url": "https://cdn-workshop-pilot-collector-gacrqqne2-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "9ec5d07780a9482345c366a724b969571f9952c3",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_EftJJMkPW2KkMqrbXUXU31B1Bufc",
+        "url": "https://cdn-workshop-pilot-collector-l2ccpfcqa-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "a72353d55e7af6b7589d50b415ce9173eeadfdc2",
+        "branch": "main"
+      },
+      {
+        "id": "dpl_4N7aB6nmW9F9Z68MqbHi1wkimPNv",
+        "url": "https://cdn-workshop-pilot-collector-drnu6kw50-cn-demos-vtest314.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "source": "git",
+        "revision": "dcf41bbee4d4217d49a010527d7558cbe4a59975",
+        "branch": "main"
+      }
+    ]
+  }
+}

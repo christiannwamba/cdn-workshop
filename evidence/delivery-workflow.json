@@ -89,5 +89,137 @@
       "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
       "deploymentId": "dpl_Bh7YEP3TDeiZRdZjga2yypxmxbza"
     }
+  },
+  "recoveryPreview": {
+    "verifiedAt": "2026-09-25T08:53:32.391Z",
+    "request": {
+      "sourceMappings": {
+        "middleware": {
+          "path": "apps/request-demo/middleware.ts",
+          "first": 1,
+          "last": 17
+        },
+        "driver": {
+          "path": "apps/request-demo/api/run.mjs",
+          "first": 1,
+          "last": 28
+        }
+      },
+      "service": "request",
+      "environment": "preview",
+      "collectorUrl": "https://cdn-workshop-pilot-collector-git-codex-fe1c47-cn-demos-vtest314.vercel.app",
+      "revision": "ff2ff1fad24857662793982caf49b8efe01ea917",
+      "deploymentId": "dpl_Hp4tXB2nW345d4SmjUCiW65FZL1h"
+    },
+    "collector": {
+      "sourceMappings": {
+        "collector": {
+          "path": "apps/collector/api/service.mjs",
+          "first": 1,
+          "last": 74
+        },
+        "verification": {
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 1,
+          "last": 14
+        }
+      },
+      "service": "collector",
+      "environment": "preview",
+      "revision": "ff2ff1fad24857662793982caf49b8efe01ea917",
+      "deploymentId": "dpl_72GWGKy7J2sjuzYM5U3aEfakkgdQ"
+    }
+  },
+  "recoveryPullRequest": {
+    "headRefOid": "ff2ff1fad24857662793982caf49b8efe01ea917",
+    "mergeCommit": {
+      "oid": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a"
+    },
+    "mergedAt": "2026-09-25T08:53:34Z",
+    "state": "MERGED",
+    "url": "https://github.com/christiannwamba/cdn-workshop-pilot/pull/2"
+  },
+  "productionAfterRecovery": {
+    "verifiedAt": "2026-09-25T08:54:34.099Z",
+    "web": {
+      "owner": "Christian Nwamba",
+      "repo": "https://github.com/christiannwamba/cdn-workshop-pilot",
+      "dashboard": "https://vercel.com",
+      "team": "cn-demos-vtest314",
+      "projects": {
+        "web": "cdn-workshop-pilot",
+        "request": "cdn-workshop-pilot-request",
+        "collector": "cdn-workshop-pilot-collector"
+      },
+      "sources": {
+        "middleware": {
+          "path": "apps/request-demo/middleware.ts",
+          "first": 1,
+          "last": 17
+        },
+        "driver": {
+          "path": "apps/request-demo/api/run.mjs",
+          "first": 1,
+          "last": 28
+        },
+        "collector": {
+          "path": "apps/collector/api/service.mjs",
+          "first": 1,
+          "last": 74
+        },
+        "verification": {
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 1,
+          "last": 14
+        },
+        "configuration": {
+          "path": "pilot.config.json",
+          "first": 1,
+          "last": 30
+        }
+      },
+      "siteUrl": "https://cdn-workshop-pilot.vercel.app",
+      "requestUrl": "https://cdn-workshop-pilot-request.vercel.app",
+      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app",
+      "environment": "production",
+      "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a"
+    },
+    "request": {
+      "sourceMappings": {
+        "middleware": {
+          "path": "apps/request-demo/middleware.ts",
+          "first": 1,
+          "last": 17
+        },
+        "driver": {
+          "path": "apps/request-demo/api/run.mjs",
+          "first": 1,
+          "last": 28
+        }
+      },
+      "service": "request",
+      "environment": "production",
+      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app",
+      "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a",
+      "deploymentId": "dpl_GSuHV6K4xnqXLEWBU23vRJatZ4Xd"
+    },
+    "collector": {
+      "sourceMappings": {
+        "collector": {
+          "path": "apps/collector/api/service.mjs",
+          "first": 1,
+          "last": 74
+        },
+        "verification": {
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 1,
+          "last": 14
+        }
+      },
+      "service": "collector",
+      "environment": "production",
+      "revision": "ccf73bcf5ccf9193672ee1331c3417e5face9b2a",
+      "deploymentId": "dpl_EgCMDEi67vEELsPKMyHmaERPFj5S"
+    }
   }
 }
