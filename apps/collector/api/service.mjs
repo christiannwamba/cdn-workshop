@@ -1,3 +1,4 @@
+import sourceMappings from '../service-metadata.json' with {type:'json'};
 import {put,list,get} from '@vercel/blob';
 import {randomUUID,createHmac,timingSafeEqual,createHash} from 'node:crypto';
 import {analyze} from '../lib/evidence.mjs';
@@ -21,7 +22,7 @@ export default async function handler(req,res){
  const u=new URL(req.url,'https://collector.invalid'),op=u.searchParams.get('op'),run=u.searchParams.get('run');
  const admin=equal(req.headers.authorization,`Bearer ${process.env.SERVICE_SECRET}`);
  try{
-  if(op==='version')return res.json({service:'collector',environment:env,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
+  if(op==='version')return res.json({sourceMappings,service:'collector',environment:env,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
   if(op==='drain'){
    if(req.method!=='POST')return res.status(405).end();
    const raw=await body(req),expected=createHmac('sha1',process.env.DRAIN_SECRET).update(raw).digest('hex');

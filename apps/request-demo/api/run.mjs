@@ -1,10 +1,11 @@
+import sourceMappings from '../service-metadata.json' with {type:'json'};
 import {randomUUID,randomBytes,createHash,createHmac} from 'node:crypto';
 const env=process.env.PILOT_ENV||'unset';
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Content-Type');res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS, GET');
  if(req.method==='OPTIONS')return res.status(204).end();
  const collector=process.env.COLLECTOR_URL;
- if(req.method==='GET')return res.json({service:'request',exerciseVersion:'delivery-proof-v2',environment:env,collectorUrl:collector,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
+ if(req.method==='GET')return res.json({sourceMappings,service:'request',exerciseVersion:'delivery-proof-v2',environment:env,collectorUrl:collector,revision:process.env.VERCEL_GIT_COMMIT_SHA||'local',deploymentId:process.env.VERCEL_DEPLOYMENT_ID||null});
  if(req.method!=='POST')return res.status(405).end();
  const run=`run-${randomUUID()}`,capability=randomBytes(32).toString('hex');
  const post=async(op,data)=>{const r=await fetch(`${collector}/api/service?op=${op}&run=${run}`,{method:'POST',headers:{authorization:`Bearer ${process.env.SERVICE_SECRET}`,'content-type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error(`${op}: ${r.status}`);return r.json();};

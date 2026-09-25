@@ -1,1 +1,13 @@
-{"framework": null, "outputDirectory": "public", "regions": ["lhr1"], "functions": {"api/*.mjs": {"maxDuration": 60}}}
+{
+  "framework": null,
+  "outputDirectory": "public",
+  "regions": [
+    "lhr1"
+  ],
+  "functions": {
+    "api/*.mjs": {
+      "maxDuration": 60
+    }
+  },
+  "buildCommand": "node ../../scripts/service-metadata.mjs request"
+}
