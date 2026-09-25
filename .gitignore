@@ -9,3 +9,5 @@ dist/
 apps/web/public/profile.json
 
 apps/*/service-metadata.json
+
+apps/request-demo/public/lab-profile.json

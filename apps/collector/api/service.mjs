@@ -1,7 +1,7 @@
 import sourceMappings from '../service-metadata.json' with {type:'json'};
 import {put,list,get} from '@vercel/blob';
 import {randomUUID,createHmac,timingSafeEqual,createHash} from 'node:crypto';
-import {analyze} from '../lib/evidence.mjs';
+import {analyze,analyzeBrowser} from '../lib/evidence.mjs';
 export const config={api:{bodyParser:false}};
 const env=process.env.PILOT_ENV || 'unset';
 const prefix=`${env}/`;
@@ -13,9 +13,9 @@ async function read(path){const b=await get(prefix+path,{access:'private',useCac
 async function save(path,value,overwrite=false){return put(prefix+path,JSON.stringify(value),{access:'private',addRandomSuffix:false,allowOverwrite:overwrite,contentType:'application/json'});}
 async function rows(path){const result=await list({prefix:prefix+path,limit:250});return Promise.all(result.blobs.map(b=>read(b.pathname.slice(prefix.length))));}
 // Retain only fields needed for this synthetic experiment. IP, headers, and unrelated messages are never stored.
-function sanitize(e){let message;try{const m=JSON.parse(e.message);if(m.kind==='workshop-cookie-v1')message=JSON.stringify({kind:m.kind,run:m.run,eventId:m.eventId,cookieState:m.cookieState,cookie:['fixture-A','fixture-B'].includes(m.cookie)?m.cookie:null});}catch{}
+function sanitize(e){let message;try{const m=JSON.parse(e.message);if(m.kind==='workshop-cookie-v1')message=JSON.stringify({kind:m.kind,run:m.run,eventId:m.eventId,cookieState:m.cookieState,...(Number.isInteger(m.slot)?{slot:m.slot}:{}),cookie:['fixture-A','fixture-B'].includes(m.cookie)?m.cookie:null});}catch{}
  const rawText=JSON.stringify(e);const nativeCookieFieldPresent=e.source==='external'?(/cookie/i.test(rawText)||rawText.includes('fixture-')):null;
- const p=e.proxy;return {nativeCookieFieldPresent,excludedValuePresent:rawText.includes('NEVER_CAPTURE'),id:e.id,projectId:e.projectId,deploymentId:e.deploymentId,source:e.source,requestId:e.requestId,timestamp:e.timestamp,...(message?{message}:{}),...(p?{proxy:{path:p.path,referer:p.referer,userAgent:p.userAgent,vercelCache:p.vercelCache,statusCode:p.statusCode,cacheId:p.cacheId}}:{})};}
+ const p=e.proxy;return {nativeCookieFieldPresent,excludedValuePresent:rawText.includes('NEVER_CAPTURE'),id:e.id,projectId:e.projectId,deploymentId:e.deploymentId,source:e.source,requestId:e.requestId,timestamp:e.timestamp,...(message?{message}:{}),...(p?{proxy:{path:p.path,referer:typeof p.referer==='string'?p.referer.split(/[?#]/)[0]:p.referer,userAgent:p.userAgent,vercelCache:p.vercelCache,statusCode:p.statusCode,cacheId:p.cacheId}}:{})};}
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');
  if(req.method==='OPTIONS')return res.status(204).end();
@@ -46,6 +46,7 @@ export default async function handler(req,res){
    if(!runOK(cfg.run)||!/^dpl_/.test(cfg.deploymentId)||cfg.environment!==env)return res.status(400).json({error:'environment or run mismatch'});
    if(!/^[a-f0-9]{64}$/.test(cfg.rateKey||''))return res.status(400).end();
    try{await save(`limits/${cfg.rateKey}.json`,{at:Date.now()});}catch(e){if(await read(`limits/${cfg.rateKey}.json`))return res.status(429).json({error:'Wait 15 seconds before another run'});throw e;}
+   if(cfg.mode==='browser'&&(!Number.isFinite(cfg.browserExpiresAt)||cfg.browserExpiresAt>Date.now()+610000||cfg.browserExpiresAt<Date.now()))return res.status(400).end();
    const {rateKey,...registered}=cfg;
    await save(`runs/${cfg.run}/config.json`,{...registered,expires:Date.now()+3600000});return res.json({registered:true});
   }
@@ -53,10 +54,28 @@ export default async function handler(req,res){
   const cfg=await read(`runs/${run}/config.json`);if(!cfg)return res.status(404).json({error:'unknown run'});
   if(Date.now()>cfg.expires)return res.status(410).json({error:'run expired; create a fresh run'});
   if(op==='origin'){
-   const [expires,sig]=(req.headers['x-fixture-ticket']||'').split('.');
-   if(Number(expires)<Date.now()||!equal(sig,createHmac('sha256',process.env.FIXTURE_SECRET).update(`${run}|${expires}`).digest('hex')))return res.status(403).json({error:'invalid origin ticket'});
+   const ticket=req.headers['x-fixture-ticket']||'',parts=ticket.split('.'),browser=ticket.startsWith('b.');
+   const expires=browser?parts[1]:parts[0],sig=browser?parts[3]:parts[1];
+   const signed=browser?`browser|${run}|${expires}|${parts[2]}`:`${run}|${expires}`;
+   if(Number(expires)<Date.now()||!equal(sig,createHmac('sha256',process.env.FIXTURE_SECRET).update(signed).digest('hex')))return res.status(403).json({error:'invalid origin ticket'});
+   if(browser){
+    const [originExpires,eventId,originSig]=(req.headers['x-workshop-origin-ticket']||'').split('.');
+    const consumed=await read(`runs/${run}/consumed/${parts[2]}.json`);
+    if(!consumed||consumed.eventId!==eventId||originExpires!==expires||!equal(originSig,createHmac('sha256',process.env.FIXTURE_SECRET).update(`origin|${run}|${expires}|${eventId}`).digest('hex')))return res.status(403).json({error:'private origin authorization required'});
+    try{await save(`runs/${run}/origin-authorizations/${eventId}.json`,{at:Date.now()});}catch{return res.status(409).json({error:'origin authorization already used'});}
+   }
    const fillId=randomUUID();await save(`runs/${run}/origins/${fillId}.json`,{fillId,at:Date.now()});
    res.setHeader('Cache-Control','public,max-age=0,s-maxage=3600');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('x-workshop-fill-id',fillId);return res.json({fixture:'owned synthetic shared content',fillId});
+  }
+  if(op==='consume'&&req.method==='POST'){
+   if(!admin)return res.status(401).json({error:'unauthorized'});
+   const item=JSON.parse(await body(req));
+   if(cfg.mode!=='browser'||Date.now()>cfg.browserExpiresAt||await read(`runs/${run}/closed.json`))return res.status(410).json({error:'Session expired or reset. Prepare a new session.'});
+   if(!Number.isInteger(item.slot)||item.slot<1||item.slot>12||!/^[a-f0-9-]{36}$/.test(item.eventId||''))return res.status(400).end();
+   const issued=await read(`runs/${run}/issued/${item.slot}.json`);
+   if(!issued||issued.expires!==item.expires||Date.now()>issued.expires)return res.status(403).json({error:'Ticket expired. Get a fresh ticket.'});
+   try{await save(`runs/${run}/consumed/${item.slot}.json`,{...issued,eventId:item.eventId,at:Date.now()});}catch(e){if(await read(`runs/${run}/consumed/${item.slot}.json`))return res.status(409).json({error:'Ticket already used. Get a fresh ticket for another request.'});throw e;}
+   return res.json({accepted:true});
   }
   if(op==='observations'&&req.method==='POST'){
    if(!admin)return res.status(401).json({error:'unauthorized'});
@@ -65,9 +84,30 @@ export default async function handler(req,res){
   }
   const bearer=(req.headers.authorization||'').replace(/^Bearer /,'');
   if(!equal(hash(bearer),cfg.capabilityHash))return res.status(401).json({error:'run capability required'});
+  if(op.startsWith('browser-')){
+   if(req.method!=='POST'||cfg.mode!=='browser')return res.status(400).end();
+   const input=JSON.parse(await body(req));
+   if(op==='browser-close'){await save(`runs/${run}/closed.json`,{at:Date.now()},true);return res.json({closed:true});}
+   if(Date.now()>cfg.browserExpiresAt||await read(`runs/${run}/closed.json`))return res.status(410).json({error:'Session expired or reset. Prepare a new session; old evidence remains readable.'});
+   if(input.deploymentId!==cfg.deploymentId)return res.status(409).json({error:'The request deployment changed. Reset and prepare a new session.'});
+   if(op==='browser-join')return res.json({run,browserExpiresAt:cfg.browserExpiresAt,environment:env,deploymentId:cfg.deploymentId,revision:cfg.revision,contentPath:`/demo/${run}`,maximumRequests:12});
+   if(op==='browser-ticket'){
+    if(!['A','B','Missing','Invalid'].includes(input.expected))return res.status(400).json({error:'Select a cookie case first'});
+    for(let slot=1;slot<=12;slot++){
+     if(await read(`runs/${run}/issued/${slot}.json`))continue;
+     const expires=Math.min(cfg.browserExpiresAt,Date.now()+(input.shortTicket?1000:60000));
+     try{await save(`runs/${run}/issued/${slot}.json`,{slot,expected:input.expected,expires});}catch(e){if(await read(`runs/${run}/issued/${slot}.json`))continue;throw e;}
+     const signature=createHmac('sha256',process.env.FIXTURE_SECRET).update(`browser|${run}|${expires}|${slot}`).digest('hex');
+     return res.json({ticket:`b.${expires}.${slot}.${signature}`,slot,expires,remaining:12-slot});
+    }
+    return res.status(429).json({error:'All 12 request tickets have been allocated. Reset for a fresh session.'});
+   }
+   return res.status(404).end();
+  }
   if(op==='evidence'){
    const data={run,environment:env,deploymentId:cfg.deploymentId,revision:cfg.revision,origins:await rows(`runs/${run}/origins/`),batches:await rows(`runs/${run}/batches/`),observations:await read(`runs/${run}/observations.json`)||[]};
-   return res.json({...analyze(data),...data,collectorRevision:process.env.VERCEL_GIT_COMMIT_SHA,collectorSourceMappings:sourceMappings});
+   const result=cfg.mode==='browser'?analyzeBrowser({...data,consumed:await rows(`runs/${run}/consumed/`)}):analyze(data);
+   return res.json({...result,...data,mode:cfg.mode||'hosted',browserExpiresAt:cfg.browserExpiresAt,collectorRevision:process.env.VERCEL_GIT_COMMIT_SHA,collectorSourceMappings:sourceMappings});
   }
   return res.status(404).end();
  }catch(error){return res.status(500).json({error:'Collector operation failed; retry evidence without generating requests.',code:error.name});}
