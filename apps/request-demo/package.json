@@ -1,1 +1,8 @@
-{"name":"workshop-request","private":true,"type":"module","dependencies":{"@vercel/functions":"latest"}}
+{
+  "name": "workshop-request",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/functions": "3.9.9"
+  }
+}

@@ -13,7 +13,8 @@ async function save(path,value,overwrite=false){return put(prefix+path,JSON.stri
 async function rows(path){const result=await list({prefix:prefix+path,limit:250});return Promise.all(result.blobs.map(b=>read(b.pathname.slice(prefix.length))));}
 // Retain only fields needed for this synthetic experiment. IP, headers, and unrelated messages are never stored.
 function sanitize(e){let message;try{const m=JSON.parse(e.message);if(m.kind==='workshop-cookie-v1')message=JSON.stringify({kind:m.kind,run:m.run,eventId:m.eventId,cookieState:m.cookieState,cookie:['fixture-A','fixture-B'].includes(m.cookie)?m.cookie:null});}catch{}
- const p=e.proxy;return {id:e.id,projectId:e.projectId,deploymentId:e.deploymentId,source:e.source,requestId:e.requestId,timestamp:e.timestamp,...(message?{message}:{}),...(p?{proxy:{path:p.path,referer:p.referer,userAgent:p.userAgent,vercelCache:p.vercelCache,statusCode:p.statusCode,cacheId:p.cacheId}}:{})};}
+ const rawText=JSON.stringify(e);const nativeCookieFieldPresent=e.source==='external'?(/cookie/i.test(rawText)||rawText.includes('fixture-')):null;
+ const p=e.proxy;return {nativeCookieFieldPresent,excludedValuePresent:rawText.includes('NEVER_CAPTURE'),id:e.id,projectId:e.projectId,deploymentId:e.deploymentId,source:e.source,requestId:e.requestId,timestamp:e.timestamp,...(message?{message}:{}),...(p?{proxy:{path:p.path,referer:p.referer,userAgent:p.userAgent,vercelCache:p.vercelCache,statusCode:p.statusCode,cacheId:p.cacheId}}:{})};}
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');
  if(req.method==='OPTIONS')return res.status(204).end();

@@ -1,1 +1,19 @@
-{"name":"workshop-web","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1","build":"node scripts/profile.mjs && vite build"},"dependencies":{"dompurify":"latest","mermaid":"^11.17.2","react":"latest","react-dom":"latest"},"devDependencies":{"@vitejs/plugin-react":"latest","vite":"latest"}}
+{
+  "name": "workshop-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node scripts/profile.mjs && vite build"
+  },
+  "dependencies": {
+    "dompurify": "3.4.15",
+    "mermaid": "11.17.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.1.1",
+    "vite": "8.3.0"
+  }
+}
