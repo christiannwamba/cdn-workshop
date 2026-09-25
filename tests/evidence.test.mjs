@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {analyze} from '../apps/collector/lib/evidence.mjs';
+test('missing delivery remains pending and never passes',()=>{assert.equal(analyze({batches:[],observations:[],origins:[]}).status,'PENDING');});
+test('duplicate deliveries are counted but deduplicated',()=>{const r={id:'record-1',source:'external',proxy:{},requestId:'real'};const a=analyze({batches:[{records:[r,r]}],origins:[],observations:[]});assert.equal(a.duplicateRecords,1);assert.equal(a.nativeCount,1);});
+test('forged event IDs cannot establish an exact request join',()=>{const a=analyze({batches:[{records:[{id:'n',source:'external',requestId:'native',proxy:{referer:'A'}},{id:'e',requestId:'different',message:JSON.stringify({kind:'workshop-cookie-v1',eventId:'uuid'})}]}],observations:[{eventId:'uuid',referer:'A'}],origins:[]});assert.equal(a.rows[0].joined,false);});

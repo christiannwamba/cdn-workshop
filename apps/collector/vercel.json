@@ -1,0 +1,1 @@
+{"framework":null,"outputDirectory":"public","regions":["lhr1"],"functions":{"api/*.mjs":{"maxDuration":60}},"rewrites":[{"source":"/origin/:run","destination":"/api/service?op=origin&run=:run"}]}

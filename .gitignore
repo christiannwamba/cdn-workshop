@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vercel/
+.env*
+.private/
+.DS_Store
+*.log
+
+apps/web/public/profile.json
