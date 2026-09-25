@@ -29,7 +29,9 @@ const original = `sequenceDiagram
   participant O as Owned origin
   participant P as Platform log pipeline
   participant R as Signed collector
-  V->>R: Prepare session and obtain one-use ticket
+  V->>R: Start a fresh test via session API (no content request)
+  V->>V: Send action sets or clears the test cookie
+  V->>R: Obtain a fresh one-use ticket via session API
   V->>M: Browser fetch, same URL and actual Cookie header
   M->>R: Consume bounded ticket (not a content-origin call)
   M-->>P: Log selected cookie + event ID
@@ -104,7 +106,15 @@ function download(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function Diagram() {
-  const [text, setText] = useState(() => readLocal('r32-diagram') || original),
+  const [text, setText] = useState(() => {
+      const saved = readLocal('r32-diagram');
+      // Upgrade the saved former default, while preserving attendees' custom diagrams.
+      const previousOriginal = original.replace(
+        '  V->>R: Start a fresh test via session API (no content request)\n  V->>V: Send action sets or clears the test cookie\n  V->>R: Obtain a fresh one-use ticket via session API',
+        '  V->>R: Prepare session and obtain one-use ticket',
+      );
+      return !saved || saved === previousOriginal ? original : saved;
+    }),
     [svg, setSvg] = useState(''),
     [error, setError] = useState(''),
     [large, setLarge] = useState(false),
@@ -247,7 +257,7 @@ function Exercise({ profile }) {
     receipts: [],
     evidence: null,
     busy: false,
-    message: 'Prepare a session to begin.',
+    message: 'Start a fresh test to begin.',
   });
   const client = useRef(null);
   const live =
@@ -289,22 +299,15 @@ function Exercise({ profile }) {
   const buttons = (name) => (
     <div className="buttons">
       <button
+        className="primary"
         disabled={state.busy || !state.session}
-        aria-pressed={state.selected === name}
-        onClick={() => act('choose', name)}
+        onClick={() => act('sendWithCookie', name)}
       >
         {name === 'Missing'
-          ? 'Clear selected cookie'
+          ? 'Send request without the cookie'
           : name === 'Invalid'
-            ? 'Set invalid cookie'
-            : `Set cookie ${name}`}
-      </button>
-      <button
-        className="primary"
-        disabled={state.busy || state.selected !== name}
-        onClick={() => act('send')}
-      >
-        Send request {name === 'A' || name === 'B' ? name : ''}
+            ? 'Send request with an invalid cookie'
+            : `Send request with cookie ${name}`}
       </button>
     </div>
   );
@@ -326,17 +329,22 @@ function Exercise({ profile }) {
     <>
       <section id="try">
         <h2>Try it</h2>
+        <p>
+          The visitor already has a cookie from an earlier visit. This exercise uses
+          JavaScript to create that starting state before requesting the page.
+        </p>
         <ol className="exercise">
           <li>
-            <h3>Open Network and prepare a session</h3>
+            <h3>Open Network and start a fresh test</h3>
             <p>
               Open Developer Tools → Network. Leave{' '}
               <strong>Disable cache unchecked</strong> and filter by{' '}
-              <code>/demo/run-</code>. Preparation gives every request in this exercise
-              the same URL; it does not fetch the page.
+              <code>/demo/run-</code>. Start a fresh test to create a new content URL
+              without requesting it or setting the test cookie. Nothing appears under this
+              filter until you click a Send button. Both A and B use this same test URL.
             </p>
             <button disabled={state.busy} onClick={() => act('prepare')}>
-              {state.session ? 'Start a fresh session' : 'Prepare session'}
+              Start a fresh test
             </button>
             <p className="small" role="status">
               {state.session ? (
@@ -344,7 +352,7 @@ function Exercise({ profile }) {
                   Content URL: <code>{state.session.contentPath}</code>
                 </>
               ) : (
-                'No session prepared.'
+                'No test started.'
               )}
             </p>
             <Source profile={sourceProfile} name="browserSession">
@@ -352,25 +360,31 @@ function Exercise({ profile }) {
             </Source>
           </li>
           <li>
-            <h3>Set A and request the page</h3>
+            <h3>Send the page request with cookie A</h3>
             <p>
-              Set <code>workshop_choice=fixture-A</code>, then send. Open that request in
-              Network → Request Headers and check the outgoing Cookie. Under Response
-              Headers, expect <code>x-vercel-cache: MISS</code> on this first request.
+              This button sets <code>workshop_choice=fixture-A</code>, then requests the
+              page. In Network, open <code>/demo/run-…</code> → Request Headers → Cookie
+              (or Request Cookies) and check for <code>workshop_choice=fixture-A</code>.
+              Under Response Headers, expect <code>x-vercel-cache: MISS</code>. Note the{' '}
+              <code>x-workshop-fill-id</code> and <code>x-workshop-event-id</code> for
+              comparison with B.
             </p>
             {buttons('A')}
             {result('A')}
             <Source profile={sourceProfile} name="browserLab">
-              Code: this browser sends the request
+              Code: set the cookie, then send the request
             </Source>
           </li>
           <li>
-            <h3>Set B and request the same page</h3>
+            <h3>Send the same page request with cookie B</h3>
             <p>
-              Check the outgoing cookie is now <code>fixture-B</code>. Expect{' '}
-              <code>x-vercel-cache: HIT</code> and the same{' '}
-              <code>x-workshop-fill-id</code> (the identifier of the cached content). The{' '}
-              <code>x-workshop-event-id</code> should be new for this request.
+              This button replaces the same cookie with{' '}
+              <code>workshop_choice=fixture-B</code>, then requests the same test URL. In
+              Network, open the new request and check Request Headers → Cookie (or Request
+              Cookies) for <code>workshop_choice=fixture-B</code>. Under Response Headers,
+              expect <code>x-vercel-cache: HIT</code>, the same{' '}
+              <code>x-workshop-fill-id</code>, and a different{' '}
+              <code>x-workshop-event-id</code>.
             </p>
             {buttons('B')}
             {result('B')}
@@ -467,9 +481,9 @@ function Exercise({ profile }) {
           <li>
             <h3>Try missing or invalid values, then reset</h3>
             <p>
-              Optional: clear the selected cookie, send, then repeat with an invalid
-              value. Expect <code>HIT</code> and <code>cookie=null</code>, with the state
-              recorded as <code>missing</code> or <code>invalid</code>.
+              Each button clears the selected cookie or sets an invalid value, then sends
+              the same page request. Expect <code>HIT</code> and <code>cookie=null</code>,
+              with the state recorded as <code>missing</code> or <code>invalid</code>.
             </p>
             {buttons('Missing')}
             {result('Missing')}
@@ -480,7 +494,7 @@ function Exercise({ profile }) {
               session gets a fresh content URL.
             </p>
             <button disabled={state.busy} onClick={() => act('reset')}>
-              Reset session
+              Reset test
             </button>
           </li>
         </ol>
@@ -488,8 +502,8 @@ function Exercise({ profile }) {
           <summary>Session limits</summary>
           <p>
             Sessions last ten minutes and allow twelve requests. Each send obtains a fresh
-            one-use ticket. If the session expires, reset and prepare again. Changing A to
-            B changes one browser’s cookie state; ordinary tabs share a cookie jar.
+            one-use ticket. If the session expires, start a fresh test. Changing A to B
+            changes one browser’s cookie state; ordinary tabs share a cookie jar.
           </p>
         </details>
       </section>

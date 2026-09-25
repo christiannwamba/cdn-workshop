@@ -29,7 +29,7 @@ test('focused local and committed ranges select their own exact source text', ()
   assert.match(maps.middleware.code, /console\.log/);
   assert.match(maps.collector.code, /invalid signature/);
   assert.match(maps.verification.code, /const joined/);
-  assert.match(maps.browserLab.code, /credentials: 'same-origin'/);
+  assert.match(maps.browserLab.code, /choose\(name\);\n\s+await send\(\);/);
   assert.equal(maps.browserLab.committed, undefined);
   assert.ok(maps.collector.committed);
 });

@@ -9,7 +9,7 @@ const regions = {
   driver: ['export default async function', 4],
   collector: ['const raw = await body(req)', 'const parsed ='],
   verification: ['const es = emissions.filter', 'const wanted ='],
-  browserLab: ['const r = await fetch(s.contentPath,', 'await r.text();'],
+  browserLab: ['async function sendWithCookie(name)', 4],
   browserSession: ["const run = 'run-' + randomUUID()", 'await call('],
   configuration: ['"production": {', '"preview": {'],
 };

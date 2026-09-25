@@ -21,7 +21,7 @@ export function createBrowserClient({ profile, live, onChange }) {
     receipts: [],
     evidence: null,
     busy: false,
-    message: 'Prepare a session to begin.',
+    message: 'Start a fresh test to begin.',
   };
   let generation = 0,
     pollTimer = null,
@@ -57,8 +57,8 @@ export function createBrowserClient({ profile, live, onChange }) {
       evidence: null,
       logMessage: '',
       message: live
-        ? 'Test cookies cleared. Prepare a new session.'
-        : 'UI preview reset. Prepare a new session.',
+        ? 'Test cookies cleared. Start a fresh test.'
+        : 'UI preview reset. Start a fresh test.',
     });
     if (live && old)
       try {
@@ -80,13 +80,13 @@ export function createBrowserClient({ profile, live, onChange }) {
       session,
       selected: null,
       message: live
-        ? 'Session prepared. Set cookie A, then send the first request.'
-        : 'UI preview prepared. Set A, then send to try the sequence.',
+        ? 'Test ready. Send request with cookie A to fetch the page.'
+        : 'UI preview ready. Send request with cookie A to try the sequence.',
     });
   }
   function choose(name) {
     if (!state.session || !Object.hasOwn(cases, name))
-      throw Error('Prepare a session and choose a test cookie.');
+      throw Error('Start a fresh test and choose a valid cookie case.');
     if (live) {
       const attributes = `Path=${state.session.contentPath}; Max-Age=600; Secure; SameSite=Strict`;
       document.cookie =
@@ -95,10 +95,7 @@ export function createBrowserClient({ profile, live, onChange }) {
           : `workshop_choice=${cases[name]}; ${attributes}`;
       document.cookie = `workshop_unrelated=NEVER_CAPTURE; ${attributes}`;
     }
-    update({
-      selected: name,
-      message: `${live ? 'Selected' : 'UI preview selected'} ${name}: ${cases[name] ?? 'selected cookie cleared'}. Send the request next.`,
-    });
+    update({ selected: name });
   }
   async function refresh() {
     if (!state.session) return;
@@ -157,7 +154,7 @@ export function createBrowserClient({ profile, live, onChange }) {
     const s = state.session,
       name = state.selected,
       g = generation;
-    if (!s || !name) throw Error('Prepare a session and select a cookie first.');
+    if (!s || !name) throw Error('Start a fresh test before sending a request.');
     if (!live) {
       update({
         receipts: [...state.receipts, { case: name, preview: true }],
@@ -211,6 +208,11 @@ export function createBrowserClient({ profile, live, onChange }) {
     waitStarted = Date.now();
     await refresh();
   }
+  // One busy guard covers both operations; neither calls the wrapped public actions.
+  async function sendWithCookie(name) {
+    choose(name);
+    await send();
+  }
   const action =
     (fn) =>
     async (...args) => {
@@ -226,8 +228,7 @@ export function createBrowserClient({ profile, live, onChange }) {
     };
   return {
     prepare: action(prepare),
-    choose: action(choose),
-    send: action(send),
+    sendWithCookie: action(sendWithCookie),
     refresh: action(refresh),
     reset: action(reset),
     dispose() {
