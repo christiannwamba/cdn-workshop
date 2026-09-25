@@ -13,5 +13,6 @@
       "source": "/lab.html",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "npm ci --prefix ../.. --include=dev --workspaces"
 }
