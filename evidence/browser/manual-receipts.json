@@ -1,0 +1,14 @@
+{
+ "provenance":"Read from the real Chrome lab DOM after UI-triggered JavaScript cookie writes and fetches; no hosted driver call. ResourceTiming is browser-generated. This capture excludes tickets, session keys and browser fingerprint data.",
+ "run":"run-75a2c105-322e-47fc-a817-6761adb4577b",
+ "revision":"4b1d5c0ed5c43eb9b1e13349878c48e94a327148",
+ "sameContentURL":"https://cdn-workshop-pilot-request-git-codex-d-108a49-cn-demos-vtest314.vercel.app/demo/run-75a2c105-322e-47fc-a817-6761adb4577b",
+ "fillId":"cee26f10-6ecd-432f-b1da-51ef6bef201d",
+ "receipts":[
+ {"case":"A","at":"2026-09-25T09:17:10.298Z","status":200,"cache":"MISS","eventId":"9f652e6b-509b-4792-84d8-0adae1f75db2","initiatorType":"fetch","transferSize":392,"encodedBodySize":92,"deliveryType":""},
+ {"case":"B","at":"2026-09-25T09:17:31.487Z","status":200,"cache":"HIT","eventId":"7d66e639-3daf-4e89-a954-f972d8cdd6e6","initiatorType":"fetch","transferSize":300,"encodedBodySize":92,"deliveryType":"cache"},
+ {"case":"Missing","at":"2026-09-25T09:17:47.063Z","status":200,"cache":"HIT","eventId":"14c23421-f2b5-4640-8530-614d47f38b9a","initiatorType":"fetch","transferSize":300,"encodedBodySize":92,"deliveryType":"cache"},
+ {"case":"Invalid","at":"2026-09-25T09:17:58.573Z","status":200,"cache":"HIT","eventId":"599fb2f7-4a76-49f0-9f5f-6a5523c9eb52","initiatorType":"fetch","transferSize":300,"encodedBodySize":92,"deliveryType":"cache"}
+ ],
+ "devtools":"Network recording enabled with Disable cache unchecked. Native app focus moved to another user tab, so outgoing Cookie headers were not separately captured from DevTools; equivalent browser fetch/ResourceTiming captures above are joined to genuine signed Middleware cookie emissions in browser-manual-2026-09-25.json."
+}
