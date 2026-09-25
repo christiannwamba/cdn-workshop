@@ -1,0 +1,93 @@
+{
+  "headRefOid": "ca67a52d88cccafd6b5c0ff9a75ddad94d68a1cb",
+  "mergeCommit": {
+    "oid": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8"
+  },
+  "mergedAt": "2026-09-25T08:51:08Z",
+  "state": "MERGED",
+  "url": "https://github.com/christiannwamba/cdn-workshop-pilot/pull/1",
+  "productionAfterMerge": {
+    "verifiedAt": "2026-09-25T08:52:02.895Z",
+    "web": {
+      "owner": "Christian Nwamba",
+      "repo": "https://github.com/christiannwamba/cdn-workshop-pilot",
+      "dashboard": "https://vercel.com",
+      "team": "cn-demos-vtest314",
+      "projects": {
+        "web": "cdn-workshop-pilot",
+        "request": "cdn-workshop-pilot-request",
+        "collector": "cdn-workshop-pilot-collector"
+      },
+      "sources": {
+        "middleware": {
+          "path": "apps/request-demo/middleware.ts",
+          "first": 1,
+          "last": 17
+        },
+        "driver": {
+          "path": "apps/request-demo/api/run.mjs",
+          "first": 1,
+          "last": 28
+        },
+        "collector": {
+          "path": "apps/collector/api/service.mjs",
+          "first": 1,
+          "last": 74
+        },
+        "verification": {
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 1,
+          "last": 14
+        },
+        "configuration": {
+          "path": "pilot.config.json",
+          "first": 1,
+          "last": 30
+        }
+      },
+      "siteUrl": "https://cdn-workshop-pilot.vercel.app",
+      "requestUrl": "https://cdn-workshop-pilot-request.vercel.app",
+      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app",
+      "environment": "production",
+      "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8"
+    },
+    "request": {
+      "sourceMappings": {
+        "middleware": {
+          "path": "apps/request-demo/middleware.ts",
+          "first": 1,
+          "last": 17
+        },
+        "driver": {
+          "path": "apps/request-demo/api/run.mjs",
+          "first": 1,
+          "last": 28
+        }
+      },
+      "service": "request",
+      "exerciseVersion": "delivery-proof-v2",
+      "environment": "production",
+      "collectorUrl": "https://cdn-workshop-pilot-collector.vercel.app",
+      "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
+      "deploymentId": "dpl_9ZZmsPaA7fojQVYuNxxEDM7bfgtQ"
+    },
+    "collector": {
+      "sourceMappings": {
+        "collector": {
+          "path": "apps/collector/api/service.mjs",
+          "first": 1,
+          "last": 74
+        },
+        "verification": {
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 1,
+          "last": 14
+        }
+      },
+      "service": "collector",
+      "environment": "production",
+      "revision": "d8cbc25305aa442adacc4e69e8dfcc75039f9dd8",
+      "deploymentId": "dpl_Bh7YEP3TDeiZRdZjga2yypxmxbza"
+    }
+  }
+}
