@@ -710,3 +710,17 @@ button:disabled {
     padding: 16px;
   }
 }
+
+.partial {
+  color: var(--ds-amber-900);
+}
+.badge.partial {
+  background: var(--ds-amber-200);
+}
+.requirement + .requirement {
+  margin-top: 32px;
+}
+
+.hero .badge {
+  white-space: normal;
+}

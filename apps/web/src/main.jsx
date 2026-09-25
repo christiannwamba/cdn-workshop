@@ -4,6 +4,7 @@ import mermaid from 'mermaid';
 import DOMPurify from 'dompurify';
 import { createBrowserClient } from './browser-client.js';
 import { CodeBlock } from './code-block.jsx';
+import { GapPage, gapCatalog } from './gap-pages.jsx';
 import './tokens.css';
 const MermaidEditor = lazy(() => import('./mermaid-editor.jsx'));
 import './style.css';
@@ -12,6 +13,7 @@ mermaid.initialize({
   securityLevel: 'strict',
   suppressErrorRendering: true,
   theme: 'neutral',
+  htmlLabels: false,
   flowchart: { htmlLabels: false },
   maxTextSize: 15000,
   secure: [
@@ -48,6 +50,7 @@ const original = `sequenceDiagram
   Note over P,R: Arrival may be delayed
   R-->>V: Logs for this session`;
 const catalog = [
+  ...gapCatalog,
   {
     id: 'R20',
     title: 'Can visitors share cached content?',
@@ -77,6 +80,7 @@ const labels = {
   supported: '✓ Fully supported',
   workaround: '△ Workaround',
   gap: '⊘ Gap',
+  partial: '◐ Partial mapping',
 };
 const readLocal = (k) => {
   try {
@@ -105,9 +109,14 @@ function download(name, text) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function Diagram() {
+function Diagram({
+  id: requirement = 'r32',
+  source = original,
+  previousSource,
+  description,
+} = {}) {
   const [text, setText] = useState(() => {
-      const saved = readLocal('r32-diagram');
+      const saved = readLocal(`${requirement}-diagram`);
       // Upgrade the saved former default, while preserving attendees' custom diagrams.
       const previousOriginal = original.replace(
         'Vercel Log Drains',
@@ -117,6 +126,12 @@ function Diagram() {
         '  V->>R: Start a fresh test via session API (no content request)\n  V->>V: Send action sets or clears the test cookie\n  V->>R: Obtain a fresh one-use ticket via session API',
         '  V->>R: Prepare session and obtain one-use ticket',
       );
+      if (requirement !== 'r32') {
+        const priorDefaults = Array.isArray(previousSource)
+          ? previousSource
+          : [previousSource];
+        return !saved || priorDefaults.includes(saved) ? source : saved;
+      }
       return !saved || saved === previousOriginal || saved === earlierOriginal
         ? original
         : saved;
@@ -135,13 +150,13 @@ function Diagram() {
       if (value.includes('%%{') || /^---/m.test(value))
         throw Error('Configuration directives are disabled; edit diagram content only.');
       await mermaid.parse(value);
-      const out = await mermaid.render(`diagram${id}`, value);
+      const out = await mermaid.render(`diagram-${requirement}-${id}`, value);
       if (id === seq.current) {
         setSvg(
           DOMPurify.sanitize(out.svg, { USE_PROFILES: { svg: true, svgFilters: true } }),
         );
         setError('');
-        writeLocal('r32-diagram', value);
+        writeLocal(`${requirement}-diagram`, value);
       }
     } catch (e) {
       setError(String(e.message || e));
@@ -163,9 +178,8 @@ function Diagram() {
         </button>
       </div>
       <p>
-        Custom middleware reads the current request’s cookie before the cache lookup.
-        Vercel Log Drains delivers the cookie record and the native request log; the
-        collector verifies and matches them for display.
+        {description ||
+          'Custom middleware reads the current request’s cookie before the cache lookup. Vercel Log Drains delivers the cookie record and the native request log; the collector verifies and matches them for display.'}
       </p>
       <div className="diagram-grid">
         <div
@@ -184,8 +198,8 @@ function Diagram() {
             <button onClick={() => apply()}>Apply diagram</button>
             <button
               onClick={() => {
-                setText(original);
-                apply(original);
+                setText(source);
+                apply(source);
               }}
             >
               Reset original
@@ -198,7 +212,9 @@ function Diagram() {
             >
               Copy
             </button>
-            <button onClick={() => download('r32.mmd', text)}>Download .mmd</button>
+            <button onClick={() => download(`${requirement}.mmd`, text)}>
+              Download .mmd
+            </button>
           </div>
           <p className="small">
             Diagram edits stay in this browser and do not change the demo.
@@ -583,7 +599,9 @@ function App() {
         </nav>
       </header>
       <main>
-        {page === 'r32' ? (
+        {gapCatalog.some((r) => r.id.toLowerCase() === page) ? (
+          <GapPage key={page} id={page} profile={p} Diagram={Diagram} />
+        ) : page === 'r32' ? (
           <>
             <a className="back" href="#index">
               ← All requirements
@@ -598,7 +616,7 @@ function App() {
               </p>
               <p className="small">This example covers cookie logging within R32.</p>
             </div>
-            <Diagram />
+            <Diagram key="r32" />
             <Exercise profile={p} />
             <section>
               <h2>Mapping and remaining work</h2>
@@ -628,7 +646,10 @@ function App() {
               <p className="lede">
                 Choose a requirement to see its status and try the available exercise.
               </p>
-              <p className="small">3 requirements · 1 exercise</p>
+              <p className="small">
+                {catalog.length} requirements ·{' '}
+                {catalog.filter((r) => r.implemented).length} pages available
+              </p>
             </div>
             <div className="filters">
               <div className="tabs" aria-label="Status filters">
@@ -641,7 +662,9 @@ function App() {
                     >
                       {v}{' '}
                       <span>
-                        {k === 'all' ? 3 : catalog.filter((r) => r.status === k).length}
+                        {k === 'all'
+                          ? catalog.length
+                          : catalog.filter((r) => r.status === k).length}
                       </span>
                     </button>
                   ),
@@ -651,7 +674,7 @@ function App() {
                 Category{' '}
                 <select value={category} onChange={(e) => setCategory(e.target.value)}>
                   <option value="all">All categories</option>
-                  {['Caching', 'Observability', 'Transport'].map((v) => (
+                  {[...new Set(catalog.map((r) => r.category))].map((v) => (
                     <option key={v}>{v}</option>
                   ))}
                 </select>
@@ -660,7 +683,7 @@ function App() {
             <p className="small" role="status">
               {selected.length} requirement{selected.length === 1 ? '' : 's'} shown
             </p>
-            {['supported', 'workaround', 'gap'].map((s) => {
+            {['supported', 'workaround', 'partial', 'gap'].map((s) => {
               const rows = selected.filter((r) => r.status === s);
               return (
                 rows.length > 0 && (
@@ -678,8 +701,11 @@ function App() {
                           <p>{r.note}</p>
                         </div>
                         {r.implemented ? (
-                          <a className="button primary" href={exerciseUrl}>
-                            Open exercise →
+                          <a
+                            className="button primary"
+                            href={r.id === 'R32' ? exerciseUrl : `#${r.id.toLowerCase()}`}
+                          >
+                            {r.id === 'R32' ? 'Open exercise →' : 'Open requirement →'}
                           </a>
                         ) : (
                           <span className="badge neutral">No exercise yet</span>

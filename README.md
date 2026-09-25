@@ -2,6 +2,8 @@
 
 One complete R32 exercise: can selected-cookie enrichment run when shared content is a CDN HIT? The answer demonstrated by the fixture is a **workaround**, not full customer coverage.
 
+Four additional pages cover exact behavior differences: `/#r05` (missing versus zero Content-Length), `/#r06` (redirect status), `/#r09` (response-header removal), and `/#r29` (external-origin path optimization decision). They use dated recorded observations, with manual commands targeting the existing public synthetic test endpoint configured at `fixtures.platformGaps.url`. Localhost does not reproduce platform behavior. R29 has no performance-parity demonstration.
+
 ## Run locally
 
 Node 24 is the deployment runtime. From a clean checkout:

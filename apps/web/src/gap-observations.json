@@ -1,0 +1,146 @@
+{
+  "verified_at_utc": "2026-09-24T17:35:45.728Z",
+  "base": "https://argos-ws-platform-gaps.vercel.app",
+  "source_digest": "15c91ec65ce9064a63c3995e25bcc9c83f85584e761c6d7d8c61722f428398d7",
+  "deployment_url": "https://argos-ws-platform-gaps-gxxhnv00t-cn-demos-vtest314.vercel.app",
+  "branches": [
+    {
+      "branch": "automatic-http-GET",
+      "status": 308,
+      "server": "Vercel",
+      "transform": null,
+      "cache": null,
+      "requirement_status": "UNMET_IN_TEST"
+    },
+    {
+      "branch": "configured-301-GET",
+      "status": 301,
+      "server": "Vercel",
+      "transform": null,
+      "cache": null,
+      "requirement_status": "UNMET_IN_TEST"
+    },
+    {
+      "branch": "normal",
+      "status": 200,
+      "server": null,
+      "transform": "applied",
+      "cache": "MISS",
+      "requirement_status": "MET"
+    },
+    {
+      "branch": "cache-fill",
+      "status": 200,
+      "server": null,
+      "transform": "applied",
+      "cache": "MISS",
+      "requirement_status": "MET"
+    },
+    {
+      "branch": "cache-hit",
+      "status": 200,
+      "server": null,
+      "transform": "applied",
+      "cache": "HIT",
+      "requirement_status": "MET"
+    },
+    {
+      "branch": "controlled-error",
+      "status": 500,
+      "server": null,
+      "transform": "applied",
+      "cache": "MISS",
+      "requirement_status": "MET"
+    },
+    {
+      "branch": "missing-static",
+      "status": 404,
+      "server": "Vercel",
+      "transform": null,
+      "cache": null,
+      "requirement_status": "UNMET_IN_TEST"
+    }
+  ],
+  "framing": [
+    {
+      "case": "probe-absent",
+      "contentLengthPresent": false,
+      "contentLength": null,
+      "bodyBytes": 0,
+      "native": null
+    },
+    {
+      "case": "probe-zero",
+      "contentLengthPresent": false,
+      "contentLength": null,
+      "bodyBytes": 0,
+      "native": null
+    },
+    {
+      "case": "probe-nonzero",
+      "contentLengthPresent": true,
+      "contentLength": "7",
+      "bodyBytes": 7,
+      "native": null
+    },
+    {
+      "case": "native-absent",
+      "contentLengthPresent": false,
+      "contentLength": null,
+      "bodyBytes": 0,
+      "native": "missing"
+    },
+    {
+      "case": "native-zero",
+      "contentLengthPresent": false,
+      "contentLength": null,
+      "bodyBytes": 0,
+      "native": "missing"
+    },
+    {
+      "case": "native-nonzero",
+      "contentLengthPresent": true,
+      "contentLength": "7",
+      "bodyBytes": 7,
+      "native": "present"
+    }
+  ],
+  "sources": {
+    "presence": {
+      "path": "api/probe.mjs",
+      "first": 23,
+      "last": 23,
+      "code": "    contentLengthPresent:Object.hasOwn(req.headers,'content-length'),contentLength:req.headers['content-length']??null,"
+    },
+    "methodMissing": {
+      "path": "vercel.json",
+      "first": 40,
+      "last": 55,
+      "code": "    {\n      \"src\": \"/native\",\n      \"methods\": [\n        \"POST\"\n      ],\n      \"missing\": [\n        {\n          \"type\": \"header\",\n          \"key\": \"content-length\"\n        }\n      ],\n      \"continue\": true,\n      \"headers\": {\n        \"x-native-content-length\": \"missing\"\n      }\n    },"
+    },
+    "methodPresent": {
+      "path": "vercel.json",
+      "first": 56,
+      "last": 71,
+      "code": "    {\n      \"src\": \"/native\",\n      \"methods\": [\n        \"POST\"\n      ],\n      \"has\": [\n        {\n          \"type\": \"header\",\n          \"key\": \"content-length\"\n        }\n      ],\n      \"continue\": true,\n      \"headers\": {\n        \"x-native-content-length\": \"present\"\n      }\n    },"
+    },
+    "redirect": {
+      "path": "vercel.json",
+      "first": 72,
+      "last": 79,
+      "code": "    {\n      \"src\": \"/configured-redirect\",\n      \"status\": 301,\n      \"headers\": {\n        \"Location\": \"/probe\",\n        \"x-configured-redirect\": \"301\"\n      }\n    }"
+    },
+    "transforms": {
+      "path": "vercel.json",
+      "first": 12,
+      "last": 39,
+      "code": "    {\n      \"src\": \"/(.*)\",\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"delete\",\n          \"target\": {\n            \"key\": \"server\"\n          }\n        },\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"delete\",\n          \"target\": {\n            \"key\": \"x-powered-by\"\n          }\n        },\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-pack-transform\"\n          },\n          \"args\": \"applied\"\n        }\n      ]\n    },"
+    },
+    "originHeaders": {
+      "path": "api/probe.mjs",
+      "first": 15,
+      "last": 16,
+      "code": "  res.setHeader('Server', 'synthetic-origin');\n  res.setHeader('X-Powered-By', 'synthetic-origin');"
+    }
+  }
+}

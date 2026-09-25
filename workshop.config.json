@@ -28,5 +28,10 @@
       "requestUrl": "https://cdn-workshop-pilot-request-git-codex-d-108a49-cn-demos-vtest314.vercel.app",
       "collectorUrl": "https://cdn-workshop-pilot-collector-git-codex-fe1c47-cn-demos-vtest314.vercel.app"
     }
+  },
+  "fixtures": {
+    "platformGaps": {
+      "url": "https://argos-ws-platform-gaps.vercel.app"
+    }
   }
 }
