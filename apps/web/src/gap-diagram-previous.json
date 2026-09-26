@@ -5,5 +5,8 @@
     "flowchart LR\n  C[Client request] --> P{Response branch}\n  P -->|HTTP| H[Automatic 308]\n  P -->|HTTPS configured route| R[Native 301]\n  P -->|HTTPS application route| F[Function response or cached content]\n  F --> T[Response deletion transforms]\n  T --> A[Server absent; marker applied]\n  H --> B[Server Vercel; no transform marker]\n  R --> B",
     "flowchart LR\n  C[Client request] --> P{Response type}\n  P -->|HTTP /probe| H[Automatic 308]\n  P -->|HTTPS /configured-redirect| R[Configured 301]\n  P -->|HTTPS /probe| F[Application response]\n  F --> T[Delete response headers]\n  T --> A[Client receives no Server header]\n  H --> B[Client receives Server: Vercel]\n  R --> B"
   ],
-  "r29": "flowchart LR\n  V[Visitor] --> C[CDN needs an origin response]\n  C --> A[Akamai SureRoute]\n  A --> P[Probe and compare network paths]\n  P --> O[External origin]\n  C --> R[Vercel external-origin delivery]\n  R --> D[Confirm supported path-optimization policy]\n  D -. Equivalent policy not established .-> O"
+  "r29": [
+    "flowchart LR\n  V[Visitor] --> C[CDN needs an origin response]\n  C --> A[Akamai SureRoute]\n  A --> P[Probe and compare network paths]\n  P --> O[External origin]\n  C --> R[Vercel external-origin delivery]\n  R --> D[Confirm supported path-optimization policy]\n  D -. Equivalent policy not established .-> O",
+    "sequenceDiagram\n  participant V as Visitor\n  participant A as Akamai CDN\n  participant O as External origin\n  V->>A: Request that needs an origin response\n  Note over A,O: SureRoute optimizes this network path\n  A->>O: Fetch using the selected path\n  O-->>A: Origin response\n  A-->>V: Response"
+  ]
 }

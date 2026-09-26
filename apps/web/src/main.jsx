@@ -5,6 +5,7 @@ import DOMPurify from 'dompurify';
 import { createBrowserClient } from './browser-client.js';
 import { CodeBlock } from './code-block.jsx';
 import { GapPage, gapCatalog } from './gap-pages.jsx';
+import { CachePage, cacheCatalog } from './cache-pages.jsx';
 import './tokens.css';
 const MermaidEditor = lazy(() => import('./mermaid-editor.jsx'));
 import './style.css';
@@ -51,14 +52,7 @@ const original = `sequenceDiagram
   R-->>V: Logs for this session`;
 const catalog = [
   ...gapCatalog,
-  {
-    id: 'R20',
-    title: 'Can visitors share cached content?',
-    status: 'supported',
-    category: 'Caching',
-    note: 'Fully supported for bounded public shared content. No R20 exercise yet.',
-    implemented: false,
-  },
+  ...cacheCatalog,
   {
     id: 'R32',
     title: 'Can we log a cookie when the CDN serves a cached page?',
@@ -548,11 +542,13 @@ function App() {
       .catch((e) => setMessage(e.message));
     const h = () => {
       setPage(location.hash.slice(1) || 'index');
-      window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', h);
     return () => window.removeEventListener('hashchange', h);
   }, []);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [page]);
   const openLiveExercise =
     p && !p.localPreview && p.surface !== 'request' && page === 'r32';
   useEffect(() => {
@@ -601,6 +597,8 @@ function App() {
       <main>
         {gapCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <GapPage key={page} id={page} profile={p} Diagram={Diagram} />
+        ) : cacheCatalog.some((r) => r.id.toLowerCase() === page) ? (
+          <CachePage key={page} id={page} profile={p} Diagram={Diagram} />
         ) : page === 'r32' ? (
           <>
             <a className="back" href="#index">

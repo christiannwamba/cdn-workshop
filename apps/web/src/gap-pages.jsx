@@ -79,7 +79,7 @@ const diagrams = {
   participant V as Visitor
   participant A as Akamai CDN
   participant O as External origin
-  V->>A: Request that needs an origin response
+  V->>A: Non-cacheable request: no-store or bypass-cache
   Note over A,O: SureRoute optimizes this network path
   A->>O: Fetch using the selected path
   O-->>A: Origin response
@@ -126,10 +126,10 @@ const copy = {
   r29: {
     status: 'Equivalent policy not demonstrated',
     intro:
-      'SureRoute optimizes the network path from the CDN to an external origin. The Vercel replacement needs a supported policy for that journey or an agreed alternative that meets the performance goal.',
+      'SureRoute optimizes the network path from the CDN to an external origin for non-cacheable no-store or bypass-cache traffic. The Vercel replacement needs a supported policy for that journey or an agreed alternative that meets the performance goal.',
     scope:
       'Evidence review: 24 September 2026. No parity experiment or performance comparison was run.',
-    flow: 'Current SureRoute flow. The replacement decision sits outside this request path.',
+    flow: 'Current SureRoute flow for non-cacheable traffic. The replacement decision sits outside this request path.',
     decision:
       'Confirm a supported Vercel external-origin optimization policy, or agree measurable latency and resilience criteria for accepting an alternative.',
   },

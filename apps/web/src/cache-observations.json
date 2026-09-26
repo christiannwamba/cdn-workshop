@@ -1,0 +1,677 @@
+{
+  "verifiedAt": "2026-09-24T17:45:30.452Z",
+  "startedAt": "2026-09-24T17:43:05.385Z",
+  "deployment": "https://argos-ws-cache-8vujt73n8-cn-demos-vtest314.vercel.app",
+  "sourceDigest": "011cfb25e7d562bfd8526d1cf69e27a39f0715ce456467afd2ef40589f6233ee",
+  "r20": {
+    "requests": [
+      {
+        "cache": "MISS",
+        "fill": "2671cd1d-38ae-458a-bbfe-a0770fb62d46",
+        "content": "results:[\"chair\"]",
+        "vary": null,
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "cache": "HIT",
+        "fill": "2671cd1d-38ae-458a-bbfe-a0770fb62d46",
+        "content": "results:[\"chair\"]",
+        "vary": null,
+        "contentType": "text/html; charset=utf-8"
+      }
+    ],
+    "sameBody": true,
+    "idleSeconds": 15,
+    "origin": {
+      "count": 1,
+      "events": [
+        {
+          "id": "2671cd1d-38ae-458a-bbfe-a0770fb62d46",
+          "content": "results:[\"chair\"]",
+          "query": [["q", "chair"]],
+          "language": "en",
+          "variant": "control"
+        }
+      ]
+    }
+  },
+  "r22": {
+    "baseline": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "3bdbe679-3c3a-48e7-8ee5-9aeaf91145c6",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "3f787398-68e1-443d-85b9-46ff963ce49d",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "3bdbe679-3c3a-48e7-8ee5-9aeaf91145c6",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "1c9abf10-369a-4183-8f66-7dc035ed51bb",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "c2cda423-0f6a-44ca-8d10-c47b7f9abf08",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "1c9abf10-369a-4183-8f66-7dc035ed51bb",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      ],
+      "origin": {
+        "count": 4,
+        "events": [
+          {
+            "id": "1c9abf10-369a-4183-8f66-7dc035ed51bb",
+            "content": "results:[\"table\"]",
+            "query": [
+              ["q", "table"],
+              ["utm_source", "email"]
+            ],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "3bdbe679-3c3a-48e7-8ee5-9aeaf91145c6",
+            "content": "results:[\"chair\"]",
+            "query": [
+              ["q", "chair"],
+              ["utm_source", "email"]
+            ],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "3f787398-68e1-443d-85b9-46ff963ce49d",
+            "content": "results:[\"chair\"]",
+            "query": [
+              ["q", "chair"],
+              ["utm_source", "social"]
+            ],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "c2cda423-0f6a-44ca-8d10-c47b7f9abf08",
+            "content": "results:[\"table\"]",
+            "query": [
+              ["q", "table"],
+              ["utm_source", "social"]
+            ],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "normalized": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "0c72d0a2-7dda-49c9-80ed-83915c3042c7",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "0c72d0a2-7dda-49c9-80ed-83915c3042c7",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "0c72d0a2-7dda-49c9-80ed-83915c3042c7",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "648e2c24-05b2-435c-b958-2ca5cba0b69b",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "648e2c24-05b2-435c-b958-2ca5cba0b69b",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "648e2c24-05b2-435c-b958-2ca5cba0b69b",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "0c72d0a2-7dda-49c9-80ed-83915c3042c7",
+            "content": "results:[\"chair\"]",
+            "query": [["q", "chair"]],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "648e2c24-05b2-435c-b958-2ca5cba0b69b",
+            "content": "results:[\"table\"]",
+            "query": [["q", "table"]],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "rewrite": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "e8c72c5e-ae8e-4958-bc5f-a0925fcb2cbc",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "e8c72c5e-ae8e-4958-bc5f-a0925fcb2cbc",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "e8c72c5e-ae8e-4958-bc5f-a0925fcb2cbc",
+          "content": "results:[\"chair\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "df21fffe-1935-4379-9f08-2ad84e6aa5e8",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "df21fffe-1935-4379-9f08-2ad84e6aa5e8",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "df21fffe-1935-4379-9f08-2ad84e6aa5e8",
+          "content": "results:[\"table\"]",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "df21fffe-1935-4379-9f08-2ad84e6aa5e8",
+            "content": "results:[\"table\"]",
+            "query": [["q", "table"]],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "e8c72c5e-ae8e-4958-bc5f-a0925fcb2cbc",
+            "content": "results:[\"chair\"]",
+            "query": [["q", "chair"]],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    }
+  },
+  "r23": {
+    "html": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "35ef7d04-b2dc-44f4-ad55-217ccbf5223d",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "MISS",
+          "fill": "7552201d-0b7a-4bd7-bc32-3a533bb02315",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "35ef7d04-b2dc-44f4-ad55-217ccbf5223d",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        },
+        {
+          "cache": "HIT",
+          "fill": "7552201d-0b7a-4bd7-bc32-3a533bb02315",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "35ef7d04-b2dc-44f4-ad55-217ccbf5223d",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "7552201d-0b7a-4bd7-bc32-3a533bb02315",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "css": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "de436db7-6d55-4b4a-ab22-1b4bdd1b407d",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/css"
+        },
+        {
+          "cache": "MISS",
+          "fill": "a58ddaa2-dffd-494e-912a-94230dbc702c",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/css"
+        },
+        {
+          "cache": "HIT",
+          "fill": "de436db7-6d55-4b4a-ab22-1b4bdd1b407d",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/css"
+        },
+        {
+          "cache": "HIT",
+          "fill": "a58ddaa2-dffd-494e-912a-94230dbc702c",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/css"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "a58ddaa2-dffd-494e-912a-94230dbc702c",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          },
+          {
+            "id": "de436db7-6d55-4b4a-ab22-1b4bdd1b407d",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "js": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "b5c1aa43-fca0-4785-9d32-6a60b6cc6b72",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/javascript"
+        },
+        {
+          "cache": "MISS",
+          "fill": "38d3ac69-9cb9-4c56-aca8-de980aeda193",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/javascript"
+        },
+        {
+          "cache": "HIT",
+          "fill": "b5c1aa43-fca0-4785-9d32-6a60b6cc6b72",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "text/javascript"
+        },
+        {
+          "cache": "HIT",
+          "fill": "38d3ac69-9cb9-4c56-aca8-de980aeda193",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "text/javascript"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "38d3ac69-9cb9-4c56-aca8-de980aeda193",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          },
+          {
+            "id": "b5c1aa43-fca0-4785-9d32-6a60b6cc6b72",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "xjs": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "c5230b3f-98c9-4f5b-89c1-be1bab49fbdf",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "application/x-javascript"
+        },
+        {
+          "cache": "MISS",
+          "fill": "223b9437-8e72-4371-aef4-fbd32559c503",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "application/x-javascript"
+        },
+        {
+          "cache": "HIT",
+          "fill": "c5230b3f-98c9-4f5b-89c1-be1bab49fbdf",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "application/x-javascript"
+        },
+        {
+          "cache": "HIT",
+          "fill": "223b9437-8e72-4371-aef4-fbd32559c503",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "application/x-javascript"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "223b9437-8e72-4371-aef4-fbd32559c503",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          },
+          {
+            "id": "c5230b3f-98c9-4f5b-89c1-be1bab49fbdf",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "icon": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "2df5be1e-d7c2-43bf-adce-e8dd96f134e2",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "image/x-icon"
+        },
+        {
+          "cache": "MISS",
+          "fill": "18fd8f7a-addf-4d7b-9a83-0a540a2a4833",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "image/x-icon"
+        },
+        {
+          "cache": "HIT",
+          "fill": "2df5be1e-d7c2-43bf-adce-e8dd96f134e2",
+          "content": "language:en",
+          "vary": null,
+          "contentType": "image/x-icon"
+        },
+        {
+          "cache": "HIT",
+          "fill": "18fd8f7a-addf-4d7b-9a83-0a540a2a4833",
+          "content": "language:fr",
+          "vary": null,
+          "contentType": "image/x-icon"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "18fd8f7a-addf-4d7b-9a83-0a540a2a4833",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          },
+          {
+            "id": "2df5be1e-d7c2-43bf-adce-e8dd96f134e2",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          }
+        ]
+      }
+    },
+    "json": {
+      "requests": [
+        {
+          "cache": "MISS",
+          "fill": "645caacc-9673-476c-862b-cb1f7497c01a",
+          "content": "language:en",
+          "vary": "x-demo-language",
+          "contentType": "application/json"
+        },
+        {
+          "cache": "MISS",
+          "fill": "e6dae16d-b3e9-44e6-8697-74b703fd088f",
+          "content": "language:fr",
+          "vary": "x-demo-language",
+          "contentType": "application/json"
+        },
+        {
+          "cache": "HIT",
+          "fill": "645caacc-9673-476c-862b-cb1f7497c01a",
+          "content": "language:en",
+          "vary": "x-demo-language",
+          "contentType": "application/json"
+        },
+        {
+          "cache": "HIT",
+          "fill": "e6dae16d-b3e9-44e6-8697-74b703fd088f",
+          "content": "language:fr",
+          "vary": "x-demo-language",
+          "contentType": "application/json"
+        }
+      ],
+      "origin": {
+        "count": 2,
+        "events": [
+          {
+            "id": "645caacc-9673-476c-862b-cb1f7497c01a",
+            "content": "language:en",
+            "query": [],
+            "language": "en",
+            "variant": "control"
+          },
+          {
+            "id": "e6dae16d-b3e9-44e6-8697-74b703fd088f",
+            "content": "language:fr",
+            "query": [],
+            "language": "fr",
+            "variant": "control"
+          }
+        ]
+      }
+    }
+  },
+  "r24": {
+    "requests": [
+      {
+        "cache": "MISS",
+        "fill": "32aefef0-c05a-48bf-8c23-ee67b57f4fb9",
+        "content": "experiment:A",
+        "vary": "x-demo-variant",
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "cache": "HIT",
+        "fill": "32aefef0-c05a-48bf-8c23-ee67b57f4fb9",
+        "content": "experiment:A",
+        "vary": "x-demo-variant",
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "cache": "MISS",
+        "fill": "bdf7b6c7-790f-46aa-8f4c-6dd8c9ad68d1",
+        "content": "experiment:B",
+        "vary": "x-demo-variant",
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "cache": "HIT",
+        "fill": "bdf7b6c7-790f-46aa-8f4c-6dd8c9ad68d1",
+        "content": "experiment:B",
+        "vary": "x-demo-variant",
+        "contentType": "text/html; charset=utf-8"
+      }
+    ],
+    "origin": {
+      "count": 3,
+      "events": [
+        {
+          "id": "32aefef0-c05a-48bf-8c23-ee67b57f4fb9",
+          "content": "experiment:A",
+          "query": [],
+          "language": "en",
+          "variant": "A"
+        },
+        {
+          "id": "a276c581-bf2b-46a7-8de5-6e4b5d67ae94",
+          "content": "experiment:control",
+          "query": [],
+          "language": "en",
+          "variant": "control"
+        },
+        {
+          "id": "bdf7b6c7-790f-46aa-8f4c-6dd8c9ad68d1",
+          "content": "experiment:B",
+          "query": [],
+          "language": "en",
+          "variant": "B"
+        }
+      ]
+    }
+  },
+  "sources": {
+    "cache": {
+      "path": "handlers/cache.mjs",
+      "first": 8,
+      "last": 12,
+      "code": " const q=u.searchParams.getAll('q');const content=experiment?`experiment:${variant}`:vary?`language:${language}`:`results:${JSON.stringify(q)}`;\n const event={path:u.pathname,query:[...u.searchParams],rawSearch:u.search,variant,language,content,trackingOnMiss:request.headers.get('x-demo-original-query')||null};\n const fill=await record('origin',namespace,event);\n const headers={'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=0, s-maxage=300','x-origin-fill':fill,'x-origin-content':encodeURIComponent(content)};\n if(experiment)headers.vary='x-demo-variant';if(vary)headers.vary='x-demo-language';",
+      "fileSha256": "ddca9006adb43c2e2a27faefb48cd7ead24cd180ff9ad1fb4d069e82fb5b6c6b",
+      "displayCode": "const q = u.searchParams.getAll('q');\nconst content = experiment\n  ? `experiment:${variant}`\n  : vary\n    ? `language:${language}`\n    : `results:${JSON.stringify(q)}`;\nconst event = {\n  path: u.pathname,\n  query: [...u.searchParams],\n  rawSearch: u.search,\n  variant,\n  language,\n  content,\n  trackingOnMiss: request.headers.get('x-demo-original-query') || null,\n};\nconst fill = await record('origin', namespace, event);\nconst headers = {\n  'content-type': 'text/html; charset=utf-8',\n  'cache-control': 'public, max-age=0, s-maxage=300',\n  'x-origin-fill': fill,\n  'x-origin-content': encodeURIComponent(content),\n};\nif (experiment) headers.vary = 'x-demo-variant';\nif (vary) headers.vary = 'x-demo-language';\n"
+    },
+    "rewrite": {
+      "path": "proxy.js",
+      "first": 9,
+      "last": 17,
+      "code": " const pairs=[...url.searchParams].filter(([key])=>key!=='utm_source'&&!(isData&&hasRouteParams&&['namespace','identity'].includes(key)));\n // Stable sort preserves the order of duplicate values. Other parameter keys remain in identity.\n pairs.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);\n const identity=Buffer.from(JSON.stringify(pairs)).toString('base64url');\n if(hasRouteParams&&suppliedIdentity!==identity)return new Response('Invalid framework identity',{status:400});\n if(identity.length>8000)return new Response('Fixture query too long',{status:400});\n url.pathname=`/internal/${namespace}/${identity}`;url.search='';\n const id=crypto.randomUUID();console.log(JSON.stringify({kind:'cache-pack-middleware',id,path:new URL(request.url).pathname}));\n const response=NextResponse.rewrite(url);response.headers.set('x-demo-middleware-id',id);return response;",
+      "fileSha256": "c1d1e2e9626fdb6fb4706aa7c79de301bd8efde9c82fe03f09e456b170c60cd7",
+      "displayCode": "const pairs = [...url.searchParams].filter(\n  ([key]) =>\n    key !== 'utm_source' &&\n    !(isData && hasRouteParams && ['namespace', 'identity'].includes(key)),\n);\n// Stable sort preserves the order of duplicate values. Other parameter keys remain in identity.\npairs.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));\nconst identity = Buffer.from(JSON.stringify(pairs)).toString('base64url');\nif (hasRouteParams && suppliedIdentity !== identity)\n  return new Response('Invalid framework identity', { status: 400 });\nif (identity.length > 8000)\n  return new Response('Fixture query too long', { status: 400 });\nurl.pathname = `/internal/${namespace}/${identity}`;\nurl.search = '';\nconst id = crypto.randomUUID();\nconsole.log(\n  JSON.stringify({\n    kind: 'cache-pack-middleware',\n    id,\n    path: new URL(request.url).pathname,\n  }),\n);\nconst response = NextResponse.rewrite(url);\nresponse.headers.set('x-demo-middleware-id', id);\nreturn response;\n"
+    },
+    "isr": {
+      "path": "pages/internal/[namespace]/[identity].jsx",
+      "first": 2,
+      "last": 9,
+      "code": "export async function getStaticPaths(){return {paths:[],fallback:'blocking'};}\nexport async function getStaticProps({params}){\n const namespace=params.namespace;if(!/^[a-zA-Z0-9-]{8,90}$/.test(namespace)||params.identity.length>8000)return {notFound:true};\n let query;try{query=JSON.parse(Buffer.from(params.identity,'base64url').toString());if(!Array.isArray(query)||query.some(p=>!Array.isArray(p)||p.length!==2||p.some(v=>typeof v!=='string')||p[0]==='utm_source'))throw Error();}catch{return {notFound:true};}\n const q=query.filter(([k])=>k==='q').map(([,v])=>v),content=`results:${JSON.stringify(q)}`;\n const event={path:`/internal/${namespace}/${params.identity}`,query,rawSearch:new URLSearchParams(query).toString(),variant:'control',language:'en',content,trackingOnMiss:null,layer:'Next.js ISR origin render'};\n const fill=await record('origin',namespace,event);return {props:{...event,fill,fixtureTTL:300},revalidate:300};\n}",
+      "fileSha256": "0b541a0988576615a9b118f59a9eda39136759b4e8e3f40da396e6de3b4f4ef5",
+      "displayCode": "export async function getStaticPaths() {\n  return { paths: [], fallback: 'blocking' };\n}\nexport async function getStaticProps({ params }) {\n  const namespace = params.namespace;\n  if (!/^[a-zA-Z0-9-]{8,90}$/.test(namespace) || params.identity.length > 8000)\n    return { notFound: true };\n  let query;\n  try {\n    query = JSON.parse(Buffer.from(params.identity, 'base64url').toString());\n    if (\n      !Array.isArray(query) ||\n      query.some(\n        (p) =>\n          !Array.isArray(p) ||\n          p.length !== 2 ||\n          p.some((v) => typeof v !== 'string') ||\n          p[0] === 'utm_source',\n      )\n    )\n      throw Error();\n  } catch {\n    return { notFound: true };\n  }\n  const q = query.filter(([k]) => k === 'q').map(([, v]) => v),\n    content = `results:${JSON.stringify(q)}`;\n  const event = {\n    path: `/internal/${namespace}/${params.identity}`,\n    query,\n    rawSearch: new URLSearchParams(query).toString(),\n    variant: 'control',\n    language: 'en',\n    content,\n    trackingOnMiss: null,\n    layer: 'Next.js ISR origin render',\n  };\n  const fill = await record('origin', namespace, event);\n  return { props: { ...event, fill, fixtureTTL: 300 }, revalidate: 300 };\n}\n"
+    },
+    "query": {
+      "path": "vercel.json",
+      "first": 8,
+      "last": 20,
+      "code": "    {\n      \"src\": \"/normalized/.*\",\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"request.query\",\n          \"op\": \"delete\",\n          \"target\": {\n            \"key\": \"utm_source\"\n          }\n        }\n      ]\n    },",
+      "fileSha256": "2090081110f138fabaffd269e3eb6ed03cdecac3c1e65a8f761948806f221c97",
+      "displayCode": "{\n  \"src\": \"/normalized/.*\",\n  \"continue\": true,\n  \"transforms\": [\n    {\n      \"type\": \"request.query\",\n      \"op\": \"delete\",\n      \"target\": {\n        \"key\": \"utm_source\"\n      }\n    }\n  ]\n}\n"
+    },
+    "cohorts": {
+      "path": "vercel.json",
+      "first": 35,
+      "last": 55,
+      "code": "    {\n      \"src\": \"/(?:experiment/.*|api/cache)\",\n      \"has\": [\n        {\n          \"type\": \"cookie\",\n          \"key\": \"experiment\",\n          \"value\": \"A\"\n        }\n      ],\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"request.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-demo-variant\"\n          },\n          \"args\": \"A\"\n        }\n      ]\n    },",
+      "fileSha256": "2090081110f138fabaffd269e3eb6ed03cdecac3c1e65a8f761948806f221c97",
+      "displayCode": "{\n  \"src\": \"/(?:experiment/.*|api/cache)\",\n  \"has\": [\n    {\n      \"type\": \"cookie\",\n      \"key\": \"experiment\",\n      \"value\": \"A\"\n    }\n  ],\n  \"continue\": true,\n  \"transforms\": [\n    {\n      \"type\": \"request.headers\",\n      \"op\": \"set\",\n      \"target\": {\n        \"key\": \"x-demo-variant\"\n      },\n      \"args\": \"A\"\n    }\n  ]\n}\n"
+    },
+    "vary": {
+      "path": "vercel.json",
+      "first": 77,
+      "last": 89,
+      "code": "    {\n      \"src\": \"/vary/(?:html|css|js|xjs|icon)/.*\",\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"delete\",\n          \"target\": {\n            \"key\": \"vary\"\n          }\n        }\n      ]\n    }",
+      "fileSha256": "2090081110f138fabaffd269e3eb6ed03cdecac3c1e65a8f761948806f221c97",
+      "displayCode": "{\n  \"src\": \"/vary/(?:html|css|js|xjs|icon)/.*\",\n  \"continue\": true,\n  \"transforms\": [\n    {\n      \"type\": \"response.headers\",\n      \"op\": \"delete\",\n      \"target\": {\n        \"key\": \"vary\"\n      }\n    }\n  ]\n}\n"
+    }
+  }
+}

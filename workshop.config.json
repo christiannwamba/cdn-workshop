@@ -32,6 +32,9 @@
   "fixtures": {
     "platformGaps": {
       "url": "https://argos-ws-platform-gaps.vercel.app"
+    },
+    "cache": {
+      "url": "https://argos-ws-cache.vercel.app"
     }
   }
 }

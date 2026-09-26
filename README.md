@@ -4,6 +4,8 @@ One complete R32 exercise: can selected-cookie enrichment run when shared conten
 
 Four additional pages cover exact behavior differences: `/#r05` (missing versus zero Content-Length), `/#r06` (redirect status), `/#r09` (response-header removal), and `/#r29` (external-origin path optimization decision). They use dated recorded observations, with manual commands targeting the existing public synthetic test endpoint configured at `fixtures.platformGaps.url`. Localhost does not reproduce platform behavior. R29 has no performance-parity demonstration.
 
+Five cache pages cover `/#r20` (shared-cache baseline), `/#r21` (refresh timing explanation), `/#r22` (query identity), `/#r23` (Vary removal) and `/#r24` (public cookie cohorts). They reuse the hosted cache test configured at `fixtures.cache.url`, with selected September 24 observations and copyable terminal commands. Counts are recorded independent origin-journal evidence; no journal secret or access capability is published. R21 has no live proof. Changing the configured test host changes commands, never the recorded evidence or its provenance.
+
 ## Run locally
 
 Node 24 is the deployment runtime. From a clean checkout:
@@ -43,7 +45,7 @@ Production aliases can be public while evidence stays protected. A random run ca
 
 See `evidence/acceptance.md` and `manifest.json` for dated outcomes and exact deployments. A recorded fallback is clearly labeled separately from live evidence. Native records are field-allowlisted; IPs and unrelated headers are not retained. Signed batches are deduplicated by record ID during analysis; arrival counts and unmatched events remain visible.
 
-This is bounded demonstration code, not a production telemetry ingestion service or load test. It does not establish lossless delivery, a delivery SLA, customer cookie semantics, production join guarantees, all plans, every framework cache topology, raw external TLS origins, WebSocket hosting/session limits, or all workshop requirements. R20/R10 are truthful catalog stubs without an exercise.
+This is bounded demonstration code, not a production telemetry ingestion service or load test. It does not establish lossless delivery, a delivery SLA, customer cookie semantics, production join guarantees, all plans, every framework cache topology, raw external TLS origins, WebSocket hosting/session limits, or all workshop requirements. R10 remains a catalog stub without an exercise.
 
 ## Public references
 

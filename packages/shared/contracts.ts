@@ -1,4 +1,4 @@
-export type RequirementStatus = 'supported' | 'workaround' | 'gap';
+export type RequirementStatus = 'supported' | 'workaround' | 'partial' | 'gap';
 export interface DeploymentProfile {
   environment: string;
   siteUrl: string;
@@ -9,6 +9,7 @@ export interface DeploymentProfile {
   dashboard: string;
   team: string;
   projects: Record<'web' | 'request' | 'collector', string>;
+  fixtures: Record<'platformGaps' | 'cache', { url: string }>;
   sources: Record<string, { path: string; first: number; last: number }>;
 }
 export interface Requirement {
