@@ -1,10 +1,14 @@
 # CDN Workshop
 
+All 42 requirements have a page, including explanation and decision pages where a demonstration or customer contract is missing. Page availability is separate from verified customer parity.
+
 One complete R32 exercise: can selected-cookie enrichment run when shared content is a CDN HIT? The answer demonstrated by the fixture is a **workaround**, not full customer coverage.
 
 Four additional pages cover exact behavior differences: `/#r05` (missing versus zero Content-Length), `/#r06` (redirect status), `/#r09` (response-header removal), and `/#r29` (external-origin path optimization decision). They use dated recorded observations, with manual commands targeting the existing public synthetic test endpoint configured at `fixtures.platformGaps.url`. Localhost does not reproduce platform behavior. R29 has no performance-parity demonstration.
 
 Five cache pages cover `/#r20` (shared-cache baseline), `/#r21` (refresh timing explanation), `/#r22` (query identity), `/#r23` (Vary removal) and `/#r24` (public cookie cohorts). They reuse the hosted cache test configured at `fixtures.cache.url`, with selected September 24 observations and copyable terminal commands. Counts are recorded independent origin-journal evidence; no journal secret or access capability is published. R21 has no live proof. Changing the configured test host changes commands, never the recorded evidence or its provenance.
+
+The remaining pages cover logging/reporting, processing and retries, routing and admission, request rules, consent/cookies, and TLS/transport. They reuse selected dated synthetic observations and owned test-source excerpts or explain an unverified candidate mapping. `apps/web/src/requirement-content.json` contains their content; `requirement-pages.jsx` uses the same layout, Shiki and editable Mermaid components. No additional live backends or public administrative controls are introduced. TLS/WebSocket pages explicitly use recorded evidence; temporary origins and tunnels have not been restored by this release.
 
 ## Run locally
 
@@ -26,7 +30,7 @@ The page uses deployed backends from `workshop.config.json`. Local Vite alone do
 - `apps/collector`: an owned origin, signed Drain ingestion, private Blob persistence and capability-protected run evidence. Only the request project is in Drain scope.
 - `packages/shared/contracts.ts`: small portable profile and requirement contracts.
 
-The source content is synthetic. The native log records are delivered by Vercel. The driver never fabricates them. Correlation uses response event UUID → application envelope → exact native `requestId`. An `x-vercel-id` suffix is never parsed as a contract.
+Runnable examples use synthetic traffic. Mapping pages distinguish customer requirements, proposed designs and recorded test outcomes. The native log records are delivered by Vercel. The driver never fabricates them. Correlation uses response event UUID → application envelope → exact native `requestId`. An `x-vercel-id` suffix is never parsed as a contract.
 
 ## Deploy your own
 

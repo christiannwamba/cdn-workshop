@@ -6,6 +6,7 @@ import { createBrowserClient } from './browser-client.js';
 import { CodeBlock } from './code-block.jsx';
 import { GapPage, gapCatalog } from './gap-pages.jsx';
 import { CachePage, cacheCatalog } from './cache-pages.jsx';
+import { RequirementPage, requirementCatalog } from './requirement-pages.jsx';
 import './tokens.css';
 const MermaidEditor = lazy(() => import('./mermaid-editor.jsx'));
 import './style.css';
@@ -53,6 +54,7 @@ const original = `sequenceDiagram
 const catalog = [
   ...gapCatalog,
   ...cacheCatalog,
+  ...requirementCatalog,
   {
     id: 'R32',
     title: 'Can we log a cookie when the CDN serves a cached page?',
@@ -60,14 +62,6 @@ const catalog = [
     category: 'Observability',
     note: 'Cookie logging demonstrated with custom middleware and Vercel Log Drains. Other R32 fields remain to be mapped.',
     implemented: true,
-  },
-  {
-    id: 'R10',
-    title: 'Can application code inspect visitor TLS metadata?',
-    status: 'gap',
-    category: 'Transport',
-    note: 'Visitor TLS details needed by this requirement are not exposed here. No R10 exercise yet.',
-    implemented: false,
   },
 ];
 const labels = {
@@ -599,6 +593,8 @@ function App() {
           <GapPage key={page} id={page} profile={p} Diagram={Diagram} />
         ) : cacheCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <CachePage key={page} id={page} profile={p} Diagram={Diagram} />
+        ) : requirementCatalog.some((r) => r.id.toLowerCase() === page) ? (
+          <RequirementPage key={page} id={page} Diagram={Diagram} />
         ) : page === 'r32' ? (
           <>
             <a className="back" href="#index">
@@ -642,11 +638,12 @@ function App() {
               <p className="eyebrow">CDN workshop</p>
               <h1>Explore the CDN requirements.</h1>
               <p className="lede">
-                Choose a requirement to see its status and try the available exercise.
+                Choose a requirement to see its mapping, evidence and remaining decision.
               </p>
               <p className="small">
                 {catalog.length} requirements ·{' '}
-                {catalog.filter((r) => r.implemented).length} pages available
+                {catalog.filter((r) => r.implemented).length} pages available · page
+                availability does not mean verified customer parity
               </p>
             </div>
             <div className="filters">
