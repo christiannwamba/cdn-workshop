@@ -747,3 +747,20 @@ button:disabled {
   text-decoration: underline;
   text-underline-offset: 0.25rem;
 }
+
+.cookies-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+.cookies-nav > div {
+  display: block;
+}
+.cookies-nav p {
+  margin: 0 0 0.65rem;
+}
+@media (max-width: 800px) {
+  .cookies-nav {
+    grid-template-columns: 1fr;
+  }
+}

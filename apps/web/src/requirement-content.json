@@ -949,19 +949,19 @@
   },
   "r11": {
     "title": "How should CONSENTMGR change consent and cookies?",
-    "intro": "The current CONSENTMGR branch reads legacy consent categories only when its feature flag is on, then clears selected experiment cookies on decline. The proposed Vercel mapping is a custom parser and ordered decision table using request and response cookie APIs.",
-    "status": "partial",
+    "intro": "The current CONSENTMGR branch reads legacy consent categories when its feature flag is on and expires selected experiment cookies on decline. A custom Vercel Function demonstrated those known branches; the same parsing logic can be integrated into Routing Middleware.",
+    "status": "workaround",
     "category": "Cookies and consent",
-    "note": "Custom parser proposed; the active flag branch and exact encoded/legacy grammar need confirmation.",
-    "diagram": "flowchart LR\n  A[Request cookies] --> B{Legacy branch enabled?}\n  B -->|No| C[Keep initial consent state]\n  B -->|Yes| D[Parse CONSENTMGR]\n  D --> E[Apply category decisions]\n  E --> F[Expire affected cookies]",
-    "flow": "Proposed translation of this consent source only. R12 covers OptanonConsent and the unresolved precedence when both sources exist.",
+    "note": "Custom parsing and cookie expiry demonstrated; exact legacy grammar and effective rule order remain configuration inputs.",
+    "diagram": "flowchart LR\n A[CONSENTMGR exists] --> B{Feature flag on?}\n B -->|No| C[No legacy branch changes]\n B -->|Yes| D[Custom parser and category rules]\n D --> E[Request-local consent state]\n D --> F[Response cookie expiry on decline]\n F --> G[Browser updates later requests]",
+    "flow": "Logical mapping of the legacy branch. Response expiry and any explicit origin-request mutation are separate operations; precedence with OptanonConsent is still an input.",
     "sectionTitle": "Keep the category policy explicit",
     "paragraphs": [
-      "The initial state accepts necessary cookies and declines functional, performance and marketing categories. In the enabled branch, c7 controls functional, c1 performance and c3 marketing; plain and encoded markers and older consent:true forms appear in the summary.",
-      "Functional decline expires the PDP experiment cookie. Marketing decline expires the content and audience experiment cookies. These changes need the original cookie scope and the rule’s actual parsing order."
+      "The source starts with necessary consent accepted and the other categories declined. Its feature flag defaults off; the branch runs only when the flag is on and CONSENTMGR exists. With consent:true, c7 controls functional, c1 performance and c3 marketing. These are the recorded source rules, not a new consent policy.",
+      "Plain and encoded category markers were tested. Functional decline removed the seeded product experiment cookie; marketing decline removed the content and audience cookies. Response expiry changes the browser’s later requests: it does not remove cookies from the current origin request automatically."
     ],
-    "decision": "Confirm whether this flag-gated branch is active, recover its exact legacy and encoded parsing rules, and agree precedence with OptanonConsent before implementing the parser.",
-    "detail": "The reported feature flag defaults off. This is an explanation of a custom implementation candidate, not a tested consent integration.",
+    "decision": "Recover the effective flag setting and exact legacy expressions, then agree their order with OptanonConsent and the original cookie scopes.",
+    "detail": "The older timestamp/id forms were tested with representative numeric timestamps and simple IDs, not the missing source regex. Decode-once, duplicate handling and malformed-input behavior are test choices to reconcile. The helper returns both consent sources separately and selects one explicitly; that selector is not customer precedence. Local tests verify logic, while dated browser evidence verifies selected Function branches and expiry.",
     "docs": [
       {
         "label": "NextResponse cookie and request APIs",
@@ -977,23 +977,42 @@
         "id": "r13",
         "label": "Cookie lifecycle"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n  A[Request cookies] --> B{Legacy branch enabled?}\n  B -->|No| C[Keep initial consent state]\n  B -->|Yes| D[Parse CONSENTMGR]\n  D --> E[Apply category decisions]\n  E --> F[Expire affected cookies]",
+    "statusText": "Workaround · custom consent parser",
+    "scope": "Custom mechanism · known branches recorded on 17 September; local parser checks repeated on 27 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded browser evidence · 17 September 2026",
+    "table": {
+      "headers": ["Check", "Observed result"],
+      "rows": [
+        [
+          "Plain / encoded categories",
+          "Expected category states; selected seeded experiment cookies removed."
+        ],
+        [
+          "Absent / malformed / flag off",
+          "Source defaults retained in the example; experiment cookies not expired."
+        ]
+      ]
+    },
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
   },
   "r12": {
     "title": "How should OptanonConsent groups affect the request?",
-    "intro": "The current OptanonConsent branch extracts its groups field and applies category decisions, including cookie expiry on decline. The proposed implementation shares a consent state model with R11 while retaining this source’s own parsing and gating rules.",
-    "status": "partial",
+    "intro": "The current OptanonConsent branch extracts groups and applies category decisions, including cookie expiry. Custom parsing in a Vercel Function demonstrated the known groups. The exact performance predicate and order relative to legacy consent still need to be supplied.",
+    "status": "workaround",
     "category": "Cookies and consent",
-    "note": "Custom parser proposed; consent-source precedence and the missing V2STACK condition remain open.",
-    "diagram": "flowchart LR\n  A[OptanonConsent cookie] --> B[Extract groups field]\n  B --> C{Group 1 accepted?}\n  C -->|Yes| D[Evaluate category groups]\n  C -->|No| E[Keep applicable prior state]\n  D --> F[Update consent and cookie expiry]",
-    "flow": "Proposed translation of the summarized branches. The prior state depends on the unresolved ordering of both consent sources.",
+    "note": "Known group parsing and expiry demonstrated; exact V2STACK expression and cross-cookie order remain missing.",
+    "diagram": "flowchart LR\n A[OptanonConsent] --> B[Extract groups]\n B --> C{Groups 1-4 all accepted?}\n C -->|Yes| D[Accept all categories]\n C -->|No| E{Group 1 accepted?}\n E -->|No| F[No matching category change]\n E -->|Yes| G[Groups 3 and 4 plus group 2 with V2STACK]\n G --> H[Consent state and selected cookie expiry]",
+    "flow": "Logical source branches. The individual performance expression and cross-source precedence are deliberately unresolved.",
     "sectionTitle": "Preserve the group gate",
     "paragraphs": [
-      "Group 1 acceptance gates the individual category branches. Group 3 controls functional, group 2 performance and group 4 marketing; the performance branch also refers to a V2STACK condition absent from the supplied expression detail.",
-      "The all-accepted pattern requires groups 1, 2, 3 and 4. Encoded and plain markers are described, and declines clear the same category-related experiment cookies as the legacy branch."
+      "Extract the groups field using the & separator. Group 1 acceptance gates individual branches: 3 controls functional, 2 performance and 4 marketing. The separate all-accepted pattern requires groups 1, 2, 3 and 4, including encoded markers.",
+      "The individual performance branch also refers to V2STACK, but its exact expression is absent from the supplied source. Tests can exercise a supplied true or false result; they cannot recover that expression. When both consent cookies exist, their order must be explicit."
     ],
     "decision": "Obtain the exact V2STACK expression and resolve which source wins when both consent cookies are present or conflict.",
-    "detail": "No deployed parser or golden-input consent test is claimed.",
+    "detail": "Known groups and actual browser expiry passed in the dated Function test. Local cases also cover encoded values, malformed/duplicate groups and conflicting consent sources. The test selector chooses one parser and reports both outputs; it does not define a production winner. The all-accepted branch is separate from the V2STACK-gated individual performance branch.",
     "docs": [
       {
         "label": "NextResponse cookie and request APIs",
@@ -1009,23 +1028,42 @@
         "id": "r13",
         "label": "Cookie lifecycle"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n  A[OptanonConsent cookie] --> B[Extract groups field]\n  B --> C{Group 1 accepted?}\n  C -->|Yes| D[Evaluate category groups]\n  C -->|No| E[Keep applicable prior state]\n  D --> F[Update consent and cookie expiry]",
+    "statusText": "Workaround · custom consent parser",
+    "scope": "Custom mechanism · known groups recorded on 17 September; local parser checks repeated on 27 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded browser evidence · 17 September 2026",
+    "table": {
+      "headers": ["Check", "Observed result"],
+      "rows": [
+        [
+          "All groups / missing group 1",
+          "All categories accepted, or individual branches skipped, as applicable."
+        ],
+        [
+          "Functional / marketing decline",
+          "Matching seeded experiment cookies removed from the browser."
+        ]
+      ]
+    },
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
   },
   "r13": {
     "title": "Can each visitor receive only their own cookie changes?",
-    "intro": "The current rules set, update and expire browser cookies, and some also change the Cookie header sent to the origin. The proposed Vercel implementation handles those two directions separately and verifies that shared cached content cannot carry another visitor’s cookie changes.",
-    "status": "partial",
+    "intro": "The current rules create and expire browser cookies and sometimes also update the Cookie header sent to the origin. Vercel provides those two operations separately. Owned tests demonstrated visitor isolation by keeping cookie-bearing responses uncached and sharing only public content.",
+    "status": "supported",
     "category": "Cookies and consent",
-    "note": "Cookie APIs provide a candidate; response Set-Cookie isolation on cache HIT and MISS is unverified.",
-    "diagram": "sequenceDiagram\n  participant B as Browser\n  participant L as Per-request cookie logic\n  participant C as Content path and cache\n  B->>L: Current request cookies\n  L->>C: Deliberately updated request Cookie\n  C-->>L: Content response\n  L-->>B: Visitor-specific Set-Cookie changes",
-    "flow": "Proposed logical behavior, not a captured cache pipeline. Request Cookie mutation and response Set-Cookie are separate operations.",
-    "sectionTitle": "Separate content sharing from cookie changes",
+    "note": "Request/response cookie APIs and safe shared-cache policies; independent-visitor evidence is recorded.",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant F as Cookie Function\n participant O as Owned origin\n B->>F: Current Cookie\n F->>O: Current or explicitly changed Cookie\n O-->>F: Private content\n F-->>B: Uncached response and Set-Cookie\n Note over B: Store or expire for later requests\n participant C as Public CDN path\n B->>C: Separate public request\n C-->>B: MISS or HIT, no visitor state or Set-Cookie",
+    "flow": "Two tested policies, not one cache pipeline: private cookie lifecycle and separate shareable public content. The recording used independent browser contexts.",
+    "sectionTitle": "Keep the two cookie directions separate",
     "paragraphs": [
-      "Updating the upstream Cookie header affects the current origin request. Returning Set-Cookie asks the browser to change subsequent requests; one does not automatically prove the other.",
-      "R32 shows each browser request logging its current cookie, and R24 shows bounded public cache variants. Neither demonstrates newly issued response cookies remaining isolated between visitors on both a MISS and a HIT."
+      "Changing the origin-bound Cookie header affects this request. Returning Set-Cookie changes what the browser sends later. The recorded test changed the upstream value without changing the browser cookie, then expired one visitor’s cookie while the other visitor retained theirs.",
+      "A response containing Set-Cookie stayed uncached even when it requested a CDN TTL. A separate public response without visitor state or Set-Cookie produced a MISS then a HIT across two cookie jars. This establishes the tested safe route policies; it does not demonstrate appending visitor-specific cookies to a cached HIT."
     ],
-    "decision": "Agree each cookie’s scope and mutation rules, then verify new, changed and expired response cookies across two visitors and cache HIT/MISS without losing the required upstream mutation.",
-    "detail": "The source’s Set-Cookie pass policy needs translation at the selected cache layer. No response-cookie isolation proof is asserted.",
+    "decision": "Map each route’s browser and upstream mutations, matching Domain/Path and expiry attributes, and decide which content is safe to share.",
+    "detail": "The source calls its pass policy CONNECTION; this mapping preserves the required cookie lifecycle, not literal Akamai transport semantics. Deletion must target the stored cookie’s scope. R24 public variants and R32 request-cookie logs are separate proof and were not used to infer response-cookie isolation. No new lifecycle endpoint is offered because its temporary origin is no longer treated as live.",
     "docs": [
       {
         "label": "NextResponse cookie and request APIs",
@@ -1045,23 +1083,47 @@
         "id": "r32",
         "label": "Request cookie logging"
       }
-    ]
+    ],
+    "previousDiagram": "sequenceDiagram\n  participant B as Browser\n  participant L as Per-request cookie logic\n  participant C as Content path and cache\n  B->>L: Current request cookies\n  L->>C: Deliberately updated request Cookie\n  C-->>L: Content response\n  L-->>B: Visitor-specific Set-Cookie changes",
+    "statusText": "Supported · cookie lifecycle",
+    "scope": "Native APIs with route policy · recorded independent-browser evidence from 17 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded browser evidence · 17 September 2026",
+    "table": {
+      "headers": ["Check", "Observed result"],
+      "rows": [
+        [
+          "Creation / request-only mutation",
+          "Response-created cookie absent upstream until the next request; explicit upstream change left browser cookie unchanged."
+        ],
+        ["Expiry / two visitors", "A’s cookie removed; B retained its own value."],
+        [
+          "Same URL with Set-Cookie and CDN TTL",
+          "Three MISS responses, three origin calls; Set-Cookie retained."
+        ],
+        [
+          "Public content across jars",
+          "MISS → HIT; one origin call; no visitor state or Set-Cookie in shared content."
+        ]
+      ]
+    },
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
   },
   "r14": {
     "title": "How do affiliate and loyalty links become cookies?",
-    "intro": "The current rules copy cjevent and loyaltysignal query values into cookies with the same names. The proposed Vercel middleware extracts those values and sets response cookies using the agreed encoding, attributes and consent conditions.",
-    "status": "partial",
+    "intro": "The current rules remember affiliate cjevent and loyaltysignal link values in same-named cookies. A Vercel Function demonstrated query extraction and response-cookie serialization. Routing Middleware is another integration option, with the same agreed value and attribute rules.",
+    "status": "workaround",
     "category": "Cookies and consent",
-    "note": "Custom extraction candidate; encoding, duplicate parameters, attributes and effective consent gates remain to confirm.",
-    "diagram": "flowchart LR\n  A[Affiliate or loyalty query value] --> B[Extract using agreed rules]\n  B --> C[Apply effective consent condition]\n  C --> D[Set corresponding response cookie]",
-    "flow": "Proposed mapping. The consent condition must be recovered from the effective source rules; this page does not invent a new gate.",
+    "note": "Custom extraction demonstrated in a Function, including browser storage and encoded values.",
+    "diagram": "flowchart LR\n A[cjevent or loyaltysignal in query] --> B[Custom extraction and serialization]\n B --> C[Same-named response cookies]\n C --> D[Browser sends values on later requests]",
+    "flow": "The demonstrated Function mapping. Effective policy comes from the customer rules; no new consent gate is assumed.",
     "sectionTitle": "Keep the recorded attributes",
     "paragraphs": [
-      "The summary specifies path /, the default domain, Secure enabled, HttpOnly disabled and a 395-day expiry. It does not fully establish the domain, SameSite or encoding contract.",
-      "Repeated parameters, empty values and percent-encoded characters need explicit expected outcomes. A generic URL parser’s choice should not silently become the customer policy."
+      "The source specifies path /, default domain, Secure on, HttpOnly off and a 395-day expiry. The browser tests stored encoded, empty and duplicate-parameter examples with those attributes. Requested expiry metadata does not guarantee future retention.",
+      "The example takes the first duplicate, decodes query values once and percent-encodes cookie values; absent parameters emit nothing and present empty values emit an empty cookie. Those choices need agreement. No consent gate is stated in these source rows: carry over any wider effective gate if one applies."
     ],
-    "decision": "Confirm the effective consent gates, duplicate-value and encoding behavior, and complete cookie attributes before implementing the two query-to-cookie rules.",
-    "detail": "No dedicated browser test has been run. The declared expiry is a requested cookie attribute, not proof that every browser will retain it for that period.",
+    "decision": "Agree encoding, duplicate/empty handling and complete cookie scope, including any effective consent condition, before translating the two rules.",
+    "detail": "The test omits Domain and SameSite, uses host-only cookies and requests 395 days through Max-Age and Expires. It covers plus signs, semicolons, spaces and Unicode. It does not test the Middleware execution path or assert the meaning of the identifiers beyond the source’s affiliate/loyalty use.",
     "docs": [
       {
         "label": "NextResponse cookie and request APIs",
@@ -1073,23 +1135,50 @@
         "id": "r13",
         "label": "Cookie lifecycle"
       }
+    ],
+    "previousDiagram": "flowchart LR\n  A[Affiliate or loyalty query value] --> B[Extract using agreed rules]\n  B --> C[Apply effective consent condition]\n  C --> D[Set corresponding response cookie]",
+    "statusText": "Workaround · query-to-cookie logic",
+    "scope": "Custom mechanism · recorded Function/browser evidence from 17 September; local checks repeated on 27 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded browser evidence · 17 September 2026",
+    "table": {
+      "headers": ["Check", "Observed result"],
+      "rows": [
+        [
+          "Encoded / empty / duplicate / absent",
+          "Expected cookie values stored; no cookie for an absent parameter."
+        ],
+        [
+          "Scope and attributes",
+          "Path /, Secure, no HttpOnly; expiry metadata approximately 395 days ahead."
+        ]
+      ]
+    },
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested.",
+    "sources": [
+      {
+        "title": "Owned query-to-cookie helper",
+        "path": "lib/state.mjs",
+        "label": "Exact tested Function helper; fixture policies shown in comments",
+        "code": "export const AFFILIATE_MAX_AGE = 395 * 24 * 60 * 60;\n\nexport function affiliateCookies(url, now = new Date()) {\n  const query = new URL(url, 'https://fixture.invalid').searchParams;\n  const expires = new Date(now.getTime() + AFFILIATE_MAX_AGE * 1000).toUTCString();\n  // URLSearchParams: first duplicate wins; an explicitly empty value creates an\n  // empty cookie. Domain and SameSite omitted, not inferred from source.\n  return ['cjevent', 'loyaltysignal'].filter(name => query.has(name)).map(name =>\n    `${name}=${encodeURIComponent(query.get(name))}; Path=/; Secure; Max-Age=${AFFILIATE_MAX_AGE}; Expires=${expires}`);\n}"
+      }
     ]
   },
   "r15": {
     "title": "What decides the analytics channel cookie?",
     "intro": "The current rule creates analytics_channel when absent, defaults it to ecomm and changes it to mcomm using physical device dimensions. Cookie creation has a Vercel implementation path; an equivalent source for that physical-size decision is unresolved.",
-    "status": "partial",
+    "status": "confirmation",
     "category": "Cookies and consent",
-    "note": "Cookie mechanics are a candidate; equivalent physical-device input is missing.",
+    "note": "Cookie-setting is supported; the required physical-device classification input has no established replacement.",
     "diagram": "flowchart LR\n  A{Cookie already present?} -->|Yes| B[Retain existing value]\n  A -->|No| C[Start with ecomm]\n  C --> D{Physical size condition?}\n  D -->|Matches| E[Use mcomm]\n  D -->|Does not match| F[Use ecomm]\n  E --> G[Response and upstream Cookie]\n  F --> G",
     "flow": "Current decision as summarized. The physical-size input in the proposed replacement has not been established.",
     "sectionTitle": "Preserve the input meaning",
     "paragraphs": [
-      "The source uses physical height at most 145 and width at most 80, without specifying units. It writes the selected value both to the response and to the outgoing Cookie header, with path / and an expiry of 31 December 2038.",
-      "Browser viewport or screen resolution does not establish those physical dimensions. A user-agent mobile label from R16 is also a different input; substituting it requires an explicit policy decision."
+      "The source uses physical height at most 145 and width at most 80; the supplied summary does not name the units. When analytics_channel is absent, this overrides ecomm with mcomm, writes both the response cookie and outgoing Cookie header, and requests path / and expiry on 31 December 2038.",
+      "Browser viewport or screen resolution does not supply those physical dimensions. A user-agent mobile label is also different. The R13 lifecycle proof establishes cookie mechanics only; it supplies no physical-device database or classification parity."
     ],
     "decision": "Identify the physical-size data source and units, or agree a revised classification rule, then confirm persistence and both cookie directions.",
-    "detail": "The physical-size branch is a requirement fact, not a Vercel device-metadata capability claim.",
+    "detail": "Retain an existing analytics_channel unless the agreed policy says otherwise. The 2038 date is the source’s requested expiry, not guaranteed browser retention. The unresolved item is the input to the decision, not whether Vercel can write the resulting cookie.",
     "docs": [
       {
         "label": "NextResponse cookie and request APIs",
@@ -1105,23 +1194,25 @@
         "id": "r16",
         "label": "Mobile classification"
       }
-    ]
+    ],
+    "statusText": "Needs confirmation · physical-device input",
+    "scope": "Decision page · no customer physical-device classification has been tested."
   },
   "r16": {
     "title": "Which requests should count as mobile?",
-    "intro": "The current property marks a request mobile when its device profile says so or an is_mobile request header is true. A proposed Vercel implementation can use user-agent classification plus an explicitly trusted signal, but the customer’s device profile equivalence is not established.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Classification candidate; device matrix, header trust and redirect policies are unresolved.",
-    "diagram": "flowchart LR\n  A[User-agent classification] --> C[Agreed mobile decision]\n  B[Approved trusted signal] --> C\n  C --> D[Request state]\n  D --> E[Origin header and dependent rules]",
-    "flow": "Proposed inputs. Trusting a signal must be a deliberate policy; accepting an arbitrary client header is not shown as verified.",
+    "intro": "The current rule sets mobile state and forwards is_mobile=true when Device_Profile says mobile OR an incoming is_mobile header is true. Vercel can apply a custom classifier and forward the result to application or redirect rules; the replacement device data and trusted-header policy must be agreed.",
+    "status": "workaround",
+    "category": "Cookies and consent",
+    "note": "Custom classification and explicit header forwarding; exact Device_Profile matching is not established.",
+    "diagram": "flowchart LR\n A[Agreed device classifier] --> C{Mobile OR permitted incoming true?}\n B[Incoming is_mobile under agreed trust policy] --> C\n C -->|Yes| D[Mobile state and outgoing true]\n C -->|No| E[Initial false or agreed unknown handling]\n D --> F[Application or ordered redirect rules]\n E --> F",
+    "flow": "Custom replacement of the source OR rule. Signal trust, unknown handling and later precedence remain explicit integration decisions.",
     "sectionTitle": "Define the device cases",
     "paragraphs": [
-      "The current rule sets request state and the outgoing is_mobile=true header. The overview additionally asks about device-dependent redirects, but their detailed rules are absent.",
-      "Next.js provides a user-agent parser with a device type. That is a useful candidate input, but a parser result alone does not prove parity with Akamai Device_Profile or the physical-size decision in R15."
+      "The source initializes mobile state to false, then applies the OR condition. An incoming true can therefore mark a device mobile; an incoming false does not negate a mobile profile. Decide which callers may supply that signal, and preserve the agreed order with any later overrides.",
+      "Next.js offers user-agent device types, including mobile and tablet, with unknown values possible. That provides a candidate classifier, not Akamai Device_Profile equivalence. Define tablet and unknown outcomes and the exact mobile redirect destinations/order before comparing representative requests."
     ],
-    "decision": "Agree the device matrix, unknown-device behavior, trusted-header policy and any device redirect rules, then compare classifications against representative requests.",
-    "detail": "No customer device classification matrix has been tested.",
+    "decision": "Agree the device matrix and trusted signal, then verify the forwarded flag and any dependent redirects against those expected outcomes.",
+    "detail": "No source for exact Device_Profile parity has been established and no customer classification suite has run. Basic classification and forwarding have a custom implementation path; physical-size analytics remains the distinct R15 question. Do not silently treat an unrecognized UA as evidence of a desktop device.",
     "docs": [
       {
         "label": "User-agent device classification",
@@ -1133,27 +1224,30 @@
         "id": "r15",
         "label": "Physical device input"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n  A[User-agent classification] --> C[Agreed mobile decision]\n  B[Approved trusted signal] --> C\n  C --> D[Request state]\n  D --> E[Origin header and dependent rules]",
+    "statusText": "Workaround · custom device classification",
+    "scope": "Custom mapping · device matrix and redirect behavior have not been customer-validated."
   },
   "r17": {
     "title": "How does a visitor keep the same experiment group?",
-    "intro": "The current source names audience buckets for search, product, browse and content, but omits the allocation policy. Stable custom assignment with shared configuration and consent-aware persistence is a candidate; the workshop’s cache variants do not supply that policy.",
-    "status": "partial",
+    "intro": "The source names audience buckets and an audience-segmentation Cloudlet, but not who assigns visitors or with what weights. If an existing assignment service survives migration, Vercel can consume its cookie. Otherwise the agreed allocation and persistence logic needs a custom implementation.",
+    "status": "confirmation",
     "category": "Cookies and consent",
-    "note": "Assignment design remains unresolved; bucket names do not establish allocation or persistence.",
+    "note": "Illustrative assignment persists; real allocator ownership, weights, identity and consent policy are missing.",
     "diagram": "flowchart LR\n  A[Consent and eligibility] --> B{Valid existing assignment?}\n  B -->|Yes| C[Reuse group]\n  B -->|No| D[Apply agreed allocation]\n  D --> E[Persist under agreed policy]\n  C --> F[Select content variant]\n  E --> F",
     "flow": "Proposed assignment design. Weights, eligibility, stable identity and reassignment are customer decisions, not implemented defaults.",
     "sectionTitle": "Distinguish assignment from cached variants",
     "paragraphs": [
-      "Numbered bucket constants and a Bot bucket describe possible values, not traffic percentages or how a visitor receives one. Consent declines also clear some experiment cookies, which may affect later assignment.",
-      "R24 demonstrates sharing content within an already chosen public cohort and separating different cohorts. It does not demonstrate production allocation, consent, persistence or reassignment."
+      "Bucket numbers and a Bot bucket do not establish traffic percentages. First identify the assignment owner and whether it remains after Akamai is removed. Then recover eligibility, identity, weights, lifetime, consent, bot treatment and reassignment rules.",
+      "The owned cache example chooses A or B with an illustrative 50/50 algorithm, sets a private no-store assignment cookie and retains a valid cookie on later calls. It also permits explicit demo transitions. Those mechanics do not define the customer’s policy; R24 separately demonstrates public content variants."
     ],
-    "decision": "Obtain the actual audience policy: weights, eligibility and bot exclusions, identity, persistence, consent behavior and reassignment rules.",
-    "detail": "Global Config can hold allocation data; it does not infer the missing allocation algorithm. Rolling Releases is not assumed to be an equivalent policy.",
+    "decision": "Confirm the surviving assignment owner, or obtain its actual allocation and consent/reassignment contract before implementing a replacement.",
+    "detail": "The illustrative cookie is host-only, Path=/, one day, Secure, HttpOnly and SameSite=Lax. The code contains no real customer identity, consent gate, bot policy or production weighting. Cookie-clearing consent branches may affect later assignment and must be reconciled.",
     "docs": [
       {
-        "label": "Global Config",
-        "url": "https://vercel.com/docs/global-config"
+        "label": "Routing Middleware",
+        "url": "https://vercel.com/docs/routing-middleware"
       }
     ],
     "related": [
@@ -1165,23 +1259,49 @@
         "id": "r11",
         "label": "Consent"
       }
-    ]
+    ],
+    "statusText": "Needs confirmation · assignment policy",
+    "scope": "Decision page · illustrative persistence example is separate from customer allocation.",
+    "sources": [
+      {
+        "title": "Owned illustrative assignment handler",
+        "path": "handlers/assign.mjs",
+        "label": "Exact example code; not a customer allocation policy",
+        "code": "export default {async fetch(request){\n const u=new URL(request.url);const old=request.headers.get('cookie')?.match(/(?:^|;\\s*)experiment=(A|B|control)(?:;|$)/)?.[1];\n const requested=u.searchParams.get('group');\n const group=['A','B','control'].includes(requested)?requested:old||(['A','B'][crypto.getRandomValues(new Uint8Array(1))[0]%2]);\n return Response.json({group,policy:'ILLUSTRATIVE ONLY: 50/50 A/B, retain valid cookie, explicit demo transition; customer consent/allocation/reassignment NOT_VERIFIED'},{headers:{'cache-control':'private, no-store','set-cookie':`experiment=${group}; Path=/; Max-Age=86400; Secure; HttpOnly; SameSite=Lax`}});\n}};\n"
+      }
+    ],
+    "recorded": true,
+    "recordedTitle": "Owned browser check · 27 September 2026",
+    "table": {
+      "headers": ["Check", "Observed result"],
+      "rows": [
+        [
+          "New assignment / repeat call",
+          "A or B cookie issued, then the same group retained in each independent browser context."
+        ],
+        [
+          "Explicit demo transition",
+          "One context changed to control; the other cookie jar stayed unchanged. Test cookies then cleared."
+        ]
+      ]
+    },
+    "observation": "Fresh check of the existing illustrative assignment endpoint. It confirms persistence and isolated cookie stores, not statistical allocation, customer consent or production identity rules."
   },
   "r25": {
     "title": "Can related pages be purged together?",
-    "intro": "The current consent branches append a cookie-list cache tag while keeping existing tags. Vercel cache tags provide a candidate for grouping cached responses and purging that group, with an explicit choice between background invalidation and foreground refresh.",
-    "status": "partial",
-    "category": "Caching",
-    "note": "Native tags are a candidate; attachment across both consent branches and purge semantics need validation.",
-    "diagram": "flowchart LR\n  A[Cookie-list response] --> B[Keep existing tags and append group tag]\n  B --> C[Cached tagged content]\n  D[Chosen purge operation] --> C\n  C --> E[Next request refreshes under chosen policy]",
-    "flow": "Proposed tag lifecycle. Tagging for purge is separate from R26 reporting and billing attribution.",
+    "intro": "The consent rules append a cookie-list group tag while preserving existing tags. Vercel supports native tags on cached responses and targeted invalidation or deletion. The translation must attach the group through each applicable consent branch at the cache layer that stores the content.",
+    "status": "supported",
+    "category": "Cookies and consent",
+    "note": "Native grouped purge is supported; branch-specific attachment and cache-layer integration remain configuration work.",
+    "diagram": "flowchart LR\n A{Cookie-list path in an applicable consent branch?} -->|Yes| B[Preserve tags and append group at storage layer]\n A -->|No| C[Keep existing tags]\n B --> D[Tagged cached responses]\n E{Targeted purge choice} -->|Invalidate| F[Next request gets stale while refreshing]\n E -->|Delete| G[Next request waits for regeneration]\n D --> E",
+    "flow": "Native tag mapping with source-specific attachment logic still to integrate. Purge groups are separate from R26 reporting groups.",
     "sectionTitle": "Choose what purge means",
     "paragraphs": [
-      "The source appends an environment-and-brand cookie-list tag on /help/cookie-list* inside either consent branch. The migration needs to retain the existing tags as well as the added group tag.",
-      "Vercel invalidation can serve stale content while refreshing in the background. Deletion makes the next request wait for regenerated content. Choose the behavior required by the content change."
+      "For /help/cookie-list*, preserve the prior tags and append the environment/brand cookie-list tag in either applicable consent branch. Tag the stored response; a visitor-specific branch that does not run on cache hits cannot be assumed to retag an existing entry.",
+      "Invalidate marks tagged content stale for background refresh on the next request. Delete makes that request wait for regeneration. These are different behaviors: neither is an immediate prefetch of every page, and a CDN purge is not proof that browser or unrelated upstream caches were refreshed."
     ],
-    "decision": "Confirm the desired purge semantics, then verify tag attachment and preservation through both consent branches and the resulting refresh behavior.",
-    "detail": "Official docs describe Vercel-Cache-Tag for Function and external-rewrite responses. No dedicated customer tag/purge test has been performed.",
+    "decision": "Choose invalidate or delete, then map tag attachment and preservation through both branches at every cache layer used by these routes.",
+    "detail": "Current docs offer Vercel-Cache-Tag on Function or external-rewrite responses, addCacheTag for runtime tagging and framework cache APIs where appropriate. Purge is available on all plans to owners/members; project/environment scope, limits and framework/version semantics still apply. The REST API defaults to all environments unless a target is supplied. No purge or customer attachment validation was performed.",
     "docs": [
       {
         "label": "Cache tags and purge behavior",
@@ -1193,27 +1313,34 @@
         "id": "r26",
         "label": "Reporting groups"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n  A[Cookie-list response] --> B[Keep existing tags and append group tag]\n  B --> C[Cached tagged content]\n  D[Chosen purge operation] --> C\n  C --> E[Next request refreshes under chosen policy]",
+    "statusText": "Supported · native cache tags",
+    "scope": "Native mapping · documentation checked 27 September 2026; no customer tag or purge test."
   },
   "r30": {
     "title": "Which compression and resource hints must remain?",
-    "intro": "The current property enables Brotli, including for non-cacheable content, and contains conditional resource-hint settings with later overrides. Vercel supports CDN compression; resource hints need an explicit application design based on the rules that are actually active.",
-    "status": "partial",
-    "category": "Transport",
-    "note": "Compression has a native mapping; active learned-hint behavior and branch semantics remain unverified.",
+    "intro": "The source enables Brotli, including non-cacheable content, and has branch-dependent automatic hints. Vercel supplies CDN compression and applications can emit explicit resource hints. Whether those hints replace the required adaptive behavior depends on what is actually active.",
+    "status": "confirmation",
+    "category": "Cookies and consent",
+    "note": "Native compression is supported; the active learned-hint requirement is not established.",
     "diagram": "flowchart LR\n  A[Response content] --> B[Negotiated CDN compression]\n  B --> C[Browser response]\n  D[Effective resource-hint policy] --> E[Application headers or markup]\n  E --> C",
     "flow": "Two separate proposed concerns: transfer encoding and resource discovery. Compression does not establish adaptive-hint equivalence.",
-    "sectionTitle": "Recover the effective optimization policy",
+    "sectionTitle": "Separate compression from learned hints",
     "paragraphs": [
-      "The source sets the resource optimizer on and later off. Push, preconnect and font preload appear enabled in one branch and disabled in a WAF-triggered branch; experiment mode is reported off.",
-      "The useful observation for compression is the actual Content-Encoding on representative cached and uncached responses. For hints, first identify the active behavior and its consumer before choosing explicit headers or markup."
+      "Compression negotiates a supported encoding for eligible content types. Check Content-Encoding on the required cached and uncached response types. A compressed response proves byte-transfer behavior; it says nothing about which connections or fonts the browser discovers early.",
+      "The source ultimately disables Resource Optimizer; AB testing and its template parameter are also off. Automatic push, preconnect and font preload settings differ in the WAF branch. Do not invent requirements from the disabled options. Recover the effective enabled hints before deciding whether application-managed preconnect/preload is an acceptable replacement for automatic learning."
     ],
-    "decision": "Confirm which adaptive hints are active and valuable, then validate compression on the required response types and agree the application-owned replacement for those hints.",
-    "detail": "Current compression docs describe Brotli and gzip negotiation. This page makes no claim of automatic learned resource-hint or HTTP push parity.",
+    "decision": "Identify the active and useful automatic hints, then agree their application-owned replacement or establish the required learned-hint capability.",
+    "detail": "Explicit application hints choose known resources; they are not an established equivalent of a service that learns resources automatically. Native compression is supported independently. No universal HTTP push or adaptive-acceleration parity is asserted.",
     "docs": [
       {
         "label": "CDN compression",
         "url": "https://vercel.com/docs/how-vercel-cdn-works/compression"
+      },
+      {
+        "label": "Application resource hints",
+        "url": "https://nextjs.org/docs/app/api-reference/functions/generate-metadata#resource-hints"
       }
     ],
     "related": [
@@ -1225,7 +1352,25 @@
         "id": "r28",
         "label": "Transport"
       }
-    ]
+    ],
+    "statusText": "Needs confirmation · active resource hints",
+    "scope": "Native compression plus a resource-hint decision · no adaptive-learning parity claim.",
+    "recorded": true,
+    "recordedTitle": "Owned response checks · 27 September 2026",
+    "table": {
+      "headers": ["Response", "Observed result"],
+      "rows": [
+        [
+          "Public workshop HTML",
+          "CDN HIT returned br when requested and gzip when requested."
+        ],
+        [
+          "Private assignment JSON",
+          "MISS, private/no-store, 155-byte body; no Content-Encoding for either request."
+        ]
+      ]
+    },
+    "observation": "Fresh checks of existing owned endpoints. The private JSON response does not demonstrate non-cacheable compression; representative customer responses and active hints still need validation."
   },
   "r03": {
     "category": "Transport",

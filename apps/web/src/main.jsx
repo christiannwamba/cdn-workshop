@@ -1,3 +1,4 @@
+import { cookiesOrder, cookiesCategory } from './cookies-navigation.jsx';
 import { requestRuleOrder, requestRuleCategory } from './request-rule-navigation.jsx';
 import { routingOrder, routingCategory } from './routing-navigation.jsx';
 import { processingOrder, processingCategory } from './processing-navigation.jsx';
@@ -713,13 +714,16 @@ function App() {
                   ? ['routing']
                   : category === requestRuleCategory
                     ? ['requestRule']
-                    : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
+                    : category === cookiesCategory
+                      ? ['cookies']
+                      : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
             ).map((s) => {
               const rows =
                 s === 'logging' ||
                 s === 'processing' ||
                 s === 'routing' ||
-                s === 'requestRule'
+                s === 'requestRule' ||
+                s === 'cookies'
                   ? [...selected].sort(
                       (a, b) =>
                         (s === 'logging'
@@ -728,7 +732,9 @@ function App() {
                             ? processingOrder
                             : s === 'routing'
                               ? routingOrder
-                              : requestRuleOrder
+                              : s === 'requestRule'
+                                ? requestRuleOrder
+                                : cookiesOrder
                         ).indexOf(a.id.toLowerCase()) -
                         (s === 'logging'
                           ? loggingOrder
@@ -736,7 +742,9 @@ function App() {
                             ? processingOrder
                             : s === 'routing'
                               ? routingOrder
-                              : requestRuleOrder
+                              : s === 'requestRule'
+                                ? requestRuleOrder
+                                : cookiesOrder
                         ).indexOf(b.id.toLowerCase()),
                     )
                   : selected.filter((r) => r.status === s);
@@ -752,7 +760,9 @@ function App() {
                             ? routingCategory
                             : s === 'requestRule'
                               ? requestRuleCategory
-                              : labels[s]}{' '}
+                              : s === 'cookies'
+                                ? cookiesCategory
+                                : labels[s]}{' '}
                       <span className="count">{rows.length}</span>
                     </h2>
                     {rows.map((r) => (
@@ -763,7 +773,8 @@ function App() {
                             {(s === 'logging' ||
                               s === 'processing' ||
                               s === 'routing' ||
-                              s === 'requestRule') && (
+                              s === 'requestRule' ||
+                              s === 'cookies') && (
                               <span className={`badge ${r.status}`}>
                                 {labels[r.status]}
                               </span>

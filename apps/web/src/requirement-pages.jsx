@@ -1,3 +1,4 @@
+import { CookiesNavigation } from './cookies-navigation.jsx';
 import { RoutingNavigation } from './routing-navigation.jsx';
 import { RequestRuleNavigation } from './request-rule-navigation.jsx';
 import React, { useState } from 'react';
@@ -81,6 +82,7 @@ export function RequirementPage({ id, Diagram, profile }) {
       <ProcessingNavigation id={id} />
       <RoutingNavigation id={id} />
       <RequestRuleNavigation id={id} />
+      <CookiesNavigation id={id} />
       <Diagram
         key={id}
         id={id}
