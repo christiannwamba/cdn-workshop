@@ -1,3 +1,4 @@
+import { TransportNavigation } from './transport-navigation.jsx';
 import { CookiesNavigation } from './cookies-navigation.jsx';
 import { RoutingNavigation } from './routing-navigation.jsx';
 import { RequestRuleNavigation } from './request-rule-navigation.jsx';
@@ -83,6 +84,7 @@ export function RequirementPage({ id, Diagram, profile }) {
       <RoutingNavigation id={id} />
       <RequestRuleNavigation id={id} />
       <CookiesNavigation id={id} />
+      <TransportNavigation id={id} />
       <Diagram
         key={id}
         id={id}

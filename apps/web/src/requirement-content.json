@@ -1373,15 +1373,15 @@
     "observation": "Fresh checks of existing owned endpoints. The private JSON response does not demonstrate non-cacheable compression; representative customer responses and active hints still need validation."
   },
   "r03": {
-    "category": "Transport",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. The temporary origin/tunnel has not been restored or tested for this page; these are saved observations.",
+    "category": "TLS and transport",
+    "status": "workaround",
+    "scope": "Owned hosted controls rechecked 27 September 2026; saved results below. Live use requires an awake Mac and a fresh, approximately one-hour raw TCP tunnel.",
     "title": "Can the origin use the required Host, SNI and certificate policy?",
-    "statusText": "Custom controls demonstrated; native mismatch",
-    "note": "Owned custom TLS controls passed; the native route did not reject the tested mismatched certificate.",
-    "intro": "The current origin policy distinguishes destination, HTTP Host, TLS server name and trusted certificates. An owned Node.js proxy demonstrated separate controls for those values. The tested native forwarding path did not meet the expected certificate rejection.",
-    "diagram": "sequenceDiagram\n participant C as Client\n participant F as Custom proxy Function\n participant O as Owned TLS origin\n C->>F: Request an approved test case\n F->>O: Connect to destination with selected SNI and CA trust\n alt Certificate accepted\n F->>O: HTTP request with independently selected Host\n O-->>F: Origin response\n F-->>C: 200 with recorded TLS facts\n else Wrong name or untrusted CA\n F-->>C: 502 before origin HTTP response\n end",
-    "flow": "Custom proxy path only. The native forwarding comparison below is a separate test. Visitor TLS is the separate R10 connection.",
+    "statusText": "Workaround · custom origin TLS controls",
+    "note": "Custom destination, Host, SNI and trust controls demonstrated; native safe rejection failed in the owned test.",
+    "intro": "The current origin policy separates the connection destination, HTTP Host, TLS server name and certificate trust. A custom Node.js proxy provides those controls and rejects invalid certificates before sending an HTTP request. The tested native rewrite did not provide the required safe rejection.",
+    "diagram": "sequenceDiagram\n participant V as Visitor\n participant E as Vercel HTTPS entry\n participant F as Custom Node.js proxy\n participant O as Origin TLS server\n V->>E: Visitor TLS connection - R10\n E->>F: HTTP request\n F->>O: Connect to destination using selected SNI\n O-->>F: Present certificate\n Note over F: Check trusted CA and certificate name\n alt Valid certificate\n F->>O: HTTP request with separately chosen Host\n O-->>F: Origin response\n F-->>V: 200\n else Wrong name or untrusted CA\n F-->>V: 502 without origin HTTP request\n end",
+    "flow": "Visitor TLS and origin TLS are separate connections. This diagram shows the custom path; the native rewrite comparison is a separate test.",
     "sectionTitle": "Compare trust and name controls",
     "paragraphs": [
       "With the dedicated test CA and correct name, the origin reported SNI origin-a.workshop.test and HTTP Host app-b.workshop.test. Changing the name or removing that CA trust caused the custom path to fail before an origin HTTP response."
@@ -1399,9 +1399,9 @@
         ]
       ]
     },
-    "observation": "The native certificate mismatch is part of the result; the successful custom controls do not resolve it.",
-    "detail": "Owned hostname and resolved IPv4 controls, separate Host and SNI choices, and recovery were tested. This does not establish customer private-origin access, complete trust policy or retries. The recorded dependency was a Mac origin and a temporary raw TCP tunnel.",
-    "decision": "Confirm the required destination, Host, SNI and CA/name policy, then choose a supported native or custom architecture and validate retries and origin access.",
+    "observation": "Native safe-rejection expectation FAILED: the private-CA, name-mismatched origin returned 200. This is a scoped finding for this rewrite configuration, not a claim about every Vercel origin path.",
+    "detail": "Current rewrite documentation describes external forwarding but does not establish independently configurable CA trust, TLS identity and certificate-name validation for this route. The native test used a raw TCP tunnel that does not terminate TLS. Custom controls kept rejectUnauthorized=true, used a dedicated application CA, and produced no origin HTTP events for invalid names or untrusted CA. Hostname and resolved IPv4 destinations, Host A/B and SNI A/B were tested. Customer CA-set membership, name-match precedence, private reachability, retry policy and caching still need implementation; the successful sample is not that implementation.",
+    "decision": "Agree the required destination, Host and CA/name policy and whether to use this custom proxy; a native route needs a verified safe-rejection configuration before selection.",
     "related": [
       {
         "id": "r10",
@@ -1419,25 +1419,48 @@
     "sources": [
       {
         "title": "Code: separate origin identity and trust settings",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Owned test source · verified 27 September 2026 · selected lines, formatting expanded",
         "path": "03-origin-tls/lib/upstream.mjs",
-        "first": 7,
-        "last": 9,
-        "code": "const servername =\n  mode === 'wrong-name'\n    ? 'wrong.workshop.test'\n    : `origin-${identity === 'b' ? 'b' : 'a'}.workshop.test`;\nconst httpHost = host === 'A' ? 'app-a.workshop.test' : 'app-b.workshop.test';\nconst diagnostic = {\n  configuredDestination: dest.hostname,\n  selectedDestination: hostname,\n  destinationMode: ip ? 'resolved-IPv4' : 'hostname',\n  destinationPort: Number(dest.port),\n  configuredSni: servername,\n  httpHost,\n  trust: mode === 'untrusted' ? 'system-default' : 'dedicated-fixture-CA',\n  rejectUnauthorized: true,\n};\n"
+        "first": 6,
+        "last": 12,
+        "code": "const hostname = ip ? (await lookup(dest.hostname, { family: 4 })).address : dest.hostname;\nconst servername = mode === 'wrong-name'\n  ? 'wrong.workshop.test'\n  : `origin-${identity === 'b' ? 'b' : 'a'}.workshop.test`;\nconst httpHost = host === 'A' ? 'app-a.workshop.test' : 'app-b.workshop.test';\nconst out = https.request({\n  hostname, port: dest.port, servername, path,\n  headers: { host: httpHost, authorization: 'Bearer ' + token },\n  ca: mode === 'untrusted' ? undefined : ca,\n  rejectUnauthorized: true, agent: false, signal,\n}, response => resolve({ response, facts, diagnostic, out }));\n"
       }
-    ]
+    ],
+    "docs": [
+      {
+        "label": "External rewrites · checked 27 Sep",
+        "url": "https://vercel.com/docs/routing/rewrites"
+      }
+    ],
+    "previousDiagram": "sequenceDiagram\n participant C as Client\n participant F as Custom proxy Function\n participant O as Owned TLS origin\n C->>F: Request an approved test case\n F->>O: Connect to destination with selected SNI and CA trust\n alt Certificate accepted\n F->>O: HTTP request with independently selected Host\n O-->>F: Origin response\n F-->>C: 200 with recorded TLS facts\n else Wrong name or untrusted CA\n F-->>C: 502 before origin HTTP response\n end",
+    "exercise": {
+      "url": "https://argos-ws-origin-tls.vercel.app/#r03",
+      "label": "Open origin TLS controls",
+      "intro": "After the presenter runs the origin readiness check, compare the required acceptance and rejection cases. A connection or DNS error means the temporary dependency needs recovery.",
+      "steps": [
+        {
+          "title": "Compare the three TLS controls",
+          "text": "Click Trusted CA + correct name, Wrong name, then Untrusted CA. Read the output below the buttons: 200 with authorized=true, then 502 with the name error, then 502 with the trust error. Invalid cases must show originHttpResponseReceived=false."
+        },
+        {
+          "title": "Compare native forwarding",
+          "text": "Click Observe native forwarding. In the September 27 test it returned 200 despite the private, mismatched certificate. Keep this failed safe-rejection expectation separate from the successful custom checks."
+        }
+      ],
+      "reset": "Each request gets a fresh run ID. The presenter must restart, redeploy and check the temporary origin shortly before this case; one tunnel session cannot cover the two-hour workshop."
+    }
   },
   "r28": {
-    "category": "Transport",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. The temporary origin/tunnel has not been restored or tested for this page; these are saved observations.",
+    "category": "TLS and transport",
+    "status": "workaround",
+    "scope": "Owned streaming and cancellation rechecked 27 September 2026. The table retains the 24 September measurements; live use needs the temporary origin to be started and checked.",
     "title": "Does content arrive incrementally, and does cancellation reach the origin?",
-    "statusText": "Bounded streaming and cancellation demonstrated",
-    "note": "Incremental chunks and bounded cancellation passed; full transport controls and lifetime remain open.",
-    "intro": "The current delivery settings cover streaming and transport behavior. The custom proxy streamed an owned origin response incrementally and passed a client abort signal upstream. This tests two observable outcomes, not every HTTP-version or buffering control.",
+    "statusText": "Workaround · incremental origin delivery",
+    "note": "Custom proxy streams the origin body and propagates cancellation; required HTTP-version and buffering semantics need agreement.",
+    "intro": "The current configuration enables chunking, disables response buffering and sets outgoing HTTP/1.1. A streaming Function can forward the origin body as it arrives; this custom proxy also propagates client cancellation. Whether the exact HTTP-version setting or an explicit buffering switch must survive is a separate customer decision.",
     "diagram": "sequenceDiagram\n participant B as Client\n participant F as Custom proxy\n participant O as Streaming origin\n B->>F: Request stream\n F->>O: Request with client abort signal\n loop Until completion or cancellation\n O-->>F: Next chunk\n F-->>B: Forward chunk\n end\n B->>F: Abort request in separate cancellation test\n F->>O: Abort upstream work\n Note over O: Stop observed after in-flight chunks",
     "flow": "Logical streaming path. The complete eight-chunk stream and the 40-chunk cancellation case are separate recorded tests.",
-    "sectionTitle": "Read the recorded arrival and cancellation results",
+    "sectionTitle": "Observe incremental delivery and cancellation",
     "paragraphs": [
       "In the eight-chunk test, the first chunk arrived before the origin finished. In the separate cancellation case, the client stopped after two chunks; the origin stopped after six of forty with completed=false. Cancellation was not instantaneous."
     ],
@@ -1451,8 +1474,8 @@
         ]
       ]
     },
-    "detail": "The recorded Node 24 Function used maxDuration=60 and supportsCancellation=true. Local origin, direct tunnel and deployed controls separated cadence from proxy buffering. A 30-second idle/recovery check is not a long-lived stream guarantee.",
-    "decision": "Specify required HTTP versions, buffering/backpressure behavior and maximum lifetime, then validate those controls with a durable origin and representative traffic.",
+    "detail": "Current documentation supports Function streaming and opt-in Node.js cancellation through supportsCancellation and request.signal. This proxy uses Node 24, maxDuration=60 and supportsCancellation=true. Tests use 8×300 ms and at most 40×300 ms, with local, raw-tunnel and hosted controls. They do not prove long sessions, instant abort, arbitrary backpressure or control of the client-facing HTTP version. The source settings are real; their required observable semantics still need agreement. A 30-second idle/recovery observation is not a lifetime guarantee.",
+    "decision": "Confirm whether incremental delivery is the required outcome, or whether forced HTTP/1.1 and explicit buffering controls are mandatory; set the maximum response lifetime for the selected route.",
     "related": [
       {
         "id": "r03",
@@ -1466,22 +1489,53 @@
     "sources": [
       {
         "title": "Code: forward the abort signal and streaming body",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Owned test source · verified 27 September 2026 · formatting expanded",
         "path": "03-origin-tls/api/proxy.mjs",
         "first": 13,
         "last": 14,
         "code": "const { response, facts, diagnostic } = await upstream({\n  endpoint: process.env.RAW_TLS_URL,\n  token: process.env.ORIGIN_TOKEN,\n  mode,\n  host: u.searchParams.get('host'),\n  identity: u.searchParams.get('identity'),\n  ip: u.searchParams.get('ip') === '1',\n  path,\n  signal: request.signal,\n});\nif (streaming)\n  return new Response(Readable.toWeb(response), {\n    status: response.statusCode,\n    headers: {\n      'content-type': 'application/x-ndjson',\n      'cache-control': 'no-store',\n      'x-demo-run': run,\n    },\n  });\n"
       }
-    ]
+    ],
+    "docs": [
+      {
+        "label": "Streaming Functions · checked 27 Sep",
+        "url": "https://vercel.com/docs/functions/streaming-functions"
+      },
+      {
+        "label": "Node.js cancellation",
+        "url": "https://vercel.com/docs/functions/functions-api-reference#cancel-requests"
+      },
+      {
+        "label": "Runtime and plan duration limits",
+        "url": "https://vercel.com/docs/functions/limitations#max-duration"
+      }
+    ],
+    "exercise": {
+      "url": "https://argos-ws-origin-tls.vercel.app/#r28",
+      "label": "Open streaming controls",
+      "intro": "After the presenter checks the origin, use the output under the streaming buttons. Read the arrival times while the response is still running.",
+      "steps": [
+        {
+          "title": "Stream the short response",
+          "text": "Click Stream 8 chunks. Timestamped lines should appear before the eighth line arrives; inspect arrival +…ms rather than just the final body."
+        },
+        {
+          "title": "Cancel the longer response",
+          "text": "Click Stream 40 chunks, then Abort client after two lines. The browser should report AbortError. Origin-side test evidence is required to show work stopped; the browser stopping alone is insufficient."
+        }
+      ],
+      "reset": "A new stream gets a fresh run ID. Abort any active stream before starting another. If the tunnel has expired, the presenter must restart, redeploy and check it."
+    },
+    "observation": "Recorded 24 September: abort after two client chunks reached the origin after six of forty chunks. Extra in-flight chunks are visible; cancellation is not instantaneous."
   },
   "r27": {
-    "category": "Transport",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. The temporary origin/tunnel has not been restored or tested for this page; these are saved observations.",
+    "category": "TLS and transport",
+    "status": "workaround",
+    "scope": "Owned relay rechecked 27 September 2026; September 24 results remain below. Live use needs presenter sign-in, an awake Mac and a checked temporary tunnel.",
     "title": "Can the chat connection survive through the proposed relay?",
-    "statusText": "Custom relay demonstrated; duration test failed",
-    "note": "Two-connection relay passed bounded message tests; native passthrough and platform cutoff remain unresolved.",
-    "intro": "The existing chat uses WebSockets, but its upstream topology and session contract are missing. The recorded custom Function relay connected the browser to an owned external backend using two separate sockets. It is an architectural alternative that still needs the chat requirements.",
+    "statusText": "Workaround · two-connection chat relay",
+    "note": "Custom relay demonstrated; the assumed 30-second platform cutoff failed and the real chat contract is still needed.",
+    "intro": "The requirement is to keep the existing live-chat backend connected. A custom Function relay accepts the browser WebSocket and opens a second connection to that backend. The owned example demonstrates message forwarding; the actual chat hostname, authentication and recovery contract decide whether this architecture is appropriate.",
     "diagram": "sequenceDiagram\n participant B as Browser\n participant R as Custom relay\n participant O as Owned WebSocket backend\n B->>R: Authenticated upgrade and subprotocol\n R->>O: Separate authenticated WebSocket connection\n O-->>R: Upstream connection ID\n R-->>B: Relay ID and upstream ID\n B->>R: Text or binary message\n R->>O: Forward message\n O-->>R: Echo\n R-->>B: Forward echo\n Note over B,O: Reconnect creates new connections, no hidden replay",
     "flow": "Two connections with application-managed forwarding and closure. This is not a transparent native passthrough demonstration.",
     "sectionTitle": "Compare the recorded connection behavior",
@@ -1503,8 +1557,8 @@
       ]
     },
     "observation": "18 of 19 recorded checks passed. The platform cutoff remains unverified; the application timer is not evidence of the platform limit.",
-    "detail": "Recorded controls also covered upstream close, unavailable-upstream recovery and 20-second idle. No production load, durable session restoration or customer authentication topology was validated. The relay ran on the then-tested Functions WebSocket beta with Node v24.20.0 and Fluid compute.",
-    "decision": "Obtain the chat topology, authentication, lifetime and recovery contract; agree whether a two-socket relay is acceptable and resolve the platform-duration behavior before committing to it.",
+    "detail": "Official docs checked 27 September label Function WebSockets beta on all plans and require Fluid compute. They say connections close at Function maximum duration and clients must reconnect and restore state. That documented expectation conflicts with the bounded 30-second configuration test. It remains unresolved, not an unlimited-lifetime guarantee or a demonstrated inability to serve this customer. This owned project exercised Node v24.20.0 with Fluid compute; customer eligibility and architecture are separate. The demo does not establish transparent passthrough, all control frames/extensions, production load, durable session restoration or customer authentication. The 25-second application timer and 20-second idle probe are sample policies, not customer requirements.",
+    "decision": "Obtain the actual chat URL, authentication and session-recovery contract, then choose direct backend access or a two-connection relay and resolve its platform-duration behavior before relying on it.",
     "related": [
       {
         "id": "r28",
@@ -1518,22 +1572,48 @@
     "sources": [
       {
         "title": "Code: application session timer and message forwarding",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Owned test source · verified 27 September 2026 · formatting expanded",
         "path": "04-websockets/api/relay.mjs",
         "first": 26,
         "last": 27,
         "code": "if (!u.pathname.startsWith('/relay/platform'))\n  timer = setTimeout(() => stop(4000, 'session boundary; reconnect'), 25000);\nws.on('message', (data, binary) => {\n  if (upstream.readyState !== WebSocket.OPEN)\n    return stop(1011, 'upstream unavailable');\n  if (upstream.bufferedAmount > 262144) return stop(1013, 'slow upstream');\n  upstream.send(data, { binary });\n});\n"
       }
-    ]
+    ],
+    "docs": [
+      {
+        "label": "WebSockets beta · checked 27 Sep",
+        "url": "https://vercel.com/docs/functions/websockets"
+      },
+      {
+        "label": "Function duration limits",
+        "url": "https://vercel.com/docs/functions/limitations#max-duration"
+      }
+    ],
+    "exercise": {
+      "url": "https://argos-ws-websockets.vercel.app",
+      "label": "Open authenticated chat relay",
+      "intro": "The presenter starts and checks the owned origin, then opens the signed-in demo using its local presenter command. A public visitor sees sign-in until authorized.",
+      "steps": [
+        {
+          "title": "Compare direct and relay messages",
+          "text": "Click Direct upstream, then Send text and Send binary. Close, choose Connect relay, and repeat. Read the upstream and relay IDs, unchanged text and binary bytes in the frame log."
+        },
+        {
+          "title": "Observe the application boundary",
+          "text": "Keep the relay open for its 25-second application timer, then reconnect. New connection IDs show a new session. This application close does not prove the Function platform cutoff or restore chat state."
+        }
+      ],
+      "reset": "Close the socket and use Reset view. If connectivity fails, the presenter checks or restarts the owned tunnel, redeploys when its endpoint changes, and retests."
+    }
   },
   "r10": {
-    "category": "Transport",
-    "status": "gap",
+    "category": "TLS and transport",
+    "status": "confirmation",
     "title": "Can the response report the visitor’s actual TLS version and cipher?",
-    "statusText": "Trustworthy exact pair unmet in test",
-    "note": "The tested Function interface did not expose an authoritative negotiated visitor TLS pair.",
+    "statusText": "Needs confirmation · exact visitor metadata",
+    "note": "Exact visitor TLS/cipher unavailable in the tested interface; a supported authoritative source remains unconfirmed.",
     "intro": "The current policy returns diagnostic headers for the visitor’s negotiated TLS version and cipher. In the tested Vercel interface, Function socket data did not provide that pair, and caller-supplied lookalike headers were untrusted. Origin TLS data answers a different question.",
-    "scope": "Recorded hosted observation · 24 September 2026. No replacement metadata source has been validated.",
+    "scope": "Raw hosted TLS 1.2/1.3 observations rechecked 27 September 2026. No replacement metadata source has been validated.",
     "diagram": "sequenceDiagram\n participant C as TLS test client\n participant V as Vercel HTTPS entry\n participant F as Probe Function\n C->>V: Negotiate visitor TLS connection\n Note over C,V: Client records actual version and cipher\n V->>F: Forward HTTP request\n F->>F: Inspect available socket and headers\n F-->>C: No trustworthy exact visitor pair established",
     "flow": "The TLS client connects to Vercel. No external-origin TLS connection is present in this test.",
     "sectionTitle": "Compare client truth with Function-visible data",
@@ -1548,8 +1628,8 @@
       ]
     },
     "observation": "In forged-header controls, Akamai-TLS and Akamai-CIPHER contained the caller’s FORGED values. Echoing those headers would not provide trustworthy diagnostics.",
-    "detail": "This is a scoped test result, not a claim that no Vercel product or future interface can ever expose the metadata. A replacement needs an authoritative source available when constructing the required response.",
-    "decision": "Establish the supported metadata source and its trust boundary, or agree to retire these exact diagnostic headers.",
+    "detail": "Current request-header documentation does not identify an authoritative negotiated TLS-version/cipher pair. Firewall JA3/JA4 hashes describe handshake fingerprints; they do not establish the exact selected pair required here. Both clean and forged-header tests used certificate-verified client sockets. This is an unmet outcome in the tested Function interface, with product-wide support still unconfirmed. Origin socket values, a user-agent guess or caller-supplied headers cannot substitute for visitor connection metadata.",
+    "decision": "Identify a supported, trustworthy source for the exact visitor TLS version and cipher, or agree with the header consumer that these diagnostic headers can be retired.",
     "related": [
       {
         "id": "r03",
@@ -1559,11 +1639,21 @@
     "sources": [
       {
         "title": "Code: inspect the Function socket",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Owned test source · verified 27 September 2026 · formatting expanded",
         "path": "01-platform-gaps/api/probe.mjs",
         "first": 6,
         "last": 7,
         "code": "const sock = req.socket;\nconst socketFacts = {\n  present: !!sock,\n  encrypted: sock?.encrypted ?? false,\n  getProtocolAvailable: typeof sock?.getProtocol === 'function',\n  getCipherAvailable: typeof sock?.getCipher === 'function',\n  protocol: sock?.getProtocol?.() ?? null,\n  cipher: sock?.getCipher?.() ?? null,\n};\n"
+      }
+    ],
+    "docs": [
+      {
+        "label": "Request headers · checked 27 Sep",
+        "url": "https://vercel.com/docs/headers/request-headers"
+      },
+      {
+        "label": "TLS fingerprints",
+        "url": "https://vercel.com/docs/vercel-firewall/firewall-concepts#ja3-and-ja4-tls-fingerprints"
       }
     ]
   }
