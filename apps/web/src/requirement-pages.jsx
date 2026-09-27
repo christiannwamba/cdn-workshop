@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import pages from './requirement-content.json';
 import { LoggingNavigation } from './logging-navigation.jsx';
+import { ProcessingNavigation } from './processing-navigation.jsx';
 
 export const requirementCatalog = Object.entries(pages).map(([id, page]) => ({
   id: id.toUpperCase(),
@@ -27,6 +28,35 @@ function Source({ source }) {
     </details>
   );
 }
+function Observation({ page: p }) {
+  return (
+    <>
+      {p.table && (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {p.table.headers.map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {p.table.rows.map((r, i) => (
+                <tr key={i}>
+                  {r.map((v, j) => (
+                    <td key={j}>{v}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {p.observation && <p className="small">{p.observation}</p>}
+    </>
+  );
+}
 export function RequirementPage({ id, Diagram, profile }) {
   const p = pages[id];
   return (
@@ -46,6 +76,7 @@ export function RequirementPage({ id, Diagram, profile }) {
         </p>
       </div>
       <LoggingNavigation id={id} profile={profile} />
+      <ProcessingNavigation id={id} />
       <Diagram
         key={id}
         id={id}
@@ -58,29 +89,36 @@ export function RequirementPage({ id, Diagram, profile }) {
         {(p.paragraphs || []).map((t) => (
           <p key={t}>{t}</p>
         ))}
-        {p.table && (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  {p.table.headers.map((h) => (
-                    <th key={h}>{h}</th>
+        {p.exercise && (
+          <>
+            <p>
+              <a href={p.exercise.url} target="_blank" rel="noopener noreferrer">
+                {p.exercise.label} ↗
+              </a>
+            </p>
+            <p>{p.exercise.intro}</p>
+            <ol className="exercise">
+              {p.exercise.steps.map((step) => (
+                <li key={step.title}>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                  {(step.sources || []).map((source, i) => (
+                    <Source key={i} source={source} />
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {p.table.rows.map((r, i) => (
-                  <tr key={i}>
-                    {r.map((v, j) => (
-                      <td key={j}>{v}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </li>
+              ))}
+            </ol>
+            <p className="small">{p.exercise.reset}</p>
+          </>
         )}
-        {p.observation && <p className="small">{p.observation}</p>}
+        {p.recorded ? (
+          <details className="source">
+            <summary>{p.recordedTitle}</summary>
+            <Observation page={p} />
+          </details>
+        ) : (
+          <Observation page={p} />
+        )}
         {(p.sources || []).map((s, i) => (
           <Source key={i} source={s} />
         ))}

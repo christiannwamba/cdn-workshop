@@ -194,88 +194,57 @@
   },
   "r38": {
     "title": "What must the replacement PIM processing do?",
-    "status": "partial",
+    "status": "confirmation",
     "category": "Processing",
     "note": "The invocation rules are known; the real PIM program and functional contract are missing.",
-    "intro": "The current rules invoke a PIM EdgeWorker only for selected requests and coordinate it with retry and waiting-room state. Routing Middleware is a candidate for request decisions, while a Function can provide explicit origin-response processing. The actual program or functional contract is needed to select and verify the replacement.",
-    "statusText": "Processing contract required",
+    "intro": "Akamai invokes the PIM EdgeWorker for selected requests, but the supplied rules do not contain the program itself. Routing Middleware is a candidate for request decisions; a Function can handle explicit origin-response processing. The real stages and response changes must be known before choosing the complete replacement.",
+    "statusText": "Needs confirmation",
     "scope": "Explanation of the known requirements. No real PIM implementation has been tested.",
     "diagram": "flowchart LR\n E[Eligibility and state rules] --> D[Stage design — unresolved]\n I[Required inputs and outputs] --> D\n S[Program source and dependencies] --> D\n C[Origin and cache interaction] --> D\n D --> G[Golden request and response cases]",
     "flow": "These are inputs needed to define the replacement, not an assertion about where the missing program runs.",
-    "sectionTitle": "Separate invocation rules from program behavior",
+    "sectionTitle": "What is known, and what is missing",
     "paragraphs": [
-      "The supplied rules describe cookie, path, method, retry-marker, subrequest and waiting-room conditions. They do not provide the program’s business stages, response changes or external service calls.",
-      "The owned test operation records a request and returns a configured status string. Its terminal backend returns synthetic JSON. Those operations support the R39 retry and R40 child-request examples; they do not replace PIM."
+      "The rules identify cookie, path, method, retry, subrequest and waiting-room conditions. They identify invocation and status, not the operations PIM performs on a request or response.",
+      "The RP-status-only mock used in R39 records path, query and method, then returns a configured status. Its backend returns synthetic JSON. Neither that test nor the separate R40 child example proves customer body changes, per-visitor cached-body processing or cookie policy."
     ],
-    "observation": "The existing tests cover named mocks. Real PIM equivalence remains unverified.",
-    "detail": "The program name alone does not establish that this is Akamai Page Integrity Manager. Before-origin, after-origin and cache-related stages must be recovered from the actual program or contract.",
-    "decision": "Obtain source and dependencies or a functional contract defining stage order, input/output and body/header/cookie changes, external calls, golden cases and latency budget.",
+    "detail": "Routing Middleware runs before the cache; do not assume it supplies a general post-cache response-body hook. Before-origin, after-origin and cache-related stages must be recovered from the program or contract. The PIM name alone does not establish Akamai Page Integrity Manager.",
+    "decision": "Obtain the PIM source and dependencies, or a functional contract with stage order, request/response changes, external calls and golden inputs/outputs. Establish whether any processing must modify a cached body separately for each visitor.",
     "related": [
       {
         "id": "r39",
-        "label": "Retry behavior"
+        "label": "Next: bounded retry"
       },
       {
         "id": "r40",
-        "label": "Child requests"
-      },
-      {
-        "id": "r36",
-        "label": "Waiting-room admission"
+        "label": "Child identity"
       }
     ]
   },
   "r39": {
     "title": "Can a failed request retry once without repeating processing?",
-    "status": "partial",
+    "status": "workaround",
     "category": "Processing",
-    "note": "Browser retry and a terminal response were demonstrated; the failure policy and exact query bytes remain open.",
+    "note": "Custom browser retry and loop guard demonstrated. Confirm actual failure policy and whether literal query bytes matter.",
     "intro": "The current failure rule returns a 302 to the same path with ewresponse=retry and x-ew-rp-error: true. In this custom Function example, the browser follows that redirect, and the retry marker skips the parent processing before the backend is called.",
-    "statusText": "Bounded retry demonstrated",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
+    "statusText": "Workaround · bounded retry demonstrated",
+    "scope": "Live example on an owned test service · recorded fallback from 27 September 2026. The customer PIM program is not implemented.",
     "diagram": "sequenceDiagram\n participant B as Browser\n participant F as Custom Function\n participant P as Test processing\n participant O as Test backend\n B->>F: GET /checkout?cart=123\n F->>P: Run eligible parent processing\n P-->>F: Failure status\n F-->>B: 302 with error header and retry Location\n B->>F: GET /checkout?cart=123&ewresponse=retry\n Note over F: Marker present — skip parent processing\n F->>O: Fetch terminal response\n O-->>F: 200 or 503\n F-->>B: Terminal response without another redirect",
     "flow": "The retry is another browser request. The Function does not fetch its own retry URL.",
-    "sectionTitle": "Compare the recorded browser responses",
+    "sectionTitle": "Follow the browser retry",
     "paragraphs": [
-      "The successful retry kept cart=123 and appended ewresponse=retry. The second request skipped parent processing and called the backend once. A separate terminal-failure case returned 503 without redirecting again."
+      "The marked request skips processing and calls the backend once. Query values and order survive; percent-escape case can change (%2f → %2F), so byte-identical preservation is not claimed."
     ],
     "table": {
       "headers": ["Case", "Responses", "Observation"],
       "rows": [
         ["Backend succeeds", "302 → 200", "Processing 1; backend 1"],
-        [
-          "Backend fails",
-          "302 → 503",
-          "Marked retry terminates without another redirect"
-        ],
-        [
-          "Encoded query control",
-          "302",
-          "lower=%2f&plus=%2b became lower=%2F&plus=%2B in Location"
-        ]
+        ["Backend fails", "302 → 503", "Processing 1; backend 1; no further redirect"],
+        ["Direct retry marker", "200", "Processing 0; backend 1"]
       ]
     },
-    "observation": "Real browser results were recorded on 24 September 2026. Query values and order were retained, but percent-escape letter case normalized; byte-exact query preservation is not demonstrated.",
-    "sources": [
-      {
-        "title": "Code: parent eligibility and retry guard",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
-        "path": "06-processing-retry/lib/retry.mjs",
-        "first": 2,
-        "last": 11,
-        "code": "export function parentDecision({\n  url,\n  method,\n  headers,\n  waitingRoom = '0',\n  queueIt = 'off',\n}) {\n  const u = new URL(url);\n  if (!/^\\/(?:checkout|login|account)(?:\\/|$)/.test(u.pathname))\n    return { run: false, reason: 'outside-fixture-selected-paths' };\n  if (!['GET', 'AKAMAI_TRANSLATE', 'AKAMAI_PURGE'].includes(method))\n    return { run: false, reason: 'method-not-in-parent-condition' };\n  if (u.searchParams.has('ewresponse'))\n    return { run: false, reason: 'ewresponse-present' };\n  if (headers.has('x-pim-ew')) return { run: false, reason: 'x-pim-ew-present' };\n  if (waitingRoom === '1') return { run: false, reason: 'waiting-room' };\n  if (queueIt !== 'off') return { run: false, reason: 'queue-it-not-off' };\n  return { run: true, reason: 'eligible-parent' };\n}\n"
-      },
-      {
-        "title": "Code: append the retry marker",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
-        "path": "06-processing-retry/lib/retry.mjs",
-        "first": 17,
-        "last": 22,
-        "code": "export function retryLocation(url) {\n  const u = new URL(url);\n  if (u.searchParams.has('ewresponse'))\n    throw Error('Never append a second retry marker');\n  // Read raw search; do not round-trip original parameters through URLSearchParams.\n  return (\n    u.pathname +\n    u.search +\n    (u.search ? (u.search.endsWith('&') ? '' : '&') : '?') +\n    'ewresponse=retry'\n  );\n}\n"
-      }
-    ],
-    "detail": "The test interprets failure statuses using case-sensitive substring exclusions for success and unimplementedHandler, without trimming. Customer golden cases must confirm that interpretation. Counters come from owned test instrumentation, not native Log Drain records.",
-    "decision": "Confirm the real failure statuses, terminal outcome after a failed retry, and whether query-byte normalization is acceptable. The complete PIM implementation remains R38.",
+    "observation": "The recorded browser runs returned 302 → 200 and 302 → 503, each with processing=1 and backend=1. A direct marked request returned 200 with processing=0 and backend=1. These are saved observations, not a new run.",
+    "detail": "Query values, duplicate-parameter order and empty values were retained. Percent-escape case normalized (%2f → %2F); literal query-byte identity is not demonstrated. Failure matching uses case-sensitive substring exclusions for success and unimplementedHandler, without trimming; confirm this with customer golden cases. Only GET enters the deployed retry branch. Counters are independent records from owned test endpoints, not native Log Drain records.",
+    "decision": "Confirm PIM failure statuses, terminal response policy and whether query strings must remain byte-identical. The bounded retry works; the full PIM program remains the separate R38 question.",
     "related": [
       {
         "id": "r38",
@@ -285,21 +254,58 @@
         "id": "r40",
         "label": "Child requests"
       }
-    ]
+    ],
+    "recorded": true,
+    "recordedTitle": "Recorded fallback · 27 September 2026",
+    "detailTitle": "Query encoding and test policy",
+    "exercise": {
+      "url": "https://argos-ws-processing.vercel.app/#r39",
+      "label": "Open the live retry example",
+      "intro": "In the example tab, open DevTools → Network and enable Preserve log. Each launch creates a fresh test namespace.",
+      "steps": [
+        {
+          "title": "Run browser retry, then inspect both requests",
+          "text": "Click Run browser retry. The browser navigates to /checkout?cart=123, receives 302 with x-ew-rp-error:true, then follows Location to the same path with cart=123&ewresponse=retry. Expect a final 200. Use browser Back, then Read counters: processing=1 and backend=1. The marked response header x-poc-parent-executed:false confirms the processing was skipped.",
+          "sources": [
+            {
+              "title": "Code: skip processing when the marker is present",
+              "label": "Owned test source · verified 27 September 2026",
+              "path": "06-processing-retry/lib/retry.mjs",
+              "first": 7,
+              "last": 7,
+              "code": "if (u.searchParams.has('ewresponse'))\n  return { run: false, reason: 'ewresponse-present' };"
+            },
+            {
+              "title": "Code: append the retry marker",
+              "label": "Owned test source · verified 27 September 2026 · excerpt formatted for readability",
+              "path": "06-processing-retry/lib/retry.mjs",
+              "first": 17,
+              "last": 22,
+              "code": "export function retryLocation(url) {\n  const u = new URL(url);\n  if (u.searchParams.has('ewresponse'))\n    throw Error('Never append a second retry marker');\n  // Read raw search; do not round-trip original parameters through URLSearchParams.\n  return (\n    u.pathname +\n    u.search +\n    (u.search ? (u.search.endsWith('&') ? '' : '&') : '?') +\n    'ewresponse=retry'\n  );\n}\n"
+            }
+          ]
+        },
+        {
+          "title": "Run terminal failure and check that it stops",
+          "text": "Click Run terminal failure in the example tab. Inspect 302 → 503: the marked response has no Location header, so the browser does not redirect again. Use Back and Read counters: processing=1, backend=1. The 503 is this example’s chosen terminal policy."
+        }
+      ],
+      "reset": "Each launch starts fresh. Fresh namespace clears the current counter selection; it does not delete earlier evidence."
+    }
   },
   "r40": {
     "title": "Can internal requests keep their parent identity without repeating processing?",
-    "status": "partial",
+    "status": "workaround",
     "category": "Processing",
-    "note": "Signed child identity and event deduplication work in the owned test; real PIM and Drain behavior remain unverified.",
+    "note": "Custom parent/child correlation and recursion guard demonstrated. Real PIM routes, trust and log policy still need the contract.",
     "intro": "The current rules mark PIM subrequests and distinguish them in logs. This owned Function example signs a child marker, keeps parent and child IDs together, and accepts only one child level. Two deliberate deliveries create one child event in the test ledger.",
-    "statusText": "Owned child example demonstrated",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
+    "statusText": "Workaround · child identity demonstrated",
+    "scope": "Live example on an owned test service · recorded fallback from 27 September 2026. The customer PIM program is not implemented.",
     "diagram": "sequenceDiagram\n participant P as Parent Function\n participant C as Child Function\n participant L as Test event ledger\n P->>C: Signed parent and child IDs, depth 1\n C->>L: Record child ID\n L-->>C: New event\n C-->>P: duplicate false\n P->>C: Same signed parent and child IDs\n C->>L: Record same child ID\n L-->>C: Existing event\n C-->>P: duplicate true\n Note over C: No further child request",
-    "flow": "The example performs two HTTP deliveries and deduplicates the event record. It does not demonstrate exactly-once business effects.",
-    "sectionTitle": "Compare the two recorded child deliveries",
+    "flow": "These are server-to-server HTTP deliveries. The custom child handler stops recursion at depth 1; the ledger deduplicates only its event record.",
+    "sectionTitle": "Observe the child requests",
     "paragraphs": [
-      "Both deliveries carried the same parent and child IDs at depth 1. The child issued no further request. The unique-event counters finished at one parent and one child."
+      "The counters describe an owned event ledger. Deduplicating its child record does not prove exactly-once business execution or native Log Drain deduplication."
     ],
     "table": {
       "headers": ["Delivery", "Parent and child IDs", "Depth", "Event result"],
@@ -308,19 +314,9 @@
         ["Repeated", "Same pair", "1", "Existing event; duplicate true"]
       ]
     },
-    "observation": "One unique child event was recorded for two deliveries. This is event-ledger deduplication, not native Log Drain deduplication or an exactly-once processing guarantee.",
-    "sources": [
-      {
-        "title": "Code: verify the child marker and depth",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
-        "path": "06-processing-retry/api/child.mjs",
-        "first": 3,
-        "last": 7,
-        "code": "const data = verify(req.headers.get('x-demo-child') || '');\nif (!data || !validRun(data.run))\n  return json({ error: 'untrusted child marker' }, 401);\nif (data.depth !== 1)\n  return json({ error: 'depth limit: exactly one child level' }, 409);\nconst receipt = await event(\n  data.run,\n  'child',\n  { parentId: data.parentId, depth: 1 },\n  data.childId,\n);\nreturn json({\n  mock: 'owned child; no further fetch',\n  run: data.run,\n  parentId: data.parentId,\n  childId: data.childId,\n  depth: 1,\n  ...receipt,\n});\n"
-      }
-    ],
+    "observation": "Recorded result: two HTTP deliveries, one parent and one unique child event. Event-ledger deduplication does not establish exactly-once business execution or native Log Drain deduplication.",
     "detail": "Unsigned, tampered and expired markers returned 401; a signed depth of 2 returned 409. A public x-pim-ew header alone does not authorize the child endpoint.",
-    "decision": "Recover real PIM child routes, trusted marker propagation, recursion rules, duplicate business-effect handling and the required native/custom log relationship.",
+    "decision": "Agree the real child routes, trusted-marker propagation, recursion rules and required log fields from the PIM contract. Define duplicate business-effect handling separately from this event ledger.",
     "related": [
       {
         "id": "r38",
@@ -334,7 +330,35 @@
         "id": "r39",
         "label": "Retry behavior"
       }
-    ]
+    ],
+    "recorded": true,
+    "recordedTitle": "Recorded fallback · 27 September 2026",
+    "exercise": {
+      "url": "https://argos-ws-processing.vercel.app/#r40",
+      "label": "Open the live child example",
+      "intro": "The browser calls the parent endpoint. The parent’s two child deliveries are server-to-server calls; inspect their returned receipts and stored counters.",
+      "steps": [
+        {
+          "title": "Run owned child example and compare the receipts",
+          "text": "Click Run owned child example. In the returned JSON, both deliveries must share parentId and childId at depth 1. Expect duplicate:false on the first and duplicate:true on the second. The child makes no further request.",
+          "sources": [
+            {
+              "title": "Code: verify the child marker and depth",
+              "label": "Owned test source · verified 27 September 2026 · excerpt formatted for readability",
+              "path": "06-processing-retry/api/child.mjs",
+              "first": 3,
+              "last": 7,
+              "code": "const data = verify(req.headers.get('x-demo-child') || '');\nif (!data || !validRun(data.run))\n  return json({ error: 'untrusted child marker' }, 401);\nif (data.depth !== 1)\n  return json({ error: 'depth limit: exactly one child level' }, 409);\nconst receipt = await event(\n  data.run,\n  'child',\n  { parentId: data.parentId, depth: 1 },\n  data.childId,\n);\nreturn json({\n  mock: 'owned child; no further fetch',\n  run: data.run,\n  parentId: data.parentId,\n  childId: data.childId,\n  depth: 1,\n  ...receipt,\n});\n"
+            }
+          ]
+        },
+        {
+          "title": "Read the unique-event counters",
+          "text": "On the same example page, expand R39 — Let the browser retry once and click Read counters. This reads the current child test namespace. Expect parent=1, child=1 and one child record containing its parentId. Two HTTP deliveries have produced one unique child event."
+        }
+      ],
+      "reset": "Run owned child example again starts a fresh namespace. Fresh namespace under R39 clears the counter selection without deleting stored evidence."
+    }
   },
   "r19": {
     "title": "Can a request select matching application and static destinations?",

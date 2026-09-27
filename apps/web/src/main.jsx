@@ -1,3 +1,4 @@
+import { processingOrder, processingCategory } from './processing-navigation.jsx';
 import {
   LoggingNavigation,
   loggingOrder,
@@ -665,8 +666,9 @@ function App() {
               <p className="small">
                 {catalog.length} requirements ·{' '}
                 {catalog.filter((r) => r.implemented).length} pages available · page
-                availability does not mean verified customer parity. Logging/reporting
-                labels have been reviewed; other category totals remain provisional.
+                availability does not mean verified customer parity. Logging/reporting and
+                processing labels have been reviewed; other category totals remain
+                provisional.
               </p>
             </div>
             <div className="filters">
@@ -703,21 +705,31 @@ function App() {
             </p>
             {(category === loggingCategory
               ? ['logging']
-              : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
+              : category === processingCategory
+                ? ['processing']
+                : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
             ).map((s) => {
               const rows =
-                s === 'logging'
+                s === 'logging' || s === 'processing'
                   ? [...selected].sort(
                       (a, b) =>
-                        loggingOrder.indexOf(a.id.toLowerCase()) -
-                        loggingOrder.indexOf(b.id.toLowerCase()),
+                        (s === 'logging' ? loggingOrder : processingOrder).indexOf(
+                          a.id.toLowerCase(),
+                        ) -
+                        (s === 'logging' ? loggingOrder : processingOrder).indexOf(
+                          b.id.toLowerCase(),
+                        ),
                     )
                   : selected.filter((r) => r.status === s);
               return (
                 rows.length > 0 && (
                   <section className="catalog-group" key={s}>
                     <h2 className={s}>
-                      {s === 'logging' ? loggingCategory : labels[s]}{' '}
+                      {s === 'logging'
+                        ? loggingCategory
+                        : s === 'processing'
+                          ? processingCategory
+                          : labels[s]}{' '}
                       <span className="count">{rows.length}</span>
                     </h2>
                     {rows.map((r) => (
@@ -725,7 +737,7 @@ function App() {
                         <div>
                           <p className="eyebrow">
                             {r.category} <span> / {r.id}</span>
-                            {s === 'logging' && (
+                            {(s === 'logging' || s === 'processing') && (
                               <span className={`badge ${r.status}`}>
                                 {labels[r.status]}
                               </span>
