@@ -1,14 +1,14 @@
 {
   "r26": {
-    "category": "Observability",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
+    "category": "Logging, reporting and measurement",
+    "status": "confirmation",
+    "scope": "Custom log labels tested 27 September 2026 · equivalent reports and cost attribution are not established.",
     "title": "How do we preserve reporting and cost groups?",
-    "statusText": "Custom labels demonstrated",
-    "note": "Branch labels work; CP-code analytics and billing parity remain unverified.",
-    "intro": "CP codes group traffic for reporting and purge attribution. Custom log fields can label requests on Vercel, while cache tags serve the separate purge use case. A label alone does not create equivalent reporting or billing.",
-    "diagram": "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label]\n C --> D[Reporting consumer]\n E[Cached content] --> F[Cache tags]\n F --> G[Group invalidation]",
-    "flow": "Proposed split between request reporting and content invalidation; the recorded test covers log labels only.",
+    "statusText": "Needs confirmation",
+    "note": "Log labels demonstrated; required reports and cost breakdowns must be defined before claiming CP-code parity.",
+    "intro": "The requirement groups traffic for reporting as well as grouping content for purge. Custom fields can label current requests for downstream reports; cache tags address purge groups separately. We still need the required reports and cost breakdowns to assess whether this split preserves the outcome.",
+    "diagram": "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label: demonstrated]\n C -.-> D[Required reports and cost allocation: to define]\n E[Cached content] -.-> F[Cache tags: separate purge mapping]\n F -.-> G[Group invalidation]",
+    "flow": "Solid arrows show the tested log-label path. Dotted arrows are proposed reporting and purge mappings; neither was demonstrated by the label test.",
     "sectionTitle": "Compare the recorded labels",
     "paragraphs": [
       "The synthetic A and B inputs selected different labels before the cache lookup. These names model reporting dimensions; they do not reproduce the customer’s security or waiting-room branches."
@@ -20,43 +20,48 @@
         ["B", "illustrative-B"]
       ]
     },
-    "observation": "Recorded run: 11 enrichment invocations and 2 content-origin calls across two paths.",
+    "observation": "The label follows the current request, including cache hits. The test did not produce a CP-code-equivalent report or reconcile billing.",
     "detail": "Cost modelling must include per-request enrichment, export volume per destination, ingestion, storage and retention at contracted rates. The small historical latency sample includes network noise and is not a customer cost or causal performance estimate.",
-    "decision": "Agree the reporting dimensions, access and cost breakdowns, and who builds the reports; define purge groups separately.",
+    "decision": "Provide the reports and cost breakdowns that must survive, including branch attribution and access requirements, so the reporting owner can validate each output. Define purge groups separately.",
     "related": [
-      {
-        "id": "r25",
-        "label": "Tag and purge"
-      },
       {
         "id": "r33",
         "label": "Log destinations"
+      },
+      {
+        "id": "r34",
+        "label": "Browser measurement"
+      },
+      {
+        "id": "r25",
+        "label": "Tag and purge"
       }
     ],
     "sources": [
       {
         "title": "Code: recorded label selection",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Test source · rerun 27 September 2026 · formatting expanded for readability · synthetic envelope omitted",
         "path": "source/middleware.ts",
         "first": 11,
         "last": 12,
-        "code": "const eventId = crypto.randomUUID();\nconst event = {\n  kind: 'argos-cookie-v1',\n  run,\n  eventId,\n  cookieState: selected.length === 0 ? 'missing' : valid ? 'valid' : 'invalid',\n  cookie: valid ? value : null,\n  branch:\n    valid && value!.startsWith('fixture-B')\n      ? 'illustrative-B'\n      : 'illustrative-default',\n  instrumentationMs: performance.now() - started,\n};\n"
+        "code": "const eventId = crypto.randomUUID();\nconst event = {\n  // Synthetic branch-selection excerpt; event envelope omitted.\n  run,\n  eventId,\n  cookieState: selected.length === 0 ? 'missing' : valid ? 'valid' : 'invalid',\n  cookie: valid ? value : null,\n  branch:\n    valid && value!.startsWith('fixture-B')\n      ? 'illustrative-B'\n      : 'illustrative-default',\n  instrumentationMs: performance.now() - started,\n};\n"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label]\n C --> D[Reporting consumer]\n E[Cached content] --> F[Cache tags]\n F --> G[Group invalidation]"
   },
   "r31": {
-    "category": "Observability",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
-    "title": "Which request does a cached response belong to?",
-    "statusText": "Bounded identity demonstrated",
-    "note": "Current request IDs differ while the cached fill stays the same; full propagation is still open.",
-    "intro": "The current setup uses a global request reference in response headers and logs, with origin correlation also required. Vercel request records distinguish the current visitor from an earlier cache fill; origin work, retries and child requests still need an explicit correlation contract.",
+    "category": "Logging, reporting and measurement",
+    "status": "supported",
+    "scope": "Owned test recorded 27 September 2026 · current-request identity on MISS and HIT. Full retry and subrequest propagation is not demonstrated here.",
+    "title": "Can we trace each request through the logs?",
+    "statusText": "Supported mapping",
+    "note": "Native request identity and log correlation demonstrated; origin and retry identifiers need an explicit propagation contract.",
+    "intro": "The requirement is a unique reference for each request, visible in CDN logs and available to send to the origin. Vercel provides request IDs and request logs; application correlation fields can be forwarded for origin work. A cached content reference must remain separate from the current request ID.",
     "diagram": "sequenceDiagram\n participant A as Request A\n participant C as CDN cache\n participant O as Content origin\n participant B as Request B\n participant L as Native request logs\n A->>C: Same content URL, first request\n C->>O: MISS, fetch content\n O-->>C: Content with fill reference\n C-->>A: New request identity, fill reference\n C-->>L: Record for A\n B->>C: Same URL, later request\n C-->>B: HIT, new request identity, same fill\n C-->>L: Record for B",
     "flow": "Recorded relationship between successive requests and a shared content fill. The arrows describe the logical flow, not an internal platform trace.",
     "sectionTitle": "Compare current request and cached fill",
     "paragraphs": [
-      "The baseline path recorded A as MISS and B as HIT. The two native request IDs differ; the response content carries the same fill ID. The test recorded one content-origin call for that path."
+      "A fetched public content on a MISS. B requested the same URL and received a HIT: its native request ID changed, while the content fill ID stayed the same. One content-origin call was recorded for this path. Open R32 next to make the same comparison in a real browser and match each current request to its cookie log."
     ],
     "table": {
       "headers": ["Request", "Cache", "Native request ID", "Content fill"],
@@ -64,19 +69,19 @@
         [
           "A",
           "MISS",
-          "5srw8-1790271399657-9f7d45d71cff",
-          "3c25dd7c-862c-47a5-b37c-d046b857aa9a"
+          "j2h6r-1790468102547-a4139e25505a",
+          "47a3201c-ed99-4083-8689-108d0fee80a1"
         ],
         [
           "B",
           "HIT",
-          "5srw8-1790271400312-147982d13698",
-          "3c25dd7c-862c-47a5-b37c-d046b857aa9a"
+          "xc9ml-1790468103387-3c305ca17cd8",
+          "47a3201c-ed99-4083-8689-108d0fee80a1"
         ]
       ]
     },
     "detail": "The full response x-vercel-id is retained separately from the native log requestId. Matching suffixes were observed, but parsing that format is not the correlation contract. R32 demonstrates an exact custom-emission envelope requestId join for its bounded case.",
-    "decision": "Define which identifier each client, origin, retry and child request receives, how those IDs relate, and which log fields consumers join.",
+    "decision": "Agree the identifiers forwarded to the origin and stored by log consumers. Keep raw platform, application, parent and attempt IDs separate; do not rely on parsing an observed ID format.",
     "docs": [
       {
         "label": "Vercel log schema",
@@ -86,58 +91,66 @@
     "related": [
       {
         "id": "r32",
-        "label": "Cookie logging"
+        "label": "Log the current cookie"
       },
       {
-        "id": "r40",
-        "label": "Child requests"
+        "id": "r33",
+        "label": "Send logs to destinations"
       }
     ]
   },
   "r33": {
-    "category": "Observability",
-    "status": "partial",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
+    "category": "Logging, reporting and measurement",
+    "status": "supported",
+    "scope": "Owned HTTP destinations tested 27 September 2026 · New Relic and Botify ingestion has not been tested.",
     "title": "Can logs go to all-traffic and bot-only destinations?",
-    "statusText": "Owned filtered destinations demonstrated",
-    "note": "Two owned destinations receive the selected subsets; real New Relic and Botify integration is unverified.",
-    "intro": "The current policy sends all requests to one stream and selected major-bot traffic to a second when the Botify flag is enabled. Two project-scoped Vercel Log Drains demonstrated all-traffic and filtered delivery to owned HTTP destinations.",
+    "statusText": "Supported mapping",
+    "note": "Native all-traffic and filtered delivery demonstrated. Vendor endpoints, format and exact bot policy remain customer setup.",
+    "intro": "The requirement sends all request logs to New Relic and the selected major-bot subset to Botify when enabled. Configure one Vercel Log Drain for all required requests and a second with a native User-Agent filter. The test uses two owned HTTP destinations in place of the vendors.",
     "diagram": "flowchart LR\n R[Native request logs] --> A[All-traffic Drain]\n A --> D[Owned destination A]\n R --> F{Googlebot text matches?}\n F -->|Yes| B[Filtered Drain]\n B --> E[Owned destination B]\n F -->|No| N[No delivery to B]",
     "flow": "The recorded filter matches User-Agent text. It does not authenticate a bot or implement the customer’s complete flag and bot policy.",
     "sectionTitle": "Compare deliveries by request group",
     "paragraphs": [
-      "The recorded run delivered 22 native request records to the all-traffic destination. Twelve requests matched the synthetic Googlebot filter and also reached the second destination; ten human requests were excluded there."
+      "The all-traffic destination received 20 native request records. Ten synthetic Googlebot requests also reached the filtered destination; ten human requests did not. Both destinations verified signed deliveries."
     ],
     "table": {
       "headers": ["Recorded request group", "Destination A", "Destination B"],
       "rows": [
-        ["12 matching requests", "12 delivered", "12 delivered"],
+        ["10 matching requests", "10 delivered", "10 delivered"],
         ["10 human requests", "10 delivered", "0 delivered"]
       ]
     },
     "observation": "Counts refer to matched native request records; custom emissions add separate records to Drain batches.",
-    "detail": "Actual New Relic/Botify schemas, credentials, delivery expectations, all-request coverage and the meaning of midgress remain to validate. Small-batch delivery is not evidence of throughput, losslessness or a delivery SLA.",
-    "decision": "Confirm the vendor formats, full bot and feature-flag policy, and required delivery semantics before wiring the actual destinations.",
+    "detail": "The test selects by User-Agent text, not authenticated bot identity. Configure coverage for every required source and path, including cache hits. Confirm whether the current midgress setting requires extra records beyond visitor-request logs. Vendor authentication, field transformations and delivery requirements must be validated at the actual endpoints; the owned test does not establish vendor ingestion or a delivery SLA.",
+    "decision": "Agree the exact bot list and enablement policy, required log sources and vendor formats, then verify ingestion in New Relic and Botify.",
     "docs": [
       {
-        "label": "Vercel Log Drains",
+        "label": "Create a Drain and configure filters",
+        "url": "https://vercel.com/docs/rest-api/drains/create-a-new-drain"
+      },
+      {
+        "label": "Log fields",
         "url": "https://vercel.com/docs/drains/reference/logs"
       }
     ],
     "related": [
       {
-        "id": "r26",
-        "label": "Reporting groups"
+        "id": "r31",
+        "label": "Request identity"
       },
       {
         "id": "r32",
         "label": "Custom context"
+      },
+      {
+        "id": "r26",
+        "label": "Reporting and costs"
       }
     ],
     "sources": [
       {
         "title": "Config: recorded bot filter",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
+        "label": "Test configuration · rerun 27 September 2026 · formatting expanded for readability",
         "path": "scripts/drains.mjs",
         "first": 8,
         "last": 8,
@@ -146,21 +159,21 @@
     ]
   },
   "r34": {
-    "category": "Observability",
-    "status": "partial",
+    "category": "Logging, reporting and measurement",
+    "status": "confirmation",
     "title": "How do we keep mPulse measurement working?",
-    "statusText": "Integration to validate",
-    "note": "Retain mPulse first; loader delivery, events and consent still need verification.",
-    "intro": "The current setup uses mPulse and its loader to measure real browser performance. Keeping mPulse is the proposed migration path: deliver its loader with the application and preserve the required events and consent behavior. A replacement is a separate scope decision.",
+    "statusText": "Needs confirmation",
+    "note": "Retain mPulse; the reports, alerts and measurement dependencies in use need confirmation.",
+    "intro": "The requirement is to preserve the browser-performance reports and alerts in use. Retaining mPulse through its application loader is the proposed approach. Loader ownership is ordinary integration work; the open question is which events, reports and Akamai-specific inputs must survive.",
     "diagram": "sequenceDiagram\n participant A as Application page\n participant B as Browser\n participant M as mPulse collection\n A-->>B: Page with approved loader integration\n B->>B: Apply agreed consent and measurement policy\n B->>M: Allowed performance beacons\n M->>M: Existing events and dashboards",
     "flow": "Proposed browser integration. No customer measurement or beacon-delivery test has been run.",
     "sectionTitle": "Keep measurement separate from CDN routing",
     "paragraphs": [
-      "Akamai documents an application loader snippet for Boomerang. If the existing setup relies on edge injection, application ownership of that injection must be established during migration.",
-      "Verify the required events, dimensions, dashboards, Timing-Allow-Origin behavior and consent before calling measurement preserved. Speed Insights would require a separate comparison of the measurements the team actually uses."
+      "Akamai documents an application loader for Boomerang. If the current setup injects it at the CDN, an application owner must take over delivery and preserve consent and Timing-Allow-Origin settings.",
+      "The loader alone does not prove that business events, PIM errors or Akamai-specific network measurements still reach the required reports. No replacement comparison is implied by this page."
     ],
     "detail": "The source also contains third-party script-manager settings and Safari mobile support, with service worker disabled. These are distinct from mPulse measurement and belong to the separate script/security workstream. Akamai-specific network measurements must be assessed individually.",
-    "decision": "Confirm who owns loader delivery and consent, which events and dashboards must survive, and whether replacement is intended at all.",
+    "decision": "Confirm the reports, alerts and events in use and their loader, consent and application owners; then test those measurements with mPulse retained.",
     "docs": [
       {
         "label": "mPulse implementation",
@@ -169,14 +182,15 @@
     ],
     "related": [
       {
-        "id": "r11",
-        "label": "Consent categories"
+        "id": "r26",
+        "label": "Traffic reporting"
       },
       {
-        "id": "r12",
-        "label": "Consent groups"
+        "id": "r31",
+        "label": "Request logs"
       }
-    ]
+    ],
+    "scope": "Proposed retained mPulse integration · no browser beacon, event or dashboard validation has been run."
   },
   "r38": {
     "title": "What must the replacement PIM processing do?",

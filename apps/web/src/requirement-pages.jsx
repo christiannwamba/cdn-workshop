@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import pages from './requirement-content.json';
+import { LoggingNavigation } from './logging-navigation.jsx';
 
 export const requirementCatalog = Object.entries(pages).map(([id, page]) => ({
   id: id.toUpperCase(),
@@ -26,7 +27,7 @@ function Source({ source }) {
     </details>
   );
 }
-export function RequirementPage({ id, Diagram }) {
+export function RequirementPage({ id, Diagram, profile }) {
   const p = pages[id];
   return (
     <>
@@ -44,7 +45,14 @@ export function RequirementPage({ id, Diagram }) {
             'Explanation and decision · customer behavior has not been validated on Vercel.'}
         </p>
       </div>
-      <Diagram key={id} id={id} source={p.diagram} description={p.flow} />
+      <LoggingNavigation id={id} profile={profile} />
+      <Diagram
+        key={id}
+        id={id}
+        source={p.diagram}
+        previousSource={p.previousDiagram}
+        description={p.flow}
+      />
       <section>
         <h2>{p.sectionTitle || 'How the mapping works'}</h2>
         {(p.paragraphs || []).map((t) => (

@@ -1,3 +1,8 @@
+import {
+  LoggingNavigation,
+  loggingOrder,
+  loggingCategory,
+} from './logging-navigation.jsx';
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import mermaid from 'mermaid';
@@ -59,16 +64,17 @@ const catalog = [
     id: 'R32',
     title: 'Can we log a cookie when the CDN serves a cached page?',
     status: 'workaround',
-    category: 'Observability',
+    category: loggingCategory,
     note: 'Cookie logging demonstrated with custom middleware and Vercel Log Drains. Other R32 fields remain to be mapped.',
     implemented: true,
   },
 ];
 const labels = {
-  supported: '✓ Fully supported',
+  supported: '✓ Supported mapping',
   workaround: '△ Workaround',
   gap: '⊘ Gap',
   partial: '◐ Partial mapping',
+  confirmation: '? Needs confirmation',
 };
 const readLocal = (k) => {
   try {
@@ -594,7 +600,7 @@ function App() {
         ) : cacheCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <CachePage key={page} id={page} profile={p} Diagram={Diagram} />
         ) : requirementCatalog.some((r) => r.id.toLowerCase() === page) ? (
-          <RequirementPage key={page} id={page} Diagram={Diagram} />
+          <RequirementPage key={page} id={page} Diagram={Diagram} profile={p} />
         ) : page === 'r32' ? (
           <>
             <a className="back" href="#index">
@@ -610,6 +616,7 @@ function App() {
               </p>
               <p className="small">This example covers cookie logging within R32.</p>
             </div>
+            <LoggingNavigation id="r32" profile={p} />
             <Diagram key="r32" />
             <Exercise profile={p} />
             <section>
@@ -625,10 +632,25 @@ function App() {
                   downstream log format still need to be mapped and verified.
                 </li>
               </ul>
-              <p className="related">
-                <a href="#index">
-                  ← Requirements: shared caching (R20) and TLS metadata (R10)
+              <details className="source">
+                <summary>Could firewall header logging capture the cookie?</summary>
+                <p>
+                  The documented Priority Projects feature captures headers on matched
+                  firewall rules, but always filters the Cookie header. It does not
+                  replace this selected-cookie workaround.
+                </p>
+                <a
+                  href="https://vercel.com/docs/vercel-firewall/firewall-observability#request-header-logging"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Request header logging documentation ↗
                 </a>
+              </details>
+              <p className="related">
+                <a href="#r31">← R31 · Request identity</a>
+                {' · '}
+                <a href="#r33">R33 · Log destinations →</a>
               </p>
             </section>
           </>
@@ -643,7 +665,8 @@ function App() {
               <p className="small">
                 {catalog.length} requirements ·{' '}
                 {catalog.filter((r) => r.implemented).length} pages available · page
-                availability does not mean verified customer parity
+                availability does not mean verified customer parity. Logging/reporting
+                labels have been reviewed; other category totals remain provisional.
               </p>
             </div>
             <div className="filters">
@@ -678,19 +701,35 @@ function App() {
             <p className="small" role="status">
               {selected.length} requirement{selected.length === 1 ? '' : 's'} shown
             </p>
-            {['supported', 'workaround', 'partial', 'gap'].map((s) => {
-              const rows = selected.filter((r) => r.status === s);
+            {(category === loggingCategory
+              ? ['logging']
+              : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
+            ).map((s) => {
+              const rows =
+                s === 'logging'
+                  ? [...selected].sort(
+                      (a, b) =>
+                        loggingOrder.indexOf(a.id.toLowerCase()) -
+                        loggingOrder.indexOf(b.id.toLowerCase()),
+                    )
+                  : selected.filter((r) => r.status === s);
               return (
                 rows.length > 0 && (
                   <section className="catalog-group" key={s}>
                     <h2 className={s}>
-                      {labels[s]} <span className="count">{rows.length}</span>
+                      {s === 'logging' ? loggingCategory : labels[s]}{' '}
+                      <span className="count">{rows.length}</span>
                     </h2>
                     {rows.map((r) => (
                       <article className="requirement" key={r.id}>
                         <div>
                           <p className="eyebrow">
                             {r.category} <span> / {r.id}</span>
+                            {s === 'logging' && (
+                              <span className={`badge ${r.status}`}>
+                                {labels[r.status]}
+                              </span>
+                            )}
                           </p>
                           <h3>{r.title}</h3>
                           <p>{r.note}</p>
