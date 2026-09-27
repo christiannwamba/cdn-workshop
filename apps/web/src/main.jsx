@@ -1,3 +1,4 @@
+import { requestRuleOrder, requestRuleCategory } from './request-rule-navigation.jsx';
 import { routingOrder, routingCategory } from './routing-navigation.jsx';
 import { processingOrder, processingCategory } from './processing-navigation.jsx';
 import {
@@ -668,8 +669,8 @@ function App() {
                 {catalog.length} requirements ·{' '}
                 {catalog.filter((r) => r.implemented).length} pages available · page
                 availability does not mean verified customer parity. Logging/reporting,
-                processing and routing/admission labels have been reviewed; other category
-                totals remain provisional.
+                processing, routing/admission and request/rule labels have been reviewed;
+                other category totals remain provisional.
               </p>
             </div>
             <div className="filters">
@@ -710,23 +711,32 @@ function App() {
                 ? ['processing']
                 : category === routingCategory
                   ? ['routing']
-                  : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
+                  : category === requestRuleCategory
+                    ? ['requestRule']
+                    : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
             ).map((s) => {
               const rows =
-                s === 'logging' || s === 'processing' || s === 'routing'
+                s === 'logging' ||
+                s === 'processing' ||
+                s === 'routing' ||
+                s === 'requestRule'
                   ? [...selected].sort(
                       (a, b) =>
                         (s === 'logging'
                           ? loggingOrder
                           : s === 'processing'
                             ? processingOrder
-                            : routingOrder
+                            : s === 'routing'
+                              ? routingOrder
+                              : requestRuleOrder
                         ).indexOf(a.id.toLowerCase()) -
                         (s === 'logging'
                           ? loggingOrder
                           : s === 'processing'
                             ? processingOrder
-                            : routingOrder
+                            : s === 'routing'
+                              ? routingOrder
+                              : requestRuleOrder
                         ).indexOf(b.id.toLowerCase()),
                     )
                   : selected.filter((r) => r.status === s);
@@ -740,7 +750,9 @@ function App() {
                           ? processingCategory
                           : s === 'routing'
                             ? routingCategory
-                            : labels[s]}{' '}
+                            : s === 'requestRule'
+                              ? requestRuleCategory
+                              : labels[s]}{' '}
                       <span className="count">{rows.length}</span>
                     </h2>
                     {rows.map((r) => (
@@ -750,7 +762,8 @@ function App() {
                             {r.category} <span> / {r.id}</span>
                             {(s === 'logging' ||
                               s === 'processing' ||
-                              s === 'routing') && (
+                              s === 'routing' ||
+                              s === 'requestRule') && (
                               <span className={`badge ${r.status}`}>
                                 {labels[r.status]}
                               </span>

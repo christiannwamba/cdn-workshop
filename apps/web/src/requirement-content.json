@@ -602,23 +602,27 @@
   },
   "r01": {
     "title": "Which hosts serve production and staging?",
-    "intro": "The current property serves business hosts for the main site, mobile, chat and failover, plus an Akamai staging address. Vercel custom domains can map each agreed business host to its project and environment; staging needs an agreed replacement address.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Native domain mapping candidate; the authoritative host and environment inventory is still needed.",
+    "intro": "The current property serves the main site, mobile, chat and failover hosts, plus a vendor staging address. Vercel custom domains and a separate staging deployment provide the host mapping; the vendor-owned staging name needs a replacement.",
+    "status": "supported",
+    "category": "Request and rule mappings",
+    "note": "Native production and staging host mapping. Agree the inventory, ownership and replacement staging address.",
     "diagram": "flowchart LR\n  A[Business host] --> B[Assigned Vercel project]\n  B --> C[Production deployment]\n  D[Agreed staging host] --> E[Staging deployment]",
     "flow": "Proposed domain ownership model. These are separate host assignments, not a DNS migration already performed.",
-    "sectionTitle": "Choose the host inventory",
+    "sectionTitle": "Map each host to its role",
     "paragraphs": [
-      "The source lists the main, mobile, chat and failover hosts separately. Its served-host and canonical-redirect lists differ, so a single wildcard should not silently replace that inventory.",
-      "For each hostname, record whether it serves content, redirects, or belongs to a separate service. Add DNS and certificate owners, the target environment, and the replacement for the Akamai-specific staging address."
+      "Keep a separate entry for every served host: content, redirect or independent service. The source’s served-host list and canonical-redirect list differ; a wildcard must not silently replace either list.",
+      "Assign each agreed business domain to the appropriate project and production or staging environment. A branch-linked preview domain is one staging option; domain ownership and DNS verification are setup work."
     ],
-    "decision": "Agree the authoritative host inventory and ownership, including whether chat and failover remain separate and which staging URL replaces the vendor hostname.",
-    "detail": "No customer DNS change or dedicated host-mapping validation has been performed. Domain assignment and canonical redirects are separate decisions; R06 covers redirect behavior.",
+    "decision": "Agree the host inventory, DNS owners and staging replacement, including the roles of chat and failover.",
+    "detail": "This establishes a supported domain mapping, not a completed cutover. No customer DNS, certificate or traffic change was made. R06 separately covers canonical redirects.",
     "docs": [
       {
         "label": "Custom domains",
         "url": "https://vercel.com/docs/domains/working-with-domains/add-a-domain"
+      },
+      {
+        "label": "Staging branch domain",
+        "url": "https://vercel.com/docs/domains/working-with-domains/assign-domain-to-a-git-branch"
       }
     ],
     "related": [
@@ -630,23 +634,25 @@
         "id": "r02",
         "label": "Service routes"
       }
-    ]
+    ],
+    "statusText": "Supported mapping",
+    "scope": "Documented native mapping · customer domains have not been migrated."
   },
   "r02": {
     "title": "Where should each service path go?",
-    "intro": "The current property names separate application and asset origins for services such as basket, checkout, search and product pages. Vercel external rewrites can forward selected paths to existing origins while keeping the visitor’s URL.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "External rewrites are a candidate; the complete ordered path-to-origin contract is missing.",
+    "intro": "The current property selects separate application and asset origins. Vercel external rewrites forward service paths to existing backends while keeping the visitor’s URL; the applications can remain at those origins.",
+    "status": "supported",
+    "category": "Request and rule mappings",
+    "note": "Native external rewrites cover service forwarding. Translate the ordered destination, Host, path and query contract.",
     "diagram": "flowchart LR\n  A[Requested path] --> B[Ordered route rules]\n  B --> C[Application origin]\n  B --> D[Asset origin]\n  B --> E[Default origin]",
     "flow": "Proposed route selection. The source declares many origins but does not supply every effective path rule.",
     "sectionTitle": "Map a route completely",
     "paragraphs": [
-      "A route needs its match, destination host, forwarded Host, path-prefix change, query behavior and priority. An origin variable by itself does not establish which requests reach it.",
-      "Use specific service rules before the default destination. R19 illustrates conditional selection on owned test origins; it does not validate the customer’s basket, checkout or asset routes."
+      "Put specific service matches before a default route. For every entry, record the destination, forwarded Host, path-prefix change, query behavior and precedence. Conditional selection can use route conditions or Routing Middleware.",
+      "The example removes /service from the upstream path. It does not prove a distinct Host override or private-origin access. Those need the selected origin design; R19’s owned conditional-routing example is not the full service matrix."
     ],
-    "decision": "Obtain the ordered route matrix or raw rule export, then confirm the origin, Host, rewritten path and query for each service.",
-    "detail": "The diagram explains the proposed architecture rather than a captured request. Origin TLS policy remains R03.",
+    "decision": "Translate the ordered service matrix, then verify destination, Host, path and query at each origin. Identify separately any origin that requires a different Host or private access.",
+    "detail": "Native external forwarding does not require moving the backend application onto Vercel. The synthetic configuration is checked against the current schema, not deployed against a customer service. Origin TLS remains R03.",
     "docs": [
       {
         "label": "External rewrites",
@@ -655,10 +661,10 @@
     ],
     "sources": [
       {
-        "title": "Illustrative route only — not customer configuration",
+        "title": "Configuration: one external service route",
         "path": "illustrative-vercel.json",
-        "label": "Illustrative configuration only; not deployed or customer-validated · formatting expanded for readability",
-        "code": "{\n  \"rewrites\": [\n    {\n      \"source\": \"/service/:path*\",\n      \"destination\": \"https://origin.example.com/:path*\"\n    }\n  ]\n}\n"
+        "label": "Synthetic configuration · schema checked locally; not deployed",
+        "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"rewrites\": [\n    {\n      \"source\": \"/service/:path*\",\n      \"destination\": \"https://origin.example.com/:path*\"\n    }\n  ]\n}\n"
       }
     ],
     "related": [
@@ -670,23 +676,25 @@
         "id": "r19",
         "label": "Conditional destinations"
       }
-    ]
+    ],
+    "statusText": "Supported mapping",
+    "scope": "Documented external rewrites · customer service routes remain to be configured."
   },
   "r04": {
     "title": "Which visitor IP should the origin trust?",
-    "intro": "The current rule removes an incoming True-Client-IP value and replaces it with the trusted visitor address. Proposed middleware would write that origin header from Vercel’s trusted request metadata, with an explicit policy for any CDN in front.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Custom header mapping candidate; spoof resistance and a dual-CDN IP chain are unverified.",
-    "diagram": "flowchart LR\n  A[Visitor request] --> B[Vercel trusted IP metadata]\n  B --> C[Replace True-Client-IP]\n  C --> D[Origin request]\n  E[Client-supplied True-Client-IP] -. ignored .-> C",
-    "flow": "Proposed direct-to-Vercel flow. If another proxy fronts Vercel, establish its trust contract before interpreting the address as the visitor IP.",
+    "intro": "The current rule discards incoming True-Client-IP and sends the trusted visitor address to the origin. A custom Function adapter can retain that header name by replacing it from Vercel-provided IP metadata.",
+    "status": "workaround",
+    "category": "Request and rule mappings",
+    "note": "Custom True-Client-IP replacement passed recorded direct-ingress spoof checks. A front-CDN trust contract remains conditional.",
+    "diagram": "flowchart LR\n  A[Visitor connects to Vercel] --> B[Platform IP metadata]\n  B --> C[Custom adapter replaces True-Client-IP]\n  C --> D[Owned origin]\n  E[Visitor-supplied IP headers] -. cannot select replacement .-> C",
+    "flow": "Direct-ingress mapping exercised by the recorded test. A CDN in front changes the trust boundary.",
     "sectionTitle": "Preserve the trust boundary",
     "paragraphs": [
-      "Copying a client-supplied True-Client-IP would let a visitor choose the address the origin believes. The replacement must overwrite that value using the approved platform metadata.",
-      "Vercel documents that it overwrites forwarded IP values by default when behind another proxy. Its Enterprise Trusted Proxy option is a separate arrangement; simply preserving an incoming header does not establish a trustworthy chain."
+      "If the origin can consume the platform’s forwarded IP value, keep that native value. If it requires the True-Client-IP name, overwrite it from trusted platform metadata before forwarding; never fall back to the visitor-supplied header.",
+      "By default, Vercel overwrites incoming X-Forwarded-For to prevent spoofing. With another CDN in front, that does not promise the original visitor’s address. Enterprise Trusted Proxy is a separately purchased and enabled arrangement; customer access is not established here."
     ],
-    "decision": "Confirm whether requests arrive directly or through another CDN, then capture the forwarded header at an owned origin and verify that a spoofed incoming value cannot win.",
-    "detail": "Current request-header documentation was read on 27 September 2026. No dedicated end-to-end spoofing or dual-CDN test has been run for this page.",
+    "decision": "Confirm whether origins require the True-Client-IP name and whether another CDN remains in front. For a front CDN, establish its trusted forwarding contract and verify that topology.",
+    "detail": "The September 17 result is a bounded custom-adapter test. The origin-side tunnel in that test was downstream of Vercel, not a CDN in front. This page proposes adopting the adapter; it does not offer the old endpoint as a live exercise.",
     "docs": [
       {
         "label": "Trusted request IP headers",
@@ -702,23 +710,42 @@
         "id": "r08",
         "label": "Request headers"
       }
-    ]
+    ],
+    "statusText": "Workaround · direct path recorded",
+    "scope": "Custom header adapter · owned direct-to-Vercel proof recorded 17 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded verification · 17 September 2026",
+    "table": {
+      "headers": ["Owned-origin case", "Observed result"],
+      "rows": [
+        [
+          "Forged True-Client-IP",
+          "Origin IP fingerprint matched the unmodified baseline."
+        ],
+        [
+          "Forged True-Client-IP and forwarding headers together",
+          "Origin still received the platform-derived value, not a supplied fake."
+        ]
+      ]
+    },
+    "observation": "A Node Function read x-vercel-forwarded-for and overwrote True-Client-IP. Keyed fingerprints verified the value without displaying visitor IPs. No front-CDN topology or fresh live spoof test is claimed.",
+    "previousDiagram": "flowchart LR\n  A[Visitor request] --> B[Vercel trusted IP metadata]\n  B --> C[Replace True-Client-IP]\n  C --> D[Origin request]\n  E[Client-supplied True-Client-IP] -. ignored .-> C"
   },
   "r07": {
     "title": "Do old homepage URLs still reach the homepage?",
     "intro": "The current rules send legacy homepage and StoreCatalogDisplay paths to / with a 301 while preserving query parameters. Vercel configured redirects can express those rules with an explicit 301 status.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Configured redirect candidate; exact servlet matches and query behavior remain to verify.",
+    "status": "supported",
+    "category": "Request and rule mappings",
+    "note": "Native configured 301 redirects cover legacy URLs. Carry over exact matches and query policy.",
     "diagram": "flowchart LR\n  A[Legacy homepage URL] --> B{Exact rule matches?}\n  B -->|Yes| C[301 to homepage with query]\n  B -->|No| D[Continue normal routing]",
     "flow": "Proposed match behavior. A similar-looking URL must not redirect unless it belongs to the recovered rule.",
     "sectionTitle": "Keep the match and query precise",
     "paragraphs": [
-      "The summary includes /static/Home.htm, /m/static/Home.htm, two beta homepage forms and several StoreCatalogDisplay servlet variants. The complete servlet regular expressions are absent.",
-      "A representative intended result is /static/Home.htm?campaign=example → /?campaign=example with status 301. This is a policy example; it has not been executed as a dedicated R07 test."
+      "The detailed source names /static/Home.htm, /m/static/Home.htm, /beta/homepage.htm and /beta/homepage, plus StoreCatalogDisplay servlet variants. The broad summary is not a substitute for the exact servlet expressions.",
+      "Use statusCode: 301 explicitly. The synthetic exact-path rule below sends /legacy-home.htm?campaign=demo to /?campaign=demo; unrelated suffixes should continue normally. Confirm case, trailing-slash and encoded-query cases when translating the real patterns."
     ],
-    "decision": "Recover the exact servlet expressions and agree near-match, suffix and query-encoding cases before applying the redirect set.",
-    "detail": "R06 separately demonstrates the difference between a configured 301 and the platform’s automatic HTTP-to-HTTPS redirect.",
+    "decision": "Recover the exact servlet patterns and their exceptions, then validate positive and near-match URLs with the retained query. The hsts.gif exception in the source belongs to canonical-host redirects, not an inferred homepage exception.",
+    "detail": "Configured redirects are distinct from the automatic HTTP-to-HTTPS 308 in R06. The example has schema and local route-conversion checks only; neither the customer redirect set nor a hosted R07 flow was executed.",
     "docs": [
       {
         "label": "Configuration redirects",
@@ -731,10 +758,10 @@
     ],
     "sources": [
       {
-        "title": "Illustrative configured redirect",
+        "title": "Configuration: synthetic legacy homepage 301",
         "path": "illustrative-vercel.json",
-        "label": "Illustrative configuration only; not deployed or customer-validated · formatting expanded for readability",
-        "code": "{\n  \"redirects\": [{ \"source\": \"/legacy-home\", \"destination\": \"/\", \"statusCode\": 301 }]\n}\n"
+        "label": "Synthetic configuration · schema checked locally; not deployed",
+        "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"redirects\": [\n    {\n      \"source\": \"/legacy-home.htm\",\n      \"destination\": \"/\",\n      \"statusCode\": 301\n    }\n  ]\n}\n"
       }
     ],
     "related": [
@@ -746,23 +773,25 @@
         "id": "r41",
         "label": "Redirect ownership"
       }
-    ]
+    ],
+    "statusText": "Supported mapping",
+    "scope": "Documented native 301 rules · synthetic configuration checked locally."
   },
   "r08": {
     "title": "Can the required headers reach the right recipient?",
-    "intro": "The current property changes both origin-request and visitor-response headers, including the brand marker and conditional browser hints. Vercel route transforms provide static header operations; middleware is a candidate for computed values.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Native transforms and custom values are candidates; effective conditions and both directions need validation.",
+    "intro": "The current rules set the brand marker on both origin requests and browser responses, request Chrome client hints, and allow the named mPulse origins to read timing data. Native request and response transforms express these additions and replacements.",
+    "status": "supported",
+    "category": "Request and rule mappings",
+    "note": "Native transforms cover brand, conditional client hints and timing headers. Keep request and response directions distinct.",
     "diagram": "sequenceDiagram\n  participant B as Browser\n  participant R as Request rules\n  participant O as Origin\n  participant S as Response rules\n  B->>R: Incoming headers\n  R->>O: Replaced request headers\n  O->>S: Origin response\n  S->>B: Required response headers",
     "flow": "Proposed request and response stages. Final response behavior can differ on early platform responses, as shown in R09.",
     "sectionTitle": "Check each direction separately",
     "paragraphs": [
-      "The brand rule removes then sets x-argos-brand=arg on the outgoing request and response. Seeing it in the browser response does not prove the origin received it.",
-      "The other examples have distinct conditions: Accept-CH is tied to the Chrome user agent, while Timing-Allow-Origin identifies the mPulse endpoints. Preserve the effective conditions and test duplicate values and casing."
+      "Set x-argos-brand=arg separately on the outgoing request and response. Accept-CH is a browser response header under the Chrome User-Agent condition; it asks for hints on later requests. Timing-Allow-Origin is also a response header, scoped to the configured monitoring origins.",
+      "Static and conditional values fit native configuration. Values computed from a request can use custom Middleware, but the required input must actually exist. The separate TLS metadata question is R10; R09 retains its platform-response removal boundary."
     ],
-    "decision": "Confirm the effective conditional header table and inspect both an owned origin capture and the final browser response for each relevant response type.",
-    "detail": "Current vercel.json documentation explicitly describes request.headers and response.headers transforms. This page does not claim that R09’s automatic-redirect header-removal limitation has been resolved.",
+    "decision": "Carry over the effective direction, value and condition for each header, then inspect an origin capture and the final browser response. Confirm which response types must receive each addition.",
+    "detail": "The synthetic example replaces x-demo-brand in both directions; it is not the customer header policy. Schema acceptance is not deployed behavior or proof that every platform-generated response passes through these rules.",
     "docs": [
       {
         "label": "Route conditions and transforms",
@@ -771,31 +800,45 @@
     ],
     "related": [
       {
-        "id": "r09",
-        "label": "Response removal"
+        "id": "r04",
+        "label": "Trusted visitor IP"
       },
       {
-        "id": "r34",
-        "label": "mPulse"
+        "id": "r09",
+        "label": "Response removal"
+      }
+    ],
+    "statusText": "Supported mapping",
+    "scope": "Documented native header operations · synthetic configuration checked locally.",
+    "sources": [
+      {
+        "title": "Configuration: replace a synthetic brand in both directions",
+        "path": "illustrative-vercel.json",
+        "label": "Synthetic configuration · schema checked locally; not deployed",
+        "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"routes\": [\n    {\n      \"src\": \"/service/(.*)\",\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"request.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-demo-brand\"\n          },\n          \"args\": \"demo\"\n        },\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-demo-brand\"\n          },\n          \"args\": \"demo\"\n        }\n      ]\n    }\n  ]\n}\n"
       }
     ]
   },
   "r18": {
     "title": "How do flags and per-request values keep their order?",
-    "intro": "The current property initializes environment values and request flags, then changes some of them in later branches. The proposed Vercel design separates environment configuration from a fresh state object for every request, with Global Config available for operational toggles.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Custom state model proposed; later overrides and evaluation order remain to recover.",
-    "diagram": "flowchart LR\n  A[Environment configuration] --> B[Fresh request state]\n  C[Request inputs] --> B\n  B --> D[Ordered conditions]\n  D --> E[Final routing and log values]",
-    "flow": "Proposed state flow. Configuration is shared deliberately; mutable request state is created separately for each visitor.",
-    "sectionTitle": "Preserve defaults and later overrides",
+    "intro": "The property mixes shared settings with variables changed during one request. Use deployment configuration for stable settings, Global Config for selected operational toggles, and fresh request-local state for ordered overrides.",
+    "status": "workaround",
+    "category": "Request and rule mappings",
+    "note": "Custom request-local state preserves defaults and overrides. Recorded isolation proof; customer stage order still needs translation.",
+    "diagram": "flowchart LR\n  A[Deployment settings or shared toggle] --> B[Create fresh state for this request]\n  C[This request inputs] --> D[Apply ordered request overrides]\n  B --> D\n  D --> E[Select destination or response]\n  E --> F[Apply response-stage logic in selected handler]",
+    "flow": "Proposed stage and lifetime model. A later response result cannot influence a destination decision that already happened.",
+    "sectionTitle": "Give each value a lifetime",
     "paragraphs": [
-      "The summary reports personalization on, the legacy feature flag off, Botify enabled and several blank or false runtime defaults. Those defaults do not prove which final values win after all conditions run.",
-      "Network labeling illustrates the ordering issue: it begins unknown and becomes production or staging under later conditions. The migration needs an explicit environment mapping rather than copying Akamai region labels."
+      "Host values, brand and environment labels are configuration; a variable named “flag” is not automatically a live feature-toggle service. Visitor classification and processing results belong to one request. Keep mutable visitor state out of module globals and shared configuration.",
+      "Preserve the last writer within each stage. The source starts the network label as not-known and later assigns prd or stg; translate those branches to the chosen deployment environment. Response-dependent values must be handled where the response is available, rather than assumed visible in pre-origin Middleware."
     ],
-    "decision": "Recover the request and response evaluation order, identify the final writer for each value, and agree which flags need runtime changes versus deployment configuration.",
-    "detail": "Official docs now call Edge Config “Global Config”; the proposed state design has not been validated against a complete customer trace.",
+    "decision": "For each variable, identify its initialization, lifetime, readers and final writer. Choose which settings require runtime changes, then carry over request and response overrides in that order.",
+    "detail": "Environment-variable changes apply to new deployments. Global Config can supply selected shared values without a redeploy; it is not storage for individual visitor state. The custom translation remains implementation work, with no unsupported state capability identified.",
     "docs": [
+      {
+        "label": "Environment variables",
+        "url": "https://vercel.com/docs/environment-variables"
+      },
       {
         "label": "Global Config",
         "url": "https://vercel.com/docs/global-config"
@@ -806,23 +849,42 @@
         "id": "r42",
         "label": "Rule order"
       }
-    ]
+    ],
+    "statusText": "Workaround · request state recorded",
+    "scope": "Custom state translation · isolation and environment checks recorded 17 September 2026.",
+    "recorded": true,
+    "recordedTitle": "Recorded verification · 17 September 2026",
+    "table": {
+      "headers": ["Owned sample", "Observed result"],
+      "rows": [
+        [
+          "16 interleaved deployed requests",
+          "Each request retained its own bot flag and defaults."
+        ],
+        [
+          "Production and preview deployments",
+          "Returned their intended prd and stg labels."
+        ]
+      ]
+    },
+    "observation": "The sample used a representative defaults → environment → configuration → request → parser order. It does not establish the complete customer rule graph.",
+    "previousDiagram": "flowchart LR\n  A[Environment configuration] --> B[Fresh request state]\n  C[Request inputs] --> B\n  B --> D[Ordered conditions]\n  D --> E[Final routing and log values]"
   },
   "r41": {
     "title": "Who owns each redirect rule?",
-    "intro": "The customer asks whether redirects should live in one site-wide policy or in path-based groups. The proposed design keeps source rules grouped by owner and produces one deterministic order for evaluation.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Governance proposal; rule volume, ownership and publishing workflow are undecided.",
-    "diagram": "flowchart LR\n  A[Team and path rule groups] --> B[Review overlaps and priority]\n  B --> C[One published rule order]\n  C --> D[Versioned change and rollback]",
-    "flow": "Proposed authoring and publishing model. Team grouping does not imply independently competing routing policies.",
+    "intro": "The source asks whether redirects belong in one site-wide policy or path-based groups. Vercel supports deployment-managed rules and native Bulk Redirects management; grouping by path or owner is an authoring choice.",
+    "status": "supported",
+    "category": "Request and rule mappings",
+    "note": "Native redirect management supports the outcome. Select rule types, volume, ownership and publishing controls.",
+    "diagram": "flowchart LR\n  A[Path or owner groups] --> B[Choose rule types and precedence]\n  B --> C[Reviewed deployment configuration]\n  B --> D[Eligible Bulk Redirects staging]\n  C --> E[Publish and retain rollback version]\n  D --> E",
+    "flow": "Two supported publishing choices. Ownership and approval policy must be agreed for the selected workflow; no live governance exercise is implied.",
     "sectionTitle": "Separate ownership from precedence",
     "paragraphs": [
-      "Path groups can make editing and accountability clear while a shared publishing step detects duplicate sources, loops and overlapping matches. Each rule should have an owner and an agreed priority.",
-      "Vercel offers configuration redirects and bulk redirect tooling. Bulk redirects target simple exact paths rather than wildcard or header matches, and run before deployment routes. Choose the authoring workflow and precedence after establishing the required rule types and volume."
+      "For configuration redirects, keep source groups under their owners and publish a deliberate combined order through version control. Review overlaps and loops before release, and retain a known version for rollback.",
+      "For simple exact paths, Bulk Redirects offers dashboard/API/CLI updates with staging and promotion. It runs before deployment routes, so choose that precedence deliberately. Keep wildcard and header-dependent rules in configuration or custom logic."
     ],
-    "decision": "Agree rule count, owning teams, approval and rollback requirements, then choose the redirect tooling and define how overlapping rules are resolved.",
-    "detail": "This is a design decision, not a demonstrated CDN parity result. No customer redirect rules have been published.",
+    "decision": "Agree the rule count and match types, owners, approvals and rollback process. Choose deployment-managed rules or eligible Bulk Redirects based on those requirements.",
+    "detail": "Configuration redirects allow up to 2,048 array entries. Bulk Redirects requires Pro or Enterprise and plan-specific capacity; no customer entitlement or purchased scale is assumed. Bulk source rules ignore query parameters; query preservation is an explicit option, off by default. Staging/promotion is a publishing mechanism, not proof of a customer approval or per-path permission model.",
     "docs": [
       {
         "label": "Configuration redirects",
@@ -842,23 +904,26 @@
         "id": "r42",
         "label": "Precedence"
       }
-    ]
+    ],
+    "statusText": "Supported mapping",
+    "scope": "Documented management options · customer governance has not been configured.",
+    "previousDiagram": "flowchart LR\n  A[Team and path rule groups] --> B[Review overlaps and priority]\n  B --> C[One published rule order]\n  C --> D[Versioned change and rollback]"
   },
   "r42": {
     "title": "Which rule wins when several conditions match?",
-    "intro": "The current property combines path, header, cookie, IP and flag conditions with later overrides and WAF-dependent decisions. Vercel matchers and custom logic provide building blocks, but the complete execution order must be translated explicitly.",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Ordinary predicates have candidate mappings; WAF-result timing and precedence remain unresolved.",
+    "intro": "The property combines ordinary request conditions with later overrides and WAF-dependent decisions. Native matchers and custom Middleware cover ordinary predicates; the WAF-result input and its availability at the consuming stage need confirmation.",
+    "status": "confirmation",
+    "category": "Request and rule mappings",
+    "note": "Host/path/method/cookie/header conditions have mappings. Confirm the required WAF result and when it is available.",
     "diagram": "flowchart LR\n  A[Initialize request state] --> B[Evaluate available conditions]\n  B --> C[Apply ordered overrides]\n  C --> D[Choose response or destination]\n  E[Required security result] -. availability unresolved .-> B",
     "flow": "Logical translation model, not an asserted Vercel internal execution trace. Only values available at a given stage can influence that stage.",
     "sectionTitle": "Test overlapping conditions",
     "paragraphs": [
-      "Path, header, cookie and query matches can use native conditions. Custom logic can express compound decisions, but percentage allocation belongs to the separate R17 audience policy.",
-      "A WAF result is an additional input with a timing dependency. The migration has not established that an equivalent security result is available before the delivery decision that consumes it."
+      "Use native host, path, header, cookie and query conditions, route method matching, or explicit custom logic for compound decisions. Match client IP only after establishing the trust boundary in R04. Audience sampling remains the separate R17 policy.",
+      "Translate request decisions and response-stage changes separately. The source captures triggered WAF rules and uses them for later reporting, optimization and bot-classification branches. A firewall’s existence does not establish an equivalent result accessible at those points."
     ],
-    "decision": "Build the ordered request and response rule graph from the raw export, then confirm WAF-result availability and expected final values for overlapping matches.",
-    "detail": "Do not translate numeric Akamai WAF rule IDs into assumed Vercel equivalents. The security-result contract remains with the security owners.",
+    "decision": "Have the security and delivery owners identify the required WAF-derived value, its supported interface and when the consuming rule can read it. Translate ordinary overlap and last-writer rules alongside that specific dependency.",
+    "detail": "No unsupported ordinary matching capability is identified. Needs confirmation records an unknown security-result contract, not a demonstrated platform gap. Do not substitute a client header for a WAF result, or treat numeric Akamai rule IDs as Vercel equivalents.",
     "docs": [
       {
         "label": "Route conditions and transforms",
@@ -875,10 +940,12 @@
         "label": "Request state"
       },
       {
-        "id": "r37",
-        "label": "Queue-it order"
+        "id": "r04",
+        "label": "IP trust boundary"
       }
-    ]
+    ],
+    "statusText": "Needs confirmation · WAF input",
+    "scope": "Ordinary predicates are supported · required security-result availability remains unresolved."
   },
   "r11": {
     "title": "How should CONSENTMGR change consent and cookies?",
