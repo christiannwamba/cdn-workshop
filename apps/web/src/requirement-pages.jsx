@@ -1,3 +1,4 @@
+import { RoutingNavigation } from './routing-navigation.jsx';
 import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import pages from './requirement-content.json';
@@ -77,6 +78,7 @@ export function RequirementPage({ id, Diagram, profile }) {
       </div>
       <LoggingNavigation id={id} profile={profile} />
       <ProcessingNavigation id={id} />
+      <RoutingNavigation id={id} />
       <Diagram
         key={id}
         id={id}

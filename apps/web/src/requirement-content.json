@@ -361,19 +361,17 @@
     }
   },
   "r19": {
-    "title": "Can a request select matching application and static destinations?",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Cookie and header branches reached owned origins; customer precedence and private access remain to validate.",
+    "title": "How do cookies and headers choose application and static destinations?",
+    "status": "workaround",
+    "category": "Routing and admission",
+    "note": "Custom Function preserves the cookie/header distinction; owned HTTPS destination selection is demonstrated.",
     "intro": "The current cookie and header rules choose different destinations: the cookie switches the application origin, while either signal switches static content. This custom Function reproduces that distinction with owned HTTPS test destinations.",
-    "statusText": "Conditional routing demonstrated",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
-    "diagram": "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Scoped cookie OR header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
-    "flow": "Internal and public identify logical owned test destinations. The diagram does not represent private connectivity or access authorization.",
+    "statusText": "Workaround · conditional routing demonstrated",
+    "scope": "Live owned example, with a dated fallback. Public/internal are test destination labels; private connectivity and access authorization are separate.",
+    "diagram": "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Host-scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Host-scoped cookie OR incoming header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
+    "flow": "The cookie changes both destinations and sets the outgoing internal-cell header. The incoming header alone changes only static selection.",
     "sectionTitle": "Compare application and static selection",
-    "paragraphs": [
-      "The header-only case is the distinction to inspect: it selected public-main for the application and internal-static for static content. A qualifying cookie selected both internal destinations and set the outgoing internal-cell header."
-    ],
+    "paragraphs": [],
     "table": {
       "headers": ["Input", "Application destination", "Static destination"],
       "rows": [
@@ -384,47 +382,64 @@
       ]
     },
     "observation": "All eight combinations reached the expected owned HTTPS origin in the 24 September test.",
-    "sources": [
-      {
-        "title": "Code: preserve the cookie and header distinction",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
-        "path": "07-supported-routing/lib/legacy-routing.mjs",
-        "first": 110,
-        "last": 118,
-        "code": "const inHostScope = String(hostname)\n  .toLowerCase()\n  .endsWith(`.${hostSuffix.toLowerCase()}`);\nconst cookie =\n  inHostScope &&\n  cookieValue(requestHeaders.get('cookie'), 'internal-cell') === 'true';\nconst header = requestHeaders.get('x-argos-internal-cell') === 'true';\nconst internalCell = cookie || header;\nif (cookie) requestHeaders.set('x-argos-internal-cell', 'true');\nconst isStatic = pathname.startsWith(staticPrefix);\nconst origin = isStatic\n  ? internalCell\n    ? internalStaticOrigin\n    : publicStaticOrigin\n  : cookie\n    ? internalOrigin\n    : publicOrigin;\n"
-      }
-    ],
-    "detail": "The test uses literal lowercase true and the first duplicate cookie. Its host scope is the owned vercel.app hostname; negative host cases are simulated decision inputs. These choices need confirmation against the customer’s effective rules.",
-    "decision": "Confirm cookie/header precedence, actual route classification and approved destinations. Validate private connectivity and access controls separately.",
+    "detail": "The source requires cookie=true on the scoped host to change the application origin; an incoming true header also sets the internal flag used for static routing. The sample uses /static/ to identify assets, literal lowercase true and the first duplicate cookie. Duplicate-cookie handling and the real asset matcher need agreement. Its negative hostname cases are simulated inputs, not DNS or private-origin tests.",
+    "decision": "The stated destination-selection behavior is demonstrated with custom routing. Confirm the actual asset paths and destination configuration; establish private connectivity and authorized access in the separate access-control design.",
     "related": [
-      {
-        "id": "r02",
-        "label": "Service routes"
-      },
       {
         "id": "r35",
         "label": "Holding response"
       },
       {
-        "id": "r42",
-        "label": "Rule order"
+        "id": "r36",
+        "label": "Admission"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Scoped cookie OR header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
+    "recorded": true,
+    "recordedTitle": "Recorded fallback · 24 September 2026",
+    "exercise": {
+      "url": "https://argos-ws-routing.vercel.app/#r19",
+      "label": "Open the live routing example",
+      "intro": "The example has an Inputs table with Application and Static content columns. Each destination link sends a fresh request: the selected row sets or clears the browser cookie and adds the header when needed. The result appears as HTTP status and JSON below the table.",
+      "steps": [
+        {
+          "title": "Compare the public destinations",
+          "text": "In the neither row, click public main under Application, then public static under Static content. After each click, inspect origin.destination in the result below the table: public-main, then public-static. Application requests /shop/cart; Static content requests /static/fixture.css."
+        },
+        {
+          "title": "See the header-only distinction",
+          "text": "In the header row, click public main, then internal static. Inspect origin.destination: public-main, then internal-static. The header changes the static destination without changing the application destination.",
+          "sources": [
+            {
+              "title": "Code: preserve the cookie and header distinction",
+              "label": "Owned test source · formatting expanded for readability",
+              "path": "07-supported-routing/lib/legacy-routing.mjs",
+              "first": 110,
+              "last": 118,
+              "code": "const inHostScope = String(hostname)\n  .toLowerCase()\n  .endsWith(`.${hostSuffix.toLowerCase()}`);\nconst cookie =\n  inHostScope &&\n  cookieValue(requestHeaders.get('cookie'), 'internal-cell') === 'true';\nconst header = requestHeaders.get('x-argos-internal-cell') === 'true';\nconst internalCell = cookie || header;\nif (cookie) requestHeaders.set('x-argos-internal-cell', 'true');\nconst isStatic = pathname.startsWith(staticPrefix);\nconst origin = isStatic\n  ? internalCell\n    ? internalStaticOrigin\n    : publicStaticOrigin\n  : cookie\n    ? internalOrigin\n    : publicOrigin;\n"
+            }
+          ]
+        },
+        {
+          "title": "Select both internal destinations with the cookie",
+          "text": "In the cookie row, click internal main, then internal static. Expect internal-main and internal-static; origin.received shows x-argos-internal-cell set to true. Repeat the two links in the both row: the destinations stay internal."
+        }
+      ],
+      "reset": "Operator utility: npm run reset from the owned 07-supported-routing demo directory restores normal mode. Every input link replaces the example cookie state."
+    }
   },
   "r35": {
     "title": "Can an operator show a holding page at the same URL?",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Controlled 503 delivery was demonstrated; activation policy and customer assets remain to agree.",
+    "status": "workaround",
+    "category": "Routing and admission",
+    "note": "Custom 503 response and authenticated deployment selection demonstrate the requested page delivery.",
     "intro": "The current requirement calls for a controlled sorry, holding or custom response page. The tested custom Function returns a packaged 503 at the requested URL when its deployment setting is enabled. An authenticated operator selects between the normal and holding deployments.",
-    "statusText": "Controlled holding page demonstrated",
-    "scope": "Recorded hosted evidence · 24 September 2026. This page does not send traffic or refresh the recorded results.",
-    "diagram": "flowchart LR\n O[Authenticated operator] -.->|Select deployment for alias| D[Active deployment]\n B[Browser request] --> D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> B\n N --> B",
-    "flow": "The dotted arrow changes deployment selection. The request URL stays the same; activation is not an automatic origin-health decision.",
+    "statusText": "Workaround · controlled holding demonstrated",
+    "scope": "Live owned example, with a dated fallback. Operator commands use the existing routing-demo checkout and Vercel login.",
+    "diagram": "flowchart LR\n B[Browser request] --> D[Active deployment]\n O[Authenticated operator] -.->|Select deployment for alias| D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> R[Response at the same URL]\n N --> R",
+    "flow": "The dotted arrow selects a prebuilt deployment for the stable alias. Requests in /shop or /shop/* receive its configured response; switching takes time to propagate.",
     "sectionTitle": "Compare the response at the same cart URL",
-    "paragraphs": [
-      "The recorded browser stayed at the same cart URL through normal service, holding mode and recovery. A holding=off query value could not override the operator’s deployment setting."
-    ],
+    "paragraphs": [],
     "table": {
       "headers": ["Operator selection", "Status", "Headers and navigation"],
       "rows": [
@@ -434,47 +449,70 @@
       ]
     },
     "observation": "The 24 September browser run demonstrated 200 → 503 → 200 at the same URL. Switching between deployments has propagation latency.",
-    "sources": [
-      {
-        "title": "Code: return the holding response for selected paths",
-        "label": "Recorded test source · 24 September 2026 · formatting expanded for readability",
-        "path": "07-supported-routing/api/index.mjs",
-        "first": 8,
-        "last": 9,
-        "code": "const inScope = u.pathname === '/shop' || u.pathname.startsWith('/shop/');\nif (enabled && inScope) {\n  res.statusCode = 503;\n  res.setHeader('Retry-After', '60');\n  res.setHeader('Content-Type', 'text/html; charset=utf-8');\n  return res.end(holdingPage);\n}\n"
-      }
-    ],
-    "detail": "HOLDING_ENABLED is a deployment environment setting. The test applies holding to /shop and /shop/*; /shopper, /outside and /static/fixture.css remain outside that scope. Controlled page selection does not decide which waiting visitors are admitted.",
-    "decision": "Agree the page assets, activation trigger and owner, status/header rules and path scope. Automatic failover and waiting-room admission require separate designs.",
+    "detail": "HOLDING_ENABLED is fixed in each deployment. The authenticated operator selects the normal or holding deployment; browser query parameters cannot change it. /shopper, /outside and /static/fixture.css stay outside holding scope. This example does not implement automatic health failover or visitor admission; neither is needed to demonstrate the stated custom-page requirement.",
+    "decision": "Custom page delivery is demonstrated. Agree the customer page, path scope, status/cache headers and activation owner. This operator switch has propagation latency; admission is addressed separately in R36.",
     "related": [
       {
-        "id": "r36",
-        "label": "Waiting-room admission"
+        "id": "r19",
+        "label": "Destination selection"
       },
       {
-        "id": "r19",
-        "label": "Origin selection"
+        "id": "r36",
+        "label": "Admission"
       }
-    ]
+    ],
+    "previousDiagram": "flowchart LR\n O[Authenticated operator] -.->|Select deployment for alias| D[Active deployment]\n B[Browser request] --> D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> B\n N --> B",
+    "recorded": true,
+    "recordedTitle": "Recorded fallback · 24 September 2026",
+    "exercise": {
+      "url": "https://argos-ws-routing.vercel.app/shop/cart?holding=off&item=fixture",
+      "label": "Open the stable cart URL",
+      "intro": "Use a terminal in the owned 07-supported-routing demo directory. These commands authenticate with the existing Vercel login and select prebuilt deployments for this test URL. Wait for each command to finish before reloading.",
+      "steps": [
+        {
+          "title": "Open normal service",
+          "text": "Run npm run reset, then open the cart link above. Open browser DevTools → Network and select the cart document. Expect status 200 and “Normal service” in the page."
+        },
+        {
+          "title": "Switch to the holding page",
+          "text": "Run npm run holding:on and reload that same tab. Expect “Please try again shortly” and status 503. In Network → cart document → Response Headers, inspect Retry-After: 60 and Cache-Control: no-store; Location is absent. The address stays unchanged even though holding=off is in its query.",
+          "sources": [
+            {
+              "title": "Code: return the holding response for selected paths",
+              "label": "Owned test source · formatting expanded for readability",
+              "path": "07-supported-routing/api/index.mjs",
+              "first": 6,
+              "last": 9,
+              "code": "res.setHeader('Cache-Control', 'no-store');\n// HOLDING_ENABLED is read from the selected deployment environment.\nconst inScope = u.pathname === '/shop' || u.pathname.startsWith('/shop/');\nif (enabled && inScope) {\n  res.statusCode = 503;\n  res.setHeader('Retry-After', '60');\n  res.setHeader('Content-Type', 'text/html; charset=utf-8');\n  return res.end(holdingPage);\n}\n"
+            }
+          ]
+        },
+        {
+          "title": "Restore normal service",
+          "text": "Run npm run reset and reload the same tab. Expect status 200 and “Normal service” again, with no Retry-After header."
+        }
+      ],
+      "reset": "Restore after presenting: npm run reset. The /shop and /shop/* paths are the only paths placed into holding mode."
+    }
   },
   "r36": {
     "title": "Who is allowed through the waiting room?",
-    "status": "partial",
-    "category": "Routing",
-    "note": "Admission requires an owned integration and policy; a holding page supplies only the response.",
-    "intro": "The current waiting room protects selected checkout and login requests, gives admitted visitors temporary access, and exposes waiting-room state to later processing. A dedicated integration or an explicitly designed admission service must supply that decision on Vercel.",
-    "statusText": "Admission integration unresolved",
-    "scope": "Proposed integration flow. No complete waiting-room admission demonstration has been run.",
-    "diagram": "flowchart LR\n V[Visitor request] --> D[Admission decision]\n D -->|Admitted| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting response]\n W -->|Recheck under agreed policy| D",
-    "flow": "Proposed flow only. The provider, capacity policy, visitor state and processing order still need to be selected and validated.",
-    "sectionTitle": "Define the admission decision",
+    "status": "workaround",
+    "category": "Routing and admission",
+    "note": "Queue-it or equivalent through Routing Middleware is the proposed admission mapping; customer integration is not yet demonstrated.",
+    "intro": "The current waiting room controls access to checkout and login, with temporary privilege and waiting cookies. The proposed Vercel mapping integrates Queue-it or an equivalent service through Routing Middleware, so its admission decision is applied before protected requests reach the application.",
+    "statusText": "Workaround · integration proposed",
+    "scope": "Explanation of a proposed integration. No Argos connector, queue capacity or fairness behavior has been verified.",
+    "diagram": "flowchart LR\n V[Visitor requests protected path] --> M[Routing Middleware and admission integration]\n M --> D{Admission service decision}\n D -->|Admitted or authorized bypass| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting experience]\n W -->|Recheck under provider policy| M",
+    "flow": "Proposed logical flow: the integration enforces admission before the protected application. The waiting experience and recheck protocol depend on the selected provider.",
+    "sectionTitle": "Separate the page from admission",
     "paragraphs": [
-      "Serving a waiting page and deciding who can proceed are separate behaviors. The current configuration includes temporary privilege and waiting-room cookies, selected paths and method rules.",
-      "The replacement must preserve the intended admission, bypass and failure policy, then pass the correct state to subsequent processing. The R35 holding-page example does not make those decisions."
+      "R35 demonstrates returning a holding page. R36 also needs a service that decides who may proceed and validates temporary admission state on subsequent requests. Queue-it or an equivalent service supplies that admission behavior; the integration and operations still need an owner.",
+      "Map the current checkout/login scope and visitor-state lifetimes to the selected service. Agree capacity, bypass and failure behavior before testing the full flow. Missing policy choices are implementation work, not evidence that the outcome is unsupported."
     ],
-    "observation": "There is no verified queue, capacity or fairness behavior in the existing workshop packs.",
-    "detail": "The supplied configuration describes a 600-second privilege cookie, a 30-second waiting-room cookie and a five-minute static TTL. These are distinct controls to confirm with the owner, not implemented settings in this diagram.",
-    "decision": "Choose the active replacement product and owner, and agree capacity, fairness, bypass, failure behavior and queue-to-admission-to-processing order.",
+    "observation": null,
+    "detail": "The supplied configuration uses 503 waiting responses, a 600-second privilege cookie, a 30-second waiting-room cookie and a five-minute static response TTL. They serve different purposes and are not assumed to transfer unchanged to a vendor connector. The public Vercel article describes a custom implementation approach; it is not a managed product commitment or proof of this customer integration.",
+    "decision": "Confirm the active waiting-room service and integration owner, then agree admission limits, visitor-state rules and behavior when the admission service fails. Validate those choices end to end; no queue or fairness guarantee is implied by this page.",
     "related": [
       {
         "id": "r35",
@@ -488,26 +526,41 @@
         "id": "r38",
         "label": "PIM processing"
       }
+    ],
+    "previousDiagram": "flowchart LR\n V[Visitor request] --> D[Admission decision]\n D -->|Admitted| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting response]\n W -->|Recheck under agreed policy| D",
+    "docs": [
+      {
+        "label": "Queue-it integration options",
+        "url": "https://queue-it.com/developers/connectors/"
+      },
+      {
+        "label": "Routing Middleware",
+        "url": "https://vercel.com/docs/routing-middleware"
+      },
+      {
+        "label": "Custom waiting-room guidance",
+        "url": "https://vercel.com/i/virtual-waiting-room#how-to-build-a-virtual-waiting-room-on-vercel-in-5-steps"
+      }
     ]
   },
   "r37": {
     "title": "Which Queue-it control wins when rules overlap?",
-    "status": "partial",
-    "category": "Routing",
-    "note": "The active connector and precedence among enable, bypass and later overrides are unresolved.",
-    "intro": "The current configuration can enable, disable or bypass Queue-it under different conditions, and a later PIM branch changes that state again. The proposed replacement needs an approved connector and an explicit evaluation order before protected application processing.",
-    "statusText": "Connector and ordering unresolved",
-    "scope": "Explanation of the integration decision. No customer Queue-it connector or admission flow has been tested.",
-    "diagram": "flowchart LR\n E[Enable and disable controls] --> P[Ordered policy — to confirm]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later processing overrides] --> P\n P --> C[Approved connector integration]\n C --> D[Effective wait or admit decision]",
-    "flow": "Inputs that must be reconciled into an ordered policy. This is not a captured runtime sequence or a verified connector design.",
-    "sectionTitle": "Resolve the effective policy before integration",
+    "status": "workaround",
+    "category": "Routing and admission",
+    "note": "Ordered controls and a Queue-it integration can preserve the outcome; active connector and final policy need confirmation.",
+    "intro": "The source has separate Queue-it enable controls and a processing bypass-event flag. The proposed mapping carries their effective order into a Queue-it integration through Routing Middleware, with admission enforced before protected requests reach the application.",
+    "statusText": "Workaround · integration proposed",
+    "scope": "Explanation of the source constraints and proposed integration. No customer Queue-it connector or admission flow has been tested.",
+    "diagram": "flowchart LR\n E[Queue-it enable and disable controls] --> P[Effective policy]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later PIM bypass-event overrides] --> P\n P --> C[Routing Middleware and Queue-it integration]\n C --> D{Admission decision}\n D -->|Proceed| A[Protected application]\n D -->|Wait| H[Waiting experience]",
+    "flow": "Inputs to the proposed effective policy, not a captured execution sequence. Confirm the active connector and rule order; a PIM bypass-event flag is not itself a Queue-it admission token.",
+    "sectionTitle": "Preserve separate flags and later overrides",
     "paragraphs": [
-      "The source starts Queue-it disabled, then applies test and bypass controls. A later non-waiting PIM branch resets the bypass-event state. Overlapping controls therefore need an explicit final decision.",
-      "A queueIt flag in the processing test only gates that mock’s parent operation. It does not prove a Queue-it connector, queue admission or the customer’s complete execution order."
+      "Queue-it starts off. The test header can turn it on or off; the configured IP bypass branch turns it off. These source branches also set the processing bypass-event flag to true.",
+      "A later eligible PIM branch, while the visitor is not waiting, resets that bypass-event flag to false. Both Queue-it-on and Queue-it-off PIM branches are described. Resetting this flag does not by itself turn Queue-it off or grant a visitor admission."
     ],
-    "observation": "No connector/runtime choice or end-to-end Queue-it admission has been established by the owned test packs.",
-    "detail": "Keep test controls protected and source credentials outside workshop content. The complete active configuration is needed to determine which rule wins when enable, disable, bypass and later overrides overlap.",
-    "decision": "Obtain the active Queue-it connector and configuration, confirm the integration owner, and agree precedence with waiting-room state and PIM overrides.",
+    "observation": "These are source constraints, not observed connector behavior. The processing demo’s queueIt input only gates its sample operation; it does not exercise Queue-it.",
+    "detail": "The later PIM branches have selected path/method, retry and internal-request eligibility conditions. Their relationship to the active connector must be confirmed from the effective configuration. Do not expose test headers as unauthenticated production admission controls; the replacement must preserve the intended trust boundary. No credentials or allowlisted addresses are required for this workshop explanation.",
+    "decision": "Obtain the active connector/runtime and effective policy, including overlapping test, bypass, waiting and PIM conditions. Confirm who owns the integration and which trusted controls may override it; the remaining uncertainty is the customer configuration and proof, not an identified runtime capability gap.",
     "related": [
       {
         "id": "r36",
@@ -520,6 +573,30 @@
       {
         "id": "r42",
         "label": "Rule order"
+      }
+    ],
+    "previousDiagram": "flowchart LR\n E[Enable and disable controls] --> P[Ordered policy — to confirm]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later processing overrides] --> P\n P --> C[Approved connector integration]\n C --> D[Effective wait or admit decision]",
+    "table": {
+      "headers": ["Source condition", "Queue-it state", "Processing bypass-event flag"],
+      "rows": [
+        ["Default", "Off", "Not established by this default"],
+        ["x-qit-test=true", "On", "True"],
+        ["x-qit-test=false or configured bypass IP", "Off", "True"],
+        [
+          "Later eligible PIM branch; visitor not waiting",
+          "Separate on/off branches",
+          "Reset to false"
+        ]
+      ]
+    },
+    "docs": [
+      {
+        "label": "Queue-it integration options",
+        "url": "https://queue-it.com/developers/connectors/"
+      },
+      {
+        "label": "Routing Middleware",
+        "url": "https://vercel.com/docs/routing-middleware"
       }
     ]
   },
