@@ -1,0 +1,194 @@
+{
+  "recordedAt": "2026-09-28T08:49:40.345Z",
+  "finishedAt": "2026-09-28T08:50:08.849Z",
+  "samplePath": "/sample/r23-1790585380344",
+  "recordedDeployment": "https://argos-ws-vary-response-type-8uu32r3h9-cn-demos-vtest314.vercel.app",
+  "phases": [
+    {
+      "name": "HTML",
+      "contentType": "TeXt/HtMl; charset=UTF-8",
+      "originCalls": 2,
+      "requests": [
+        {
+          "language": "en",
+          "cache": "MISS",
+          "vary": null,
+          "fill": "7a901159-7e19-4f92-8ae5-d8a379ac6720",
+          "phase": "html",
+          "status": 200
+        },
+        {
+          "language": "fr",
+          "cache": "MISS",
+          "vary": null,
+          "fill": "3853a306-5f28-4885-94b4-80af067f5f8a",
+          "phase": "html",
+          "status": 200
+        },
+        {
+          "language": "en",
+          "cache": "HIT",
+          "vary": null,
+          "fill": "7a901159-7e19-4f92-8ae5-d8a379ac6720",
+          "phase": "html",
+          "status": 200
+        },
+        {
+          "language": "fr",
+          "cache": "HIT",
+          "vary": null,
+          "fill": "3853a306-5f28-4885-94b4-80af067f5f8a",
+          "phase": "html",
+          "status": 200
+        }
+      ],
+      "originEvents": [
+        {
+          "at": "2026-09-28T08:49:41.139Z",
+          "language": "en",
+          "fill": "7a901159-7e19-4f92-8ae5-d8a379ac6720",
+          "phase": "html",
+          "contentType": "TeXt/HtMl; charset=UTF-8"
+        },
+        {
+          "at": "2026-09-28T08:49:41.610Z",
+          "language": "fr",
+          "fill": "3853a306-5f28-4885-94b4-80af067f5f8a",
+          "phase": "html",
+          "contentType": "TeXt/HtMl; charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "name": "JSON",
+      "contentType": "application/json; charset=utf-8",
+      "originCalls": 2,
+      "requests": [
+        {
+          "language": "en",
+          "cache": "MISS",
+          "vary": "Accept-Language",
+          "fill": "e1045195-4a93-4d2e-a577-587e9682a550",
+          "phase": "json",
+          "status": 200
+        },
+        {
+          "language": "fr",
+          "cache": "MISS",
+          "vary": "Accept-Language",
+          "fill": "d2bd7e55-0e89-44f6-a831-1b323a916354",
+          "phase": "json",
+          "status": 200
+        },
+        {
+          "language": "en",
+          "cache": "HIT",
+          "vary": "Accept-Language",
+          "fill": "e1045195-4a93-4d2e-a577-587e9682a550",
+          "phase": "json",
+          "status": 200
+        },
+        {
+          "language": "fr",
+          "cache": "HIT",
+          "vary": "Accept-Language",
+          "fill": "d2bd7e55-0e89-44f6-a831-1b323a916354",
+          "phase": "json",
+          "status": 200
+        }
+      ],
+      "originEvents": [
+        {
+          "at": "2026-09-28T08:50:08.332Z",
+          "language": "en",
+          "fill": "e1045195-4a93-4d2e-a577-587e9682a550",
+          "phase": "json",
+          "contentType": "application/json; charset=utf-8"
+        },
+        {
+          "at": "2026-09-28T08:50:08.671Z",
+          "language": "fr",
+          "fill": "d2bd7e55-0e89-44f6-a831-1b323a916354",
+          "phase": "json",
+          "contentType": "application/json; charset=utf-8"
+        }
+      ]
+    }
+  ],
+  "typeMatrix": [
+    {
+      "contentType": "TeXt/HtMl; charset=UTF-8",
+      "vary": null,
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "application/json; charset=utf-8",
+      "vary": "Accept-Language",
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "TEXT/CSS; charset=UTF-8",
+      "vary": null,
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "text/js; charset=UTF-8",
+      "vary": null,
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "text/javascript; charset=UTF-8",
+      "vary": "Accept-Language",
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "application/javascript; charset=UTF-8",
+      "vary": "Accept-Language",
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "Application/X-JavaScript; charset=UTF-8",
+      "vary": null,
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    },
+    {
+      "contentType": "IMAGE/X-ICON",
+      "vary": null,
+      "cacheSequence": ["MISS", "MISS", "HIT", "HIT"],
+      "originCalls": 2
+    }
+  ],
+  "sources": {
+    "rewrite": {
+      "path": "09-vary-response-type/proxy.js",
+      "first": 6,
+      "last": 9,
+      "code": " // Explicit finite fixture language contract; not a general Accept-Language parser.\n const language=/^fr(?:[-,;]|$)/i.test(request.headers.get('accept-language')||'')?'fr':'en';\n url.pathname='/api/content'; url.search=new URLSearchParams({namespace:match[1],language}).toString();\n return rewrite(url);",
+      "fileSha256": "f7ce246c7f032e932342f47b4a74dfab0d52cb2e46ef6e5d286fe840df50825c",
+      "displayCode": "// Explicit finite fixture language contract; not a general Accept-Language parser.\nconst language = /^fr(?:[-,;]|$)/i.test(\n  request.headers.get(\"accept-language\") || \"\",\n)\n  ? \"fr\"\n  : \"en\";\nurl.pathname = \"/api/content\";\nurl.search = new URLSearchParams({ namespace: match[1], language }).toString();\nreturn rewrite(url);\n"
+    },
+    "response": {
+      "path": "09-vary-response-type/api/content.mjs",
+      "first": 8,
+      "last": 16,
+      "code": "  const origin=new URL('/content/'+namespace,process.env.FIXTURE_URL);\n  const upstream=await fetch(origin,{headers:{authorization:'Bearer '+process.env.FIXTURE_TOKEN,'accept-language':language,'x-function-invocation':invocation},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(8000)});\n  if(upstream.status!==200)throw Error('Origin unavailable');\n  const contentType=upstream.headers.get('content-type'),vary=upstream.headers.get('vary');\n  // Explicitly support only the fixture variant contract. Unknown dimensions fail closed.\n  if(vary?.toLowerCase().trim()!=='accept-language'||upstream.headers.has('set-cookie'))throw Error('Unsupported origin cache contract');\n  const headers=new Headers({'content-type':contentType,'cache-control':'public, max-age=0, must-revalidate','vercel-cdn-cache-control':'public, s-maxage=20','x-function-invocation':invocation,'x-origin-fill':upstream.headers.get('x-origin-fill'),'x-origin-phase':upstream.headers.get('x-origin-phase')});\n  if(!removeVary(contentType))headers.set('vary',vary);\n  return new Response(await upstream.text(),{status:200,headers});",
+      "fileSha256": "14dd876dbd506ecd88ce6a23fff7f42ed3797ca9a1ddb511061d75942c71b404",
+      "displayCode": "const origin = new URL(\"/content/\" + namespace, process.env.FIXTURE_URL);\nconst upstream = await fetch(origin, {\n  headers: {\n    authorization: \"Bearer \" + process.env.FIXTURE_TOKEN,\n    \"accept-language\": language,\n    \"x-function-invocation\": invocation,\n  },\n  cache: \"no-store\",\n  redirect: \"error\",\n  signal: AbortSignal.timeout(8000),\n});\nif (upstream.status !== 200) throw Error(\"Origin unavailable\");\nconst contentType = upstream.headers.get(\"content-type\"),\n  vary = upstream.headers.get(\"vary\");\n// Explicitly support only the fixture variant contract. Unknown dimensions fail closed.\nif (\n  vary?.toLowerCase().trim() !== \"accept-language\" ||\n  upstream.headers.has(\"set-cookie\")\n)\n  throw Error(\"Unsupported origin cache contract\");\nconst headers = new Headers({\n  \"content-type\": contentType,\n  \"cache-control\": \"public, max-age=0, must-revalidate\",\n  \"vercel-cdn-cache-control\": \"public, s-maxage=20\",\n  \"x-function-invocation\": invocation,\n  \"x-origin-fill\": upstream.headers.get(\"x-origin-fill\"),\n  \"x-origin-phase\": upstream.headers.get(\"x-origin-phase\"),\n});\nif (!removeVary(contentType)) headers.set(\"vary\", vary);\nreturn new Response(await upstream.text(), { status: 200, headers });\n"
+    },
+    "matcher": {
+      "path": "09-vary-response-type/lib/policy.mjs",
+      "first": 1,
+      "last": 2,
+      "code": "export const prefixes=['text/html','text/css','text/js','application/x-javascript','image/x-icon'];\nexport function removeVary(contentType){return prefixes.some(prefix=>(contentType||'').trim().toLowerCase().startsWith(prefix));}",
+      "fileSha256": "5796ae6e3bbf4cf6cfa8567da6ce9cc785e810a617afc09c9475260a65bd5cad",
+      "displayCode": "export const prefixes = [\n  \"text/html\",\n  \"text/css\",\n  \"text/js\",\n  \"application/x-javascript\",\n  \"image/x-icon\",\n];\nexport function removeVary(contentType) {\n  return prefixes.some((prefix) =>\n    (contentType || \"\").trim().toLowerCase().startsWith(prefix),\n  );\n}\n"
+    }
+  }
+}

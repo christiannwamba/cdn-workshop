@@ -35,6 +35,9 @@
     },
     "cache": {
       "url": "https://argos-ws-cache.vercel.app"
+    },
+    "varyResponseType": {
+      "url": "https://argos-ws-vary-response-type.vercel.app"
     }
   }
 }

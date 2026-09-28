@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import observation from './cache-observations.json';
+import { VarySolution } from './r23-solution.jsx';
+import previousVaryDiagram from './r23-previous-diagram.json';
 
 export const cacheCatalog = [
   {
@@ -24,8 +26,8 @@ export const cacheCatalog = [
   {
     id: 'R23',
     title: 'Can we choose which responses lose Vary by their content type?',
-    status: 'partial',
-    note: 'Known-route removal retained CDN variants. Dynamic Content-Type matching is unverified.',
+    status: 'workaround',
+    note: 'Custom origin-response Content-Type rule demonstrated with explicit CDN variant identity.',
   },
   {
     id: 'R24',
@@ -61,14 +63,14 @@ const copy = {
       'Confirm which browser pixels or backend services need tracking parameters, and whether application-hosted ISR is acceptable. The working rewrite does not establish cache-key control for arbitrary external origins or per-visitor origin attribution.',
   },
   r23: {
-    status: 'URL-based removal demonstrated',
+    status: 'Custom response-type rule demonstrated',
     intro:
-      'The customer rule removes Vary from selected response types while retaining the CDN’s necessary variants.',
+      'The customer rule removes Vary from selected response types. Here, a Function checks the Content-Type returned by the origin and removes Vary only when it matches. Separate internal cache entries keep the content variants apart.',
     scope:
-      'We demonstrated removing Vary on selected URLs. We have not verified choosing responses by the Content-Type returned by the origin.',
-    flow: 'This test uses predetermined URL paths. English and French illustrate separate CDN variants, not a confirmed customer use case. The diagram shows logical stages, not an internal platform trace.',
+      'The browser keeps the same URL. The test switched the origin from HTML to JSON: HTML lost Vary, JSON kept it, and both retained separate English and French content.',
+    flow: 'Middleware selects the language’s internal cache entry before lookup. The Function inspects the origin response only on a MISS; a fresh HIT reuses the stored body and headers. English/French are illustrative variants.',
     decision:
-      'Confirm whether predetermined URL paths can express the customer’s response-type rule. Validate browser and downstream cache behavior before adopting removal.',
+      'Map every customer content variant into the cache identity and confirm the exact MIME rules. Validate downstream caching before adopting removal: this test gives browsers zero freshness, while Vercel caches each variant for 20 seconds.',
   },
   r24: {
     status: 'Bounded public variants demonstrated',
@@ -124,17 +126,25 @@ const diagrams = {
   Note over B,M: Requested URL still includes utm_source
   Note over I,O: Renderer gets no utm_source`,
   r23: `sequenceDiagram
-  participant C as Client
-  participant E as Vercel CDN and response rules
-  participant O as Test origin
-  C->>E: First English request
-  E->>O: MISS, x-demo-language: en
-  O-->>E: English body, Vary: x-demo-language
-  E->>E: Store language variant, remove final Vary
-  E-->>C: English body, Vary absent
-  Note over E,O: French request creates its own entry the same way
-  C->>E: Repeat English or French request
-  E-->>C: HIT for that language, Vary absent`,
+  participant B as Browser
+  participant M as Middleware
+  participant C as CDN cache
+  participant F as Function
+  participant O as Origin
+  B->>M: Same public URL, selected language
+  M->>C: Internal cache entry for that language
+  alt Fresh HIT
+    C-->>B: Stored body and headers for that language
+    Note over F,O: No Function or origin call
+  else MISS
+    C->>F: Run response handler
+    F->>O: Fetch selected language
+    O-->>F: Body, Content-Type and Vary
+    F->>F: Matching type removes Vary, other types keep it
+    F-->>C: Cacheable body and chosen headers
+    C->>C: Store under explicit language identity
+    C-->>B: Body and chosen headers
+  end`,
   r24: `sequenceDiagram
   participant C as Client
   participant E as Native rules and CDN
@@ -275,11 +285,6 @@ function commandText(id, base) {
       start +
       `\n# Six requests per mode: chair/email, chair/social, repeat; then table.\nfor mode in baseline normalized rewrite; do\n  for term in chair table; do\n    for tracking in email social email; do\n      echo "$mode: q=$term, utm_source=$tracking"\n      curl -q -sS --max-time 30 -D - "$cache_base/$mode/$cache_run-$mode?q=$term&utm_source=$tracking"\n      echo\n    done\n  done\ndone`
     );
-  if (id === 'r23')
-    return (
-      start +
-      `\n# Same path, alternate language headers, then repeat both.\nfor language in en fr en fr; do\n  curl -q -sS --max-time 30 -D - -H "x-demo-language: $language" "$cache_base/vary/html/$cache_run"\n  echo\ndone`
-    );
   return (
     start +
     `\n# Terminal Cookie headers: these are not browser-cookie actions.\nfor cookie in 'experiment=A; other=1' 'experiment=A; other=2' 'experiment=B' 'experiment=B; other=3'; do\n  curl -q -sS --max-time 30 -D - -H "Cookie: $cookie" "$cache_base/experiment/$cache_run"\n  echo\ndone`
@@ -322,7 +327,6 @@ function Repeat({ id, base, children }) {
   const path = {
     r20: '/baseline/',
     r22: '/baseline/, /normalized/ and /rewrite/',
-    r23: '/vary/html/',
     r24: '/experiment/',
   }[id];
   return (
@@ -472,68 +476,6 @@ function Query({ base }) {
     </section>
   );
 }
-function Vary({ base }) {
-  const data = observation.r23.html;
-  return (
-    <section>
-      <h2>Alternate languages on one URL</h2>
-      <Recorded />
-      <ol className="exercise">
-        <li>
-          <h3>Check the language and the final Vary header</h3>
-          <Results
-            data={data}
-            labels={['English', 'French', 'English again', 'French again']}
-            vary
-          />
-          <p>
-            English and French keep different fills. Each repeat reuses its own language,
-            while the client receives no Vary header. The independent journal records two
-            origin executions.
-          </p>
-          <Source name="cache">Code: generate content and the origin Vary header</Source>
-          <Source name="vary">Config: remove Vary on known response paths</Source>
-          <details className="source">
-            <summary>Other tested response types and downstream scope</summary>
-            <Table
-              headings={[
-                'Route type',
-                'Response Content-Type',
-                'Vary at client',
-                'Origin fills',
-              ]}
-              rows={Object.entries(observation.r23).map(([type, result]) => [
-                type,
-                result.requests[0].contentType,
-                result.requests[0].vary || 'Absent',
-                result.origin.count,
-              ])}
-            />
-            <p>
-              All six sequences retained language separation. JSON is outside the deletion
-              rule and kept Vary. The test’s JavaScript route emits text/javascript; the
-              customer’s text/js* rule still needs exact mapping.
-            </p>
-            <p>
-              Removal is a final response rule, not deletion of Vary before CDN storage.
-              The test sends browser max-age=0; this CDN evidence alone does not establish
-              safe reuse in browsers or downstream caches without Vary.
-            </p>
-            <p>
-              <Link href={docs.cache}>Vercel CDN cache variants</Link>
-            </p>
-          </details>
-        </li>
-        <Repeat id="r23" base={base}>
-          Send <code>x-demo-language: en</code> and <code>fr</code> to the same URL, then
-          repeat both. Check <code>x-vercel-cache</code>, <code>x-origin-fill</code>, Vary
-          and the body. Expect en MISS → fr MISS → en HIT → fr HIT, with Vary absent.
-        </Repeat>
-      </ol>
-      <Evidence data={data.origin} />
-    </section>
-  );
-}
 function Cohorts({ base }) {
   const data = observation.r24;
   return (
@@ -621,7 +563,13 @@ export function CachePage({ id, profile, Diagram }) {
           </p>
         )}
       </div>
-      <Diagram key={id} id={id} source={diagrams[id]} description={content.flow} />
+      <Diagram
+        key={id}
+        id={id}
+        source={diagrams[id]}
+        previousSource={id === 'r23' ? previousVaryDiagram : undefined}
+        description={content.flow}
+      />
       {id === 'r20' ? (
         <Baseline base={base} />
       ) : id === 'r21' ? (
@@ -629,7 +577,7 @@ export function CachePage({ id, profile, Diagram }) {
       ) : id === 'r22' ? (
         <Query base={base} />
       ) : id === 'r23' ? (
-        <Vary base={base} />
+        <VarySolution base={profile.fixtures.varyResponseType.url.replace(/\/$/, '')} />
       ) : (
         <Cohorts base={base} />
       )}
