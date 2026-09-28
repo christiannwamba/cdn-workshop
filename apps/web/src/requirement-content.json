@@ -193,22 +193,22 @@
     "scope": "Proposed retained mPulse integration · no browser beacon, event or dashboard validation has been run."
   },
   "r38": {
-    "title": "What must the replacement PIM processing do?",
-    "status": "confirmation",
+    "title": "Can we run custom code on Vercel?",
+    "status": "supported",
     "category": "Processing",
-    "note": "The invocation rules are known; the real PIM program and functional contract are missing.",
-    "intro": "Akamai invokes the PIM EdgeWorker for selected requests, but the supplied rules do not contain the program itself. Routing Middleware is a candidate for request decisions; a Function can handle explicit origin-response processing. The real stages and response changes must be known before choosing the complete replacement.",
-    "statusText": "Needs confirmation",
-    "scope": "Explanation of the known requirements. No real PIM implementation has been tested.",
-    "diagram": "flowchart LR\n E[Eligibility and state rules] --> D[Stage design — unresolved]\n I[Required inputs and outputs] --> D\n S[Program source and dependencies] --> D\n C[Origin and cache interaction] --> D\n D --> G[Golden request and response cases]",
-    "flow": "These are inputs needed to define the replacement, not an assertion about where the missing program runs.",
-    "sectionTitle": "What is known, and what is missing",
+    "note": "Custom code is supported through Routing Middleware and Functions; review PIM to plan its migration.",
+    "intro": "Yes. Routing Middleware and Functions run custom request and response logic. Argos runs a custom program called PIM on Akamai; reviewing it will determine where its logic belongs and what adaptations are needed.",
+    "statusText": "Supported mapping",
+    "scope": "Custom-code capability is supported. The actual PIM program has not been migrated or tested for equivalence.",
+    "diagram": "sequenceDiagram\n  participant C as Client\n  participant M as Routing Middleware\n  participant E as CDN cache\n  participant F as Function\n  participant O as Origin\n  C->>M: Request\n  M->>E: Run request logic, then continue\n  alt Fresh cached response\n    E-->>C: HIT, Function does not run\n  else Response needs the Function\n    E->>F: Invoke custom code\n    F->>O: Fetch origin explicitly\n    O-->>F: Origin response\n    F->>F: Process response\n    F-->>E: Return response with cache policy\n    E-->>C: Response\n  end",
+    "flow": "Illustrative route using both capabilities. Routing Middleware runs before the cache; a fresh cached response skips the Function.",
+    "sectionTitle": "Where the code runs",
     "paragraphs": [
-      "The rules identify cookie, path, method, retry, subrequest and waiting-room conditions. They identify invocation and status, not the operations PIM performs on a request or response.",
-      "The RP-status-only mock used in R39 records path, query and method, then returns a configured status. Its backend returns synthetic JSON. Neither that test nor the separate R40 child example proves customer body changes, per-visitor cached-body processing or cookie policy."
+      "Routing Middleware can inspect a request, redirect or rewrite it, and set headers before the cache lookup.",
+      "A Function can fetch an origin, inspect or change its response, and return the result. This is explicit application code."
     ],
-    "detail": "Routing Middleware runs before the cache; do not assume it supplies a general post-cache response-body hook. Before-origin, after-origin and cache-related stages must be recovered from the program or contract. The PIM name alone does not establish Akamai Page Integrity Manager.",
-    "decision": "Obtain the PIM source and dependencies, or a functional contract with stage order, request/response changes, external calls and golden inputs/outputs. Establish whether any processing must modify a cached body separately for each visitor.",
+    "detail": "Running custom code does not mean every Akamai lifecycle hook is available unchanged. Routing Middleware is not a general after-origin or cached-response-body hook; response processing in this flow belongs to the Function.",
+    "decision": "Review the PIM source and dependencies to choose where its logic runs, identify adaptations, and agree request/response cases to verify the migration.",
     "related": [
       {
         "id": "r39",
@@ -217,6 +217,32 @@
       {
         "id": "r40",
         "label": "Child identity"
+      }
+    ],
+    "previousDiagram": "flowchart LR\n E[Eligibility and state rules] --> D[Stage design — unresolved]\n I[Required inputs and outputs] --> D\n S[Program source and dependencies] --> D\n C[Origin and cache interaction] --> D\n D --> G[Golden request and response cases]",
+    "detailTitle": "Migration scope",
+    "docs": [
+      {
+        "label": "Routing Middleware",
+        "url": "https://vercel.com/docs/routing-middleware"
+      },
+      {
+        "label": "Vercel Functions",
+        "url": "https://vercel.com/docs/functions"
+      },
+      {
+        "label": "CDN caching of Function responses",
+        "url": "https://vercel.com/docs/caching/cdn-cache"
+      }
+    ],
+    "sources": [
+      {
+        "title": "Existing example: custom request logic",
+        "label": "Workshop Middleware excerpt · custom cookie logging, not PIM",
+        "path": "apps/request-demo/middleware.ts",
+        "first": 55,
+        "last": 71,
+        "code": "  const selected = (request.headers.get('cookie') || '')\n    .split(';')\n    .map((x) => x.trim())\n    .filter((x) => x.startsWith('workshop_choice='));\n  const value =\n    selected.length === 1 ? selected[0].slice('workshop_choice='.length) : null;\n  const valid = value === 'fixture-A' || value === 'fixture-B';\n  console.log(\n    JSON.stringify({\n      kind: 'workshop-cookie-v1',\n      run,\n      eventId,\n      ...(browser ? { slot } : {}),\n      cookieState: selected.length === 0 ? 'missing' : valid ? 'valid' : 'invalid',\n      cookie: valid ? value : null,\n    }),\n  );"
       }
     ]
   },
@@ -248,7 +274,7 @@
     "related": [
       {
         "id": "r38",
-        "label": "PIM contract"
+        "label": "Custom code"
       },
       {
         "id": "r40",
@@ -320,7 +346,7 @@
     "related": [
       {
         "id": "r38",
-        "label": "PIM contract"
+        "label": "Custom code"
       },
       {
         "id": "r31",
@@ -524,7 +550,7 @@
       },
       {
         "id": "r38",
-        "label": "PIM processing"
+        "label": "Custom code"
       }
     ],
     "previousDiagram": "flowchart LR\n V[Visitor request] --> D[Admission decision]\n D -->|Admitted| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting response]\n W -->|Recheck under agreed policy| D",
@@ -568,7 +594,7 @@
       },
       {
         "id": "r38",
-        "label": "PIM processing"
+        "label": "Custom code"
       },
       {
         "id": "r42",
