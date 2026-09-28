@@ -193,19 +193,19 @@
     "scope": "Proposed retained mPulse integration · no browser beacon, event or dashboard validation has been run."
   },
   "r38": {
-    "title": "Can we run custom code on Vercel?",
+    "title": "Can we run custom code at the edge?",
     "status": "supported",
     "category": "Processing",
-    "note": "Custom code is supported through Routing Middleware and Functions; review PIM to plan its migration.",
-    "intro": "Yes. Routing Middleware and Functions run custom request and response logic. Argos runs a custom program called PIM on Akamai; reviewing it will determine where its logic belongs and what adaptations are needed.",
+    "note": "Routing Middleware supports edge request logic; Functions process origin responses in configured regions. Review PIM to plan its migration.",
+    "intro": "Yes. Routing Middleware runs custom request logic globally at the edge, before the CDN cache. Origin-response processing can use Functions in configured regions.",
     "statusText": "Supported mapping",
-    "scope": "Custom-code capability is supported. The actual PIM program has not been migrated or tested for equivalence.",
+    "scope": "Argos runs a custom program called PIM on Akamai. Its migration and equivalent behavior have not been tested.",
     "diagram": "sequenceDiagram\n  participant C as Client\n  participant M as Routing Middleware\n  participant E as CDN cache\n  participant F as Function\n  participant O as Origin\n  C->>M: Request\n  M->>E: Run request logic, then continue\n  alt Fresh cached response\n    E-->>C: HIT, Function does not run\n  else Response needs the Function\n    E->>F: Invoke custom code\n    F->>O: Fetch origin explicitly\n    O-->>F: Origin response\n    F->>F: Process response\n    F-->>E: Return response with cache policy\n    E-->>C: Response\n  end",
     "flow": "Illustrative route using both capabilities. Routing Middleware runs before the cache; a fresh cached response skips the Function.",
     "sectionTitle": "Where the code runs",
     "paragraphs": [
       "Routing Middleware can inspect a request, redirect or rewrite it, and set headers before the cache lookup.",
-      "A Function can fetch an origin, inspect or change its response, and return the result. This is explicit application code."
+      "A Function runs in configured regions and can fetch an origin, inspect or change its response, and return the result. This is explicit application code."
     ],
     "detail": "Running custom code does not mean every Akamai lifecycle hook is available unchanged. Routing Middleware is not a general after-origin or cached-response-body hook; response processing in this flow belongs to the Function.",
     "decision": "Review the PIM source and dependencies to choose where its logic runs, identify adaptations, and agree request/response cases to verify the migration.",
