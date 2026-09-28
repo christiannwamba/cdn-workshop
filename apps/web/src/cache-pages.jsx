@@ -23,7 +23,7 @@ export const cacheCatalog = [
   },
   {
     id: 'R23',
-    title: 'Can we remove Vary and keep language versions separate?',
+    title: 'Can we choose which responses lose Vary by their content type?',
     status: 'partial',
     note: 'Known-route removal retained CDN variants. Dynamic Content-Type matching is unverified.',
   },
@@ -61,12 +61,14 @@ const copy = {
       'Confirm which browser pixels or backend services need tracking parameters, and whether application-hosted ISR is acceptable. The working rewrite does not establish cache-key control for arbitrary external origins or per-visitor origin attribution.',
   },
   r23: {
-    status: 'Known-route behavior demonstrated',
+    status: 'URL-based removal demonstrated',
     intro:
-      'The current policy removes Vary for selected response content types. This Vercel test uses native response rules on known paths, while retaining separate CDN entries for English and French content.',
-    flow: 'Logical stages demonstrated by the final responses and origin journal, not an internal platform trace.',
+      'The customer rule removes Vary from selected response types while retaining the CDN’s necessary variants.',
+    scope:
+      'We demonstrated removing Vary on selected URLs. We have not verified choosing responses by the Content-Type returned by the origin.',
+    flow: 'This test uses predetermined URL paths. English and French illustrate separate CDN variants, not a confirmed customer use case. The diagram shows logical stages, not an internal platform trace.',
     decision:
-      'Can the policy use known routes, or must it match each origin response’s Content-Type dynamically? That dynamic condition remains unverified. Browser and downstream cache behavior also needs validation before adopting removal.',
+      'Confirm whether predetermined URL paths can express the customer’s response-type rule. Validate browser and downstream cache behavior before adopting removal.',
   },
   r24: {
     status: 'Bounded public variants demonstrated',
@@ -612,6 +614,7 @@ export function CachePage({ id, profile, Diagram }) {
         </span>
         <h1>{page.title}</h1>
         <p className="lede">{content.intro}</p>
+        {id === 'r23' && <p>{content.scope}</p>}
         {id === 'r21' && (
           <p className="small">
             Explanation only. Exact pre-expiry refresh is not demonstrated.
