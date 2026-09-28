@@ -68,7 +68,7 @@ const copy = {
       'The customer rule removes Vary from selected response types. Here, a Function checks the Content-Type returned by the origin and removes Vary only when it matches. Separate internal cache entries keep the content variants apart.',
     scope:
       'The browser keeps the same URL. The test switched the origin from HTML to JSON: HTML lost Vary, JSON kept it, and both retained separate English and French content.',
-    flow: 'Middleware selects the language’s internal cache entry before lookup. The Function inspects the origin response only on a MISS; a fresh HIT reuses the stored body and headers. English/French are illustrative variants.',
+    flow: 'Routing Middleware runs globally before cache lookup. The Node.js Vercel Function runs in London (lhr1) in this demo. Both run inside Vercel; only a MISS reaches the Function and external origin. English/French are illustrative variants.',
     decision:
       'Map every customer content variant into the cache identity and confirm the exact MIME rules. Validate downstream caching before adopting removal: this test gives browsers zero freshness, while Vercel caches each variant for 20 seconds.',
   },
@@ -127,12 +127,12 @@ const diagrams = {
   Note over I,O: Renderer gets no utm_source`,
   r23: `sequenceDiagram
   participant B as Browser
-  participant M as Middleware
-  participant C as CDN cache
-  participant F as Function
-  participant O as Origin
+  participant M as Routing Middleware
+  participant C as Vercel CDN cache
+  participant F as Node.js Vercel Function
+  participant O as External origin
   B->>M: Same public URL, selected language
-  M->>C: Internal cache entry for that language
+  M->>C: Internal language identity, then cache lookup
   alt Fresh HIT
     C-->>B: Stored body and headers for that language
     Note over F,O: No Function or origin call
