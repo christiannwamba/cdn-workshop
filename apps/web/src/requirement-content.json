@@ -320,18 +320,18 @@
     }
   },
   "r40": {
-    "title": "Can internal requests keep their parent identity without repeating processing?",
+    "title": "Can we link an internal request to the request that caused it?",
     "status": "workaround",
     "category": "Processing",
-    "note": "Custom parent/child correlation and recursion guard demonstrated. Real PIM routes, trust and log policy still need the contract.",
-    "intro": "The current rules mark PIM subrequests and distinguish them in logs. This owned Function example signs a child marker, keeps parent and child IDs together, and accepts only one child level. Two deliberate deliveries create one child event in the test ledger.",
+    "note": "Custom IDs link an outgoing request to its parent; the receiver reads and logs them for correlation.",
+    "intro": "The browser sends request A to a Function. That Function sends a new request B to a backend, carrying B’s ID and parent A in a signed header. The receiver records both IDs so we can link B back to A.",
     "statusText": "Workaround · child identity demonstrated",
-    "scope": "Live example on an owned test service · recorded fallback from 27 September 2026. The customer PIM program is not implemented.",
-    "diagram": "sequenceDiagram\n participant P as Parent Function\n participant C as Child Function\n participant L as Test event ledger\n P->>C: Signed parent and child IDs, depth 1\n C->>L: Record child ID\n L-->>C: New event\n C-->>P: duplicate false\n P->>C: Same signed parent and child IDs\n C->>L: Record same child ID\n L-->>C: Existing event\n C-->>P: duplicate true\n Note over C: No further child request",
-    "flow": "These are server-to-server HTTP deliveries. The custom child handler stops recursion at depth 1; the ledger deduplicates only its event record.",
-    "sectionTitle": "Observe the child requests",
+    "scope": "A and B are IDs assigned by the demo code. This test uses two regular Functions; the actual PIM program is not implemented.",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant P as First Function\n participant S as Backend service\n participant L as Demo log store\n B->>P: Start the example\n Note over P: Give this request ID A\n P->>L: Record request A\n Note over P: Prepare outgoing request B, linked to A\n P->>S: Send request with signed header: parent A, request B\n S->>S: Verify signed header\n S->>L: Record request B and its parent A\n S-->>P: Return result\n P-->>B: Return response",
+    "flow": "First delivery shown. The backend is a second Function in this test. The demo also repeats B once for a duplicate check, omitted from this diagram.",
+    "sectionTitle": "Find the link between A and B",
     "paragraphs": [
-      "The counters describe an owned event ledger. Deduplicating its child record does not prove exactly-once business execution or native Log Drain deduplication."
+      "An ordinary backend can receive the request too. The caller can track what it sends; for correlation in the receiver’s logs, the receiver must read and log the supplied IDs. Location and latency are separate from this link."
     ],
     "table": {
       "headers": ["Delivery", "Parent and child IDs", "Depth", "Event result"],
@@ -341,8 +341,8 @@
       ]
     },
     "observation": "Recorded result: two HTTP deliveries, one parent and one unique child event. Event-ledger deduplication does not establish exactly-once business execution or native Log Drain deduplication.",
-    "detail": "Unsigned, tampered and expired markers returned 401; a signed depth of 2 returned 409. A public x-pim-ew header alone does not authorize the child endpoint.",
-    "decision": "Agree the real child routes, trusted-marker propagation, recursion rules and required log fields from the PIM contract. Define duplicate business-effect handling separately from this event ledger.",
+    "detail": "The signed x-demo-child header carries run, parentId, childId, depth and expiry. The demo deliberately sends B twice with the same IDs. The first receipt has duplicate:false; the second has duplicate:true because the demo log store retains one child event. This does not prove exactly-once business execution or native Log Drain deduplication. The child handler accepts only depth 1 and makes no further request. Unsigned, tampered and expired markers returned 401; a signed depth of 2 returned 409. A public x-pim-ew header alone does not authorize the child endpoint. These are custom IDs and receiver logic, not automatic platform ID propagation or a global tracing guarantee. To inspect stored event counts, expand R39 in the example tab and click Read counters without starting another test. Expect parent=1 and child=1 for the two deliveries of B.",
+    "decision": "Agree which internal calls need linking, how each receiver will accept and log the IDs, and the PIM recursion policy. Treat duplicate business effects separately from the demo log store.",
     "related": [
       {
         "id": "r38",
@@ -362,14 +362,22 @@
     "exercise": {
       "url": "https://argos-ws-processing.vercel.app/#r40",
       "label": "Open the live child example",
-      "intro": "The browser calls the parent endpoint. The parent’s two child deliveries are server-to-server calls; inspect their returned receipts and stored counters.",
+      "intro": "Click Run owned child example in the example tab. The browser calls the first Function; that Function sends the backend request. Inspect the returned JSON below the button.",
       "steps": [
         {
-          "title": "Run owned child example and compare the receipts",
-          "text": "Click Run owned child example. In the returned JSON, both deliveries must share parentId and childId at depth 1. Expect duplicate:false on the first and duplicate:true on the second. The child makes no further request.",
+          "title": "Match request B to its parent A",
+          "text": "Read parentId at the top of the response: this is A. Read childId: this is B. In deliveries[0], check that parentId and childId match those top-level values. This receipt comes from the receiving Function after it verifies the signed header and records the link.",
           "sources": [
             {
-              "title": "Code: verify the child marker and depth",
+              "title": "Code: assign IDs, record A and prepare the signed header",
+              "label": "Owned test source · excerpt formatted for readability",
+              "path": "06-processing-retry/api/subrequest.mjs",
+              "first": 6,
+              "last": 7,
+              "code": "const parentId = randomUUID(), childId = randomUUID();\nawait event(run, 'parent', { parentId }, parentId);\nconst token = sign({\n  run, parentId, childId, depth: 1, expires: Date.now() + 30000,\n});"
+            },
+            {
+              "title": "Code: verify the header and record B with parent A",
               "label": "Owned test source · verified 27 September 2026 · excerpt formatted for readability",
               "path": "06-processing-retry/api/child.mjs",
               "first": 3,
@@ -377,14 +385,12 @@
               "code": "const data = verify(req.headers.get('x-demo-child') || '');\nif (!data || !validRun(data.run))\n  return json({ error: 'untrusted child marker' }, 401);\nif (data.depth !== 1)\n  return json({ error: 'depth limit: exactly one child level' }, 409);\nconst receipt = await event(\n  data.run,\n  'child',\n  { parentId: data.parentId, depth: 1 },\n  data.childId,\n);\nreturn json({\n  mock: 'owned child; no further fetch',\n  run: data.run,\n  parentId: data.parentId,\n  childId: data.childId,\n  depth: 1,\n  ...receipt,\n});\n"
             }
           ]
-        },
-        {
-          "title": "Read the unique-event counters",
-          "text": "On the same example page, expand R39 — Let the browser retry once and click Read counters. This reads the current child test namespace. Expect parent=1, child=1 and one child record containing its parentId. Two HTTP deliveries have produced one unique child event."
         }
       ],
       "reset": "Run owned child example again starts a fresh namespace. Fresh namespace under R39 clears the counter selection without deleting stored evidence."
-    }
+    },
+    "detailTitle": "Duplicate check, trust and logging scope",
+    "previousDiagram": "sequenceDiagram\n participant P as Parent Function\n participant C as Child Function\n participant L as Test event ledger\n P->>C: Signed parent and child IDs, depth 1\n C->>L: Record child ID\n L-->>C: New event\n C-->>P: duplicate false\n P->>C: Same signed parent and child IDs\n C->>L: Record same child ID\n L-->>C: Existing event\n C-->>P: duplicate true\n Note over C: No further child request"
   },
   "r19": {
     "title": "How do cookies and headers choose application and static destinations?",
