@@ -32,6 +32,7 @@ export const isDesignPage = (page) =>
 
 // The five existing support statuses, verbatim, in fixed presentation order.
 export const statusOrder = ['supported', 'workaround', 'partial', 'confirmation', 'gap'];
+const statusGroupOrder = ['gap', 'confirmation', 'partial', 'workaround', 'supported'];
 export const statusLabels = {
   supported: 'Supported',
   workaround: 'Workaround',
@@ -173,7 +174,7 @@ function useLandingState(design, catalog) {
         }))
         .filter((g) => g.rows.length);
     if (state.group === 'status')
-      return statusOrder
+      return statusGroupOrder
         .map((key) => ({
           key,
           title: statusLabels[key],
@@ -238,6 +239,9 @@ function PageTitle({ design, clean }) {
         Explore how each requirement maps to Vercel, then open one for its evidence and
         remaining decision.
       </p>
+      <a className="source-home-link" href="#sources">
+        Original requirements →
+      </a>
       {!clean && <p className="landing-priority">{designs[design].priority}</p>}
     </div>
   );

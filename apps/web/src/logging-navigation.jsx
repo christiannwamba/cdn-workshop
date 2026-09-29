@@ -7,7 +7,7 @@ const topics = [
   'Request identity',
   'Cookie logs',
   'Destinations',
-  'Reporting and costs',
+  'Reporting groups',
   'Browser measurement',
 ];
 export function LoggingNavigation({ id, profile }) {

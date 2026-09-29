@@ -1,0 +1,178 @@
+.original-requirements {
+  padding-top: 16px;
+}
+.original-requirements h1 {
+  font-size: clamp(30px, 4vw, 42px);
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  margin: 24px 0 16px;
+}
+.original-requirements h2 {
+  font-size: 21px;
+  letter-spacing: -0.025em;
+}
+.source-intro {
+  max-width: 760px;
+  color: var(--ds-gray-900);
+}
+.source-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 28px 0 20px;
+}
+.source-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.source-controls input {
+  min-width: 240px;
+  padding: 8px 12px;
+  border: 1px solid var(--ds-gray-400);
+  background: var(--ds-background-100);
+  color: var(--ds-gray-1000);
+  border-radius: 6px;
+}
+.source-views {
+  display: flex;
+  gap: 6px;
+}
+.source-views button {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.source-views button[aria-pressed='true'] {
+  background: var(--ds-gray-1000);
+  color: var(--ds-background-100);
+}
+.source-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 18px 0;
+}
+.source-reference-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+  font-size: 14px;
+}
+.source-reference-table th,
+.source-reference-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 16px;
+  border-bottom: 1px solid var(--ds-gray-300);
+  overflow-wrap: anywhere;
+}
+.source-reference-table thead th {
+  background: var(--ds-gray-100);
+  font-size: 12px;
+  color: var(--ds-gray-900);
+  font-weight: 500;
+}
+.source-reference-table tbody th {
+  width: 26%;
+  font-weight: 500;
+}
+.source-reference-table tbody td:last-child {
+  width: 21%;
+  font-size: 12px;
+  color: var(--ds-gray-900);
+}
+.source-reference-table p {
+  margin: 6px 0;
+}
+.source-workshop-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ds-gray-900);
+}
+.source-excerpt + .source-excerpt {
+  margin-top: 20px;
+}
+.source-excerpt strong {
+  font-weight: 500;
+}
+.source-excerpt small {
+  font-size: 12px;
+  color: var(--ds-gray-900);
+}
+.source-id-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 70px;
+}
+.source-pdf-table {
+  min-width: 800px;
+}
+.source-pdf-table tbody th {
+  width: 24%;
+}
+.source-pdf-table tbody td:last-child {
+  width: 7%;
+}
+.source-pdf-table tbody td:nth-child(3) {
+  width: 35%;
+}
+.source-footnote {
+  font-size: 13px;
+  color: var(--ds-gray-900);
+  margin-top: 24px;
+}
+.source-home-link {
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .source-controls {
+    align-items: stretch;
+  }
+  .source-controls label {
+    width: 100%;
+  }
+  .source-controls input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.original-requirement-brief {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+}
+.original-requirement-brief > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ds-gray-900);
+  font-size: 13px;
+  font-weight: 500;
+}
+.original-requirement-body {
+  max-width: 820px;
+  padding: 16px 0 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.original-requirement-body blockquote {
+  margin: 8px 0;
+  padding: 0;
+  border: 0;
+  font-size: 14px;
+  font-style: normal;
+}
+.original-requirement-body .source-citation {
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--ds-gray-900);
+}
+.original-requirement-body a {
+  font-size: 13px;
+}

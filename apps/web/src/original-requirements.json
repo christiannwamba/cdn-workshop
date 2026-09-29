@@ -1,0 +1,385 @@
+{
+  "title": "High level view of Akamai features for Argos to validate for migration",
+  "tableTitle": "Functionality Comparison: Akamai vs. Vercel",
+  "columns": ["Functionality", "Current Akamai Usage", "Vercel Equivalent / Gap"],
+  "rows": [
+    {
+      "key": "overview-01",
+      "functionality": "Allowing Methods",
+      "usage": "Options to allow only certain methods like GET/POST/DELETE",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R05"]
+    },
+    {
+      "key": "overview-02",
+      "functionality": "Determining Cookie Consent",
+      "usage": "Validate Cookie value and set appropriate flag/variables to determine/categorise users decision on cookie prefrerences",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R11", "R12"]
+    },
+    {
+      "key": "overview-03",
+      "functionality": "Request header modification",
+      "usage": "Add/modify/delete header/cookie",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R04", "R08", "R13"]
+    },
+    {
+      "key": "overview-04",
+      "functionality": "Response header modificcation",
+      "usage": "Add/modify/delete header/cookie",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R08", "R09", "R10", "R13"]
+    },
+    {
+      "key": "overview-05",
+      "functionality": "Request path rewrites",
+      "usage": "Manipulate request path before sending to origin",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R02"]
+    },
+    {
+      "key": "overview-06",
+      "functionality": "Request redirection to different path",
+      "usage": "Redirect on certain condition within CDN config",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R06", "R07"]
+    },
+    {
+      "key": "overview-07",
+      "functionality": "Cache Prefresh",
+      "usage": "Prefresh cached response from origin before ttl expiry",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R21"]
+    },
+    {
+      "key": "overview-08",
+      "functionality": "Define Cache key",
+      "usage": "To include/exclude all query params/ selected query param, certain headers, Flag variables and cookies",
+      "equivalent": "",
+      "pages": "1",
+      "requirements": ["R22", "R23", "R24"]
+    },
+    {
+      "key": "overview-09",
+      "functionality": "Unique reference number for each request",
+      "usage": "To trace in CDN-logs, status code , custom logs, caching and origin details. Possibility to send this reference# to origin",
+      "equivalent": "",
+      "pages": "1–2",
+      "requirements": ["R31", "R32"]
+    },
+    {
+      "key": "overview-10",
+      "functionality": "Datastream",
+      "usage": "Send logs to multiple destination, known bots traffic are sent to Botify endpoint and all traffic to NR.",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R33"]
+    },
+    {
+      "key": "overview-11",
+      "functionality": "Layers of Routing Logic for Origin",
+      "usage": "Change the Origin hostname depending on Cookie/request header - To Handle WCS Internal Cell routing, Pilot launches for internal testing.",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R02", "R19"]
+    },
+    {
+      "key": "overview-12",
+      "functionality": "Websocket",
+      "usage": "For Argos Live Chat",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R27"]
+    },
+    {
+      "key": "overview-13",
+      "functionality": "Device Characteristics",
+      "usage": "match based on the settings of a device or browser making the request - redirect mobile desktop to web or viceversa",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R15", "R16"]
+    },
+    {
+      "key": "overview-14",
+      "functionality": "Set response cookie from CDN",
+      "usage": "Setting/modifying/killing response cookies",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R13", "R14", "R15"]
+    },
+    {
+      "key": "overview-15",
+      "functionality": "Features for Virtual Waiting Room/VPC/QueueIT",
+      "usage": "",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R36", "R37"]
+    },
+    {
+      "key": "overview-16",
+      "functionality": "EdgeWorker",
+      "usage": "To apply custom operations on the Edge Layer during onRequest,onResponse stage and modify response stabefore sending to the client etc. For Personalisation and PIM.",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R38", "R39", "R40"]
+    },
+    {
+      "key": "overview-17",
+      "functionality": "Serve Custom page from CDN",
+      "usage": "Like Sorry Page, Holding Page, Custom response",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R35"]
+    },
+    {
+      "key": "overview-18",
+      "functionality": "CPCode",
+      "usage": "Will this be relevant, to group certain paths for reporting and purging cache",
+      "equivalent": "",
+      "pages": "2",
+      "requirements": ["R25", "R26"]
+    },
+    {
+      "key": "overview-19",
+      "functionality": "Redirects",
+      "usage": "Should we have redirects groupe for entire site in one policy or split it based on paths like in Akamai now?",
+      "equivalent": "",
+      "pages": "3",
+      "requirements": ["R41"]
+    },
+    {
+      "key": "overview-20",
+      "functionality": "AB Test Audience Segmentation Cloudlet",
+      "usage": "",
+      "equivalent": "",
+      "pages": "3",
+      "requirements": ["R17"]
+    },
+    {
+      "key": "overview-21",
+      "functionality": "Match Conditions",
+      "usage": "Matching ClientIP, WAF rules applied,sample % of clients/users, RegEx match on Paths, useragent and any headers",
+      "equivalent": "",
+      "pages": "3",
+      "requirements": ["R04", "R42"]
+    }
+  ],
+  "lookup": [
+    {
+      "id": "R01",
+      "references": ["PM Config, p. 1, 2-3, 16"],
+      "configurationExcerpt": {
+        "heading": "Hostnames · Served hostnames",
+        "text": "argos.co.uk; chat.argos.co.uk; failover.argos.co.uk; m.argos.co.uk; www.argos.co.uk; www.argos.co.uk.edgekey-staging.net",
+        "page": "1"
+      }
+    },
+    {
+      "id": "R02",
+      "references": ["PM Config, p. 1-2, 5, 9-13"]
+    },
+    {
+      "id": "R03",
+      "references": ["PM Config, p. 1-2, 12-13, 29"],
+      "configurationExcerpt": {
+        "heading": "Default origin · Host header / TLS validation",
+        "text": "Host header uses %(AK_HOSTHEADER); certificate verification enforced against origin, forward host header and host header",
+        "page": "1"
+      }
+    },
+    {
+      "id": "R04",
+      "references": ["PM Config, p. 1, 13"]
+    },
+    {
+      "id": "R05",
+      "references": ["PM Config, p. 2, 31-32"]
+    },
+    {
+      "id": "R06",
+      "references": ["PM Config, p. 2-3, 16"]
+    },
+    {
+      "id": "R07",
+      "references": ["PM Config, p. 3, 16"]
+    },
+    {
+      "id": "R08",
+      "references": ["PM Config, p. 4, 17"]
+    },
+    {
+      "id": "R09",
+      "references": ["PM Config, p. 3-4, 17-18"]
+    },
+    {
+      "id": "R10",
+      "references": ["PM Config, p. 4, 17"]
+    },
+    {
+      "id": "R11",
+      "references": ["PM Config, p. 5, 8, 15, 24-25"]
+    },
+    {
+      "id": "R12",
+      "references": ["PM Config, p. 5, 8, 15-16, 25-27"]
+    },
+    {
+      "id": "R13",
+      "references": ["PM Config, p. 12, 20-21, 24-30"]
+    },
+    {
+      "id": "R14",
+      "references": ["PM Config, p. 20-21, 30"]
+    },
+    {
+      "id": "R15",
+      "references": ["PM Config, p. 20, 30"]
+    },
+    {
+      "id": "R16",
+      "references": ["PM Config, p. 4-5, 20, 29"]
+    },
+    {
+      "id": "R17",
+      "references": ["PM Config, p. 5, 8-9", "Feature overview, p. 3"]
+    },
+    {
+      "id": "R18",
+      "references": ["PM Config, p. 5, 7-9, 27"],
+      "configurationExcerpt": {
+        "heading": "Experiment / feature variables · Key feature flags",
+        "text": "PMUSER_ENABLE_PERSONALISATION=on; PMUSER_FEATURE_FLAG=off; PMUSER_BOTIFY_ENABLED=true; PMUSER_FF_QUEUEIT default off; PMUSER_ENV_PREFIX=prod; PMUSER_BRAND=arg",
+        "page": "5"
+      }
+    },
+    {
+      "id": "R19",
+      "references": ["PM Config, p. 1-2, 19-20, 29"]
+    },
+    {
+      "id": "R20",
+      "references": ["PM Config, p. 6, 20", "Feature overview, p. 1"],
+      "configurationExcerpt": {
+        "heading": "Caching · Cache key and tags",
+        "text": "Search/Browse servlet paths force cache key rule (* [!x] [!y],,,); cookie-list paths add cache tag %(PMUSER_ENV_PREFIX)-%(PMUSER_BRAND)-cookielist",
+        "page": "6"
+      }
+    },
+    {
+      "id": "R21",
+      "references": ["PM Config, p. 2, 20"]
+    },
+    {
+      "id": "R22",
+      "references": ["PM Config, p. 6, 20", "Feature overview, p. 1"]
+    },
+    {
+      "id": "R23",
+      "references": ["PM Config, p. 6, 20", "Feature overview, p. 1"]
+    },
+    {
+      "id": "R24",
+      "references": ["Feature overview, p. 1", "PM Config, p. 5-6, 20-21"]
+    },
+    {
+      "id": "R25",
+      "references": ["PM Config, p. 6, 25", "Feature overview, p. 2"]
+    },
+    {
+      "id": "R26",
+      "references": ["PM Config, p. 2, 22, 27, 32", "Feature overview, p. 2"]
+    },
+    {
+      "id": "R27",
+      "references": ["PM Config, p. 1-2, 20", "Feature overview, p. 2"]
+    },
+    {
+      "id": "R28",
+      "references": ["PM Config, p. 2, 12, 20"],
+      "configurationExcerpt": {
+        "heading": "Protocol and methods · HTTP / HTTPS — Notes",
+        "text": "WebSockets on; response buffering off",
+        "page": "2"
+      }
+    },
+    {
+      "id": "R29",
+      "references": ["PM Config, p. 2, 13-14"],
+      "configurationExcerpt": {
+        "heading": "Core delivery · SureRoute",
+        "text": "Enabled; custom map www.argos.co.uk.akasrg.akamai.com; test object /en_GB/images/sureroute-test-object.htm",
+        "page": "2"
+      }
+    },
+    {
+      "id": "R30",
+      "references": ["PM Config, p. 2, 14, 27-28"],
+      "configurationExcerpt": {
+        "heading": "Core delivery · Prefetch / prefresh — Notes",
+        "text": "Adaptive acceleration sets Brotli enabled; resource optimizer ultimately disabled for non-cacheable handling",
+        "page": "2"
+      }
+    },
+    {
+      "id": "R31",
+      "references": ["PM Config, p. 4, 7, 14, 27", "Feature overview, p. 1-2"]
+    },
+    {
+      "id": "R32",
+      "references": ["PM Config, p. 7, 14, 21, 27, 32-33"]
+    },
+    {
+      "id": "R33",
+      "references": ["PM Config, p. 4, 19, 28-29", "Feature overview, p. 2"]
+    },
+    {
+      "id": "R34",
+      "references": ["PM Config, p. 6, 14, 17"],
+      "configurationExcerpt": {
+        "heading": "mPulse / script management · Performance instrumentation",
+        "text": "mPulse PCI on; loader version LATEST; third-party script manager enabled with Safari mobile support",
+        "page": "6"
+      }
+    },
+    {
+      "id": "R35",
+      "references": ["Feature overview, p. 2", "PM Config, p. 6, 21-22, 31-33"]
+    },
+    {
+      "id": "R36",
+      "references": ["PM Config, p. 6, 21-22, 31-32"]
+    },
+    {
+      "id": "R37",
+      "references": ["PM Config, p. 6-7, 21, 31-32"]
+    },
+    {
+      "id": "R38",
+      "references": ["PM Config, p. 6, 21-23, 30-32", "Feature overview, p. 2"]
+    },
+    {
+      "id": "R39",
+      "references": ["PM Config, p. 23, 32-33"]
+    },
+    {
+      "id": "R40",
+      "references": ["PM Config, p. 23, 32-33"]
+    },
+    {
+      "id": "R41",
+      "references": ["Feature overview, p. 3"]
+    },
+    {
+      "id": "R42",
+      "references": ["Feature overview, p. 3", "PM Config, p. 24-33"]
+    }
+  ]
+}

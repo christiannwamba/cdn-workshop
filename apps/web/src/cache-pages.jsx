@@ -1,3 +1,4 @@
+import { OriginalRequirementDetails } from './original-requirements.jsx';
 import {
   CodeExample,
   FoldedEvidence,
@@ -672,6 +673,7 @@ function PresentedCachePage({ id, page, content, base, Diagram }) {
         </span>
         <h1>{page.title}</h1>
         <p className="lede">{content.intro}</p>
+        <OriginalRequirementDetails id={id} />
       </div>
       {presentation.required ? (
         <ComparisonDiagram
@@ -769,6 +771,7 @@ export function CachePage({ id, profile, Diagram }) {
         </span>
         <h1>{page.title}</h1>
         <p className="lede">{content.intro}</p>
+        <OriginalRequirementDetails id={id} />
         {id === 'r21' && (
           <p className="small">
             Explanation only. Exact pre-expiry refresh is not demonstrated.

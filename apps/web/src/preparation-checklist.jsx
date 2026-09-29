@@ -11,7 +11,7 @@ const tasks = [
   [
     'release',
     'Choose the version to present and share',
-    'If releasing, verify the hosted version. The redesigned site is currently local only.',
+    'Verify the released website, its hosted pages and attendee password access. Speaker notes and this checklist stay local.',
   ],
   [
     'agenda',
@@ -117,7 +117,7 @@ export default function PreparationChecklist({ catalog }) {
       </a>
       {' · '}
       <a className="prep-back" href="/agenda">
-        Speaker notes →
+        Agenda →
       </a>
       <p className="prep-eyebrow">Local preparation · 29 September · 13:00–16:00 BST</p>
       <h1>Preparation checklist</h1>

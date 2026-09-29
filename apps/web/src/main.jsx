@@ -33,6 +33,9 @@ import './style.css';
 // Approved homepage plus archived landing alternatives on direct design routes.
 import { LandingDesignPage, isDesignPage } from './landing-designs.jsx';
 import { HomeLink } from './home-link.jsx';
+import OriginalRequirements, {
+  OriginalRequirementDetails,
+} from './original-requirements.jsx';
 import { pageFromHash, exerciseHref } from './home-navigation.js';
 mermaid.initialize({
   startOnLoad: false,
@@ -737,7 +740,9 @@ function App() {
   return (
     <>
       <main>
-        {isDesignPage(page) ? (
+        {page === 'sources' ? (
+          <OriginalRequirements catalog={catalog} exerciseUrl={exerciseUrl} />
+        ) : isDesignPage(page) ? (
           <LandingDesignPage
             key={page}
             page={page}
@@ -761,6 +766,7 @@ function App() {
                 middleware logs the cookie before the cache lookup, and Vercel Log Drains
                 delivers that record alongside the request log.
               </p>
+              <OriginalRequirementDetails id="r32" />
               <p className="small">This example covers cookie logging within R32.</p>
             </div>
             <CookieArchitecture Diagram={Diagram} previousSource={original} />
@@ -889,10 +895,14 @@ function App() {
       </main>
       <footer>
         <span>CDN Workshop · synthetic test data</span>
+        {/^r\d{2}$/.test(page) && (
+          <a href={`#sources?q=${page.toUpperCase()}`}>
+            Original source for {page.toUpperCase()}
+          </a>
+        )}
         {import.meta.env.DEV && (
           <span>
-            <a href="/checklist">Preparation checklist</a> ·{' '}
-            <a href="/agenda">Speaker notes</a>
+            <a href="/checklist">Preparation checklist</a> · <a href="/agenda">Agenda</a>
           </span>
         )}
         <span>

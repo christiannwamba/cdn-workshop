@@ -1,3 +1,4 @@
+import { OriginalRequirementDetails } from './original-requirements.jsx';
 import {
   CodeExample,
   FoldedEvidence,
@@ -352,6 +353,7 @@ export function GapPage({ id, profile, Diagram }) {
         </span>
         <h1>{page.title}</h1>
         <p className="lede">{content.intro}</p>
+        <OriginalRequirementDetails id={id} />
         {id !== 'r29' && <p className="small">{content.scope}</p>}
       </div>
       {id === 'r06' ? (
