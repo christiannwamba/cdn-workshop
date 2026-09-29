@@ -234,7 +234,7 @@ function PageTitle({ design, clean }) {
           ? 'CDN workshop'
           : `Design ${designs[design].letter} · ${designs[design].name}`}
       </p>
-      <h1>CDN requirements</h1>
+      <h1>Akamai to Vercel: Migration Gap Analysis</h1>
       <p className="landing-lede">
         Explore how each requirement maps to Vercel, then open one for its evidence and
         remaining decision.
