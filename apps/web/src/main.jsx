@@ -893,24 +893,6 @@ function App() {
           </>
         )}
       </main>
-      <footer>
-        <span>CDN Workshop · synthetic test data</span>
-        {/^r\d{2}$/.test(page) && (
-          <a href={`#sources?q=${page.toUpperCase()}`}>
-            Original source for {page.toUpperCase()}
-          </a>
-        )}
-        {import.meta.env.DEV && (
-          <span>
-            <a href="/checklist">Preparation checklist</a> · <a href="/agenda">Agenda</a>
-          </span>
-        )}
-        <span>
-          {p.localPreview ? 'Local UI preview' : p.environment} ·{' '}
-          {p.localPreview ? 'base ' : ''}
-          <code>{p.revision.slice(0, 8)}</code>
-        </span>
-      </footer>
     </>
   );
 }
