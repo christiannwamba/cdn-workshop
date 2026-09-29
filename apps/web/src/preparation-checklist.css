@@ -1,0 +1,191 @@
+.prep-checklist {
+  max-width: 880px;
+  padding-top: 48px;
+}
+.prep-checklist h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+  margin: 16px 0;
+}
+.prep-checklist h2 {
+  font-size: 21px;
+  letter-spacing: -0.025em;
+  margin: 0 0 16px;
+}
+.prep-checklist section {
+  margin-top: 40px;
+  border: 0;
+  padding: 0;
+}
+.prep-back,
+.prep-eyebrow,
+.prep-storage {
+  font-size: 13px;
+  color: var(--ds-gray-900);
+}
+.prep-eyebrow {
+  margin-top: 32px;
+}
+.prep-intro {
+  font-size: 17px;
+  color: var(--ds-gray-900);
+  max-width: 660px;
+}
+.prep-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  justify-content: space-between;
+  margin-top: 30px;
+  font-size: 14px;
+}
+.prep-progress span {
+  color: var(--ds-gray-900);
+}
+.prep-checklist progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin-top: 12px;
+  accent-color: var(--ds-gray-1000);
+}
+.prep-checklist progress::-webkit-progress-bar {
+  background: var(--ds-gray-200);
+  border-radius: 4px;
+}
+.prep-checklist progress::-webkit-progress-value {
+  background: var(--ds-gray-1000);
+  border-radius: 4px;
+}
+.prep-tasks {
+  display: grid;
+  gap: 20px;
+}
+.prep-task {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.prep-checklist input[type='checkbox'] {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 4px 0 0;
+  flex: 0 0 18px;
+  accent-color: var(--ds-gray-1000);
+  cursor: pointer;
+}
+.prep-task strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+}
+.prep-task small {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ds-gray-900);
+  margin-top: 3px;
+}
+.prep-auto {
+  cursor: default;
+}
+.prep-auto > span:first-child {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.prep-group {
+  border: 0;
+  border-radius: 8px;
+  background: var(--ds-gray-100);
+  margin: 10px 0;
+  padding: 14px 18px;
+}
+.prep-group summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+}
+.prep-group summary > span {
+  float: right;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ds-gray-900);
+}
+.prep-group p {
+  font-size: 14px;
+}
+.prep-prompt {
+  color: var(--ds-gray-900);
+}
+.prep-requirement {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.prep-requirement label {
+  flex: 1;
+  cursor: pointer;
+}
+.prep-id {
+  display: block;
+  font-size: 12px;
+  color: var(--ds-gray-900);
+}
+.prep-requirement a {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding-top: 3px;
+}
+@media (max-width: 600px) {
+  .prep-checklist {
+    padding: 28px 20px 64px;
+  }
+  .prep-group {
+    padding: 12px;
+  }
+}
+
+.prep-agenda p,
+.prep-agenda li {
+  font-size: 15px;
+}
+.prep-agenda-order {
+  padding-left: 20px;
+}
+.prep-agenda-order li {
+  padding-left: 4px;
+  margin: 12px 0;
+}
+@media print {
+  .prep-agenda {
+    max-width: none;
+    padding: 0;
+  }
+  .prep-agenda .prep-back {
+    display: none;
+  }
+  .prep-agenda h1 {
+    font-size: 25px;
+  }
+  .prep-agenda h2 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .prep-agenda section {
+    margin-top: 12px;
+    break-inside: avoid;
+  }
+  .prep-agenda p,
+  .prep-agenda li {
+    font-size: 10px;
+    line-height: 1.4;
+    margin: 5px 0;
+  }
+}

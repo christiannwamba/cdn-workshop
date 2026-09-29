@@ -14,12 +14,26 @@ import mermaid from 'mermaid';
 import DOMPurify from 'dompurify';
 import { createBrowserClient } from './browser-client.js';
 import { CodeBlock } from './code-block.jsx';
+import { LiveDiagramVersions } from './live-diagram-versions.jsx';
+import { DiagramSnippets } from './diagram-snippets.jsx';
+import { CookieArchitecture, CookieWalkthrough } from './r32-presentation.jsx';
 import { GapPage, gapCatalog } from './gap-pages.jsx';
 import { CachePage, cacheCatalog } from './cache-pages.jsx';
 import { RequirementPage, requirementCatalog } from './requirement-pages.jsx';
 import './tokens.css';
 const MermaidEditor = lazy(() => import('./mermaid-editor.jsx'));
+// Compile out the preparation page and its content from every production build.
+const PreparationChecklist = import.meta.env.DEV
+  ? lazy(() => import('./preparation-checklist.jsx'))
+  : null;
+const PreparationAgenda = import.meta.env.DEV
+  ? lazy(() => import('./preparation-agenda.jsx'))
+  : null;
 import './style.css';
+// Approved homepage plus archived landing alternatives on direct design routes.
+import { LandingDesignPage, isDesignPage } from './landing-designs.jsx';
+import { HomeLink } from './home-link.jsx';
+import { pageFromHash, exerciseHref } from './home-navigation.js';
 mermaid.initialize({
   startOnLoad: false,
   securityLevel: 'strict',
@@ -67,6 +81,7 @@ const catalog = [
   ...requirementCatalog,
   {
     id: 'R32',
+    implementation: 'Middleware on every request',
     title: 'Can we log a cookie when the CDN serves a cached page?',
     status: 'workaround',
     category: loggingCategory,
@@ -81,6 +96,29 @@ const labels = {
   partial: '◐ Partial mapping',
   confirmation: '? Needs confirmation',
 };
+const indexViews = {
+  number: 'Requirement number',
+  category: 'Category',
+  status: 'Support status',
+};
+const categories = [...new Set(catalog.map((r) => r.category))];
+const categoryOrders = new Map([
+  [loggingCategory, loggingOrder],
+  [processingCategory, processingOrder],
+  [routingCategory, routingOrder],
+  [requestRuleCategory, requestRuleOrder],
+  [cookiesCategory, cookiesOrder],
+  [transportCategory, transportOrder],
+]);
+const byRequirementNumber = (a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1));
+function byCategoryOrder(category) {
+  const order = categoryOrders.get(category) || [];
+  const rank = (id) => {
+    const index = order.indexOf(id.toLowerCase());
+    return index < 0 ? order.length : index;
+  };
+  return (a, b) => rank(a.id) - rank(b.id) || byRequirementNumber(a, b);
+}
 const readLocal = (k) => {
   try {
     return localStorage.getItem(k);
@@ -108,122 +146,315 @@ function download(name, text) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+// Page-controlled Mermaid frontmatter for layout/typography (fonts, margins, mirroring).
+// It is prepended only at render time, so the editable text stays directive-free and the
+// existing block on participant-supplied directives/frontmatter still applies. Keys in the
+// `secure` list above cannot be changed this way.
+function frontmatter(config) {
+  const lines = ['---', 'config:'];
+  const walk = (value, depth) => {
+    for (const [key, item] of Object.entries(value)) {
+      const pad = '  '.repeat(depth);
+      if (item && typeof item === 'object') {
+        lines.push(`${pad}${key}:`);
+        walk(item, depth + 1);
+      } else lines.push(`${pad}${key}: ${JSON.stringify(item)}`);
+    }
+  };
+  walk(config, 1);
+  lines.push('---');
+  return `${lines.join('\n')}\n`;
+}
 function Diagram({
   id: requirement = 'r32',
   source = original,
   previousSource,
+  title = 'Request flow',
   description,
+  // Opt-in presentation for the six reviewed pages. Undefined preserves other pages.
+  variant,
+  renderConfig,
+  actorRoles = {},
+  hideTitle = false,
+  liveEditing = false,
 } = {}) {
-  const [text, setText] = useState(() => {
-      const saved = readLocal(`${requirement}-diagram`);
-      // Upgrade the saved former default, while preserving attendees' custom diagrams.
-      const previousOriginal = original.replace(
-        'Vercel Log Drains',
-        'Platform log pipeline',
-      );
-      const earlierOriginal = previousOriginal.replace(
-        '  V->>R: Start a fresh test via session API (no content request)\n  V->>V: Send action sets or clears the test cookie\n  V->>R: Obtain a fresh one-use ticket via session API',
-        '  V->>R: Prepare session and obtain one-use ticket',
-      );
-      if (requirement !== 'r32') {
-        const priorDefaults = Array.isArray(previousSource)
-          ? previousSource
-          : [previousSource];
-        return !saved || priorDefaults.includes(saved) ? source : saved;
-      }
-      return !saved || saved === previousOriginal || saved === earlierOriginal
-        ? original
-        : saved;
-    }),
+  const [initial] = useState(() => {
+    const saved = readLocal(`${requirement}-diagram`);
+    // Upgrade the saved former default, while preserving attendees' custom diagrams.
+    const previousOriginal = original.replace(
+      'Vercel Log Drains',
+      'Platform log pipeline',
+    );
+    const earlierOriginal = previousOriginal.replace(
+      '  V->>R: Start a fresh test via session API (no content request)\n  V->>V: Send action sets or clears the test cookie\n  V->>R: Obtain a fresh one-use ticket via session API',
+      '  V->>R: Prepare session and obtain one-use ticket',
+    );
+    const priorDefaults = Array.isArray(previousSource)
+      ? [...previousSource]
+      : [previousSource];
+    if (requirement === 'r32')
+      priorDefaults.push(original, previousOriginal, earlierOriginal);
+    const valid = !saved || priorDefaults.includes(saved) ? source : saved;
+    const draft = liveEditing ? readLocal(`${requirement}-diagram-draft-v1`) : null;
+    return {
+      valid,
+      draft: draft === null || priorDefaults.includes(draft) ? valid : draft,
+    };
+  });
+  const [text, setText] = useState(initial.draft),
     [svg, setSvg] = useState(''),
+    [naturalWidth, setNaturalWidth] = useState(0),
     [error, setError] = useState(''),
     [large, setLarge] = useState(false),
     [notice, setNotice] = useState(''),
     [rendering, setRendering] = useState(false),
-    [editorOpen, setEditorOpen] = useState(false);
+    [editorOpen, setEditorOpen] = useState(false),
+    [validatedText, setValidatedText] = useState(null),
+    [storageError, setStorageError] = useState(''),
+    [editorRevision, setEditorRevision] = useState(0),
+    [snippetsOpen, setSnippetsOpen] = useState(true);
   const seq = useRef(0);
+  function changeText(value) {
+    if (value === text) return;
+    // Invalidate immediately, including the debounce window before the next render.
+    if (liveEditing) {
+      seq.current++;
+      setRendering(true);
+      setError('');
+      try {
+        localStorage.setItem(`${requirement}-diagram-draft-v1`, value);
+        setStorageError('');
+      } catch {
+        setStorageError(
+          'This browser could not save your draft. Keep this page open or download the Mermaid text.',
+        );
+      }
+    }
+    setText(value);
+  }
+  function replaceText(value) {
+    changeText(value);
+    setEditorRevision((revision) => revision + 1);
+  }
+  async function renderDiagram(value, id) {
+    if (value.length > 15000) throw Error('Keep the diagram within 15,000 characters.');
+    if (value.includes('%%{') || /^---/m.test(value))
+      throw Error('Configuration directives are disabled; edit diagram content only.');
+    await mermaid.parse(value);
+    const prelude = renderConfig ? frontmatter(renderConfig) : '';
+    const out = await mermaid
+      .render(`diagram-${requirement}-${id}`, prelude + value)
+      .catch((e) => {
+        // A layout prelude must never hide a valid participant edit.
+        if (!prelude) throw e;
+        console.warn('Diagram layout config rejected; rendering plain', e);
+        return mermaid.render(`diagram-${requirement}-${id}-plain`, value);
+      });
+    const clean = DOMPurify.sanitize(out.svg, {
+      USE_PROFILES: { svg: true, svgFilters: true },
+    });
+    const doc = new DOMParser().parseFromString(clean, 'image/svg+xml');
+    for (const actor of doc.querySelectorAll('rect.actor')) {
+      if (actorRoles[actor.getAttribute('name')] === 'vercel')
+        actor.classList.add('vercel-actor');
+    }
+    const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+)/.exec(out.svg);
+    return {
+      svg: new XMLSerializer().serializeToString(doc.documentElement),
+      width: box ? Math.round(Number(box[1])) : 0,
+    };
+  }
   async function apply(value = text) {
     const id = ++seq.current;
     setRendering(true);
     try {
-      if (value.includes('%%{') || /^---/m.test(value))
-        throw Error('Configuration directives are disabled; edit diagram content only.');
-      await mermaid.parse(value);
-      const out = await mermaid.render(`diagram-${requirement}-${id}`, value);
+      const result = await renderDiagram(value, id);
       if (id === seq.current) {
-        setSvg(
-          DOMPurify.sanitize(out.svg, { USE_PROFILES: { svg: true, svgFilters: true } }),
-        );
+        setSvg(result.svg);
+        setNaturalWidth(result.width);
+        setValidatedText(value);
         setError('');
-        writeLocal(`${requirement}-diagram`, value);
+        if (liveEditing) {
+          try {
+            localStorage.setItem(`${requirement}-diagram`, value);
+          } catch {
+            setStorageError(
+              'This browser could not save the diagram. Keep this page open or download the Mermaid text.',
+            );
+          }
+        } else writeLocal(`${requirement}-diagram`, value);
       }
     } catch (e) {
-      setError(String(e.message || e));
+      // On reload with an unfinished draft, recover the last valid saved drawing.
+      if (liveEditing && !svg && id === seq.current) {
+        for (const fallback of [...new Set([initial.valid, source])]) {
+          try {
+            const result = await renderDiagram(fallback, `${id}-fallback`);
+            if (id === seq.current) {
+              setSvg(result.svg);
+              setNaturalWidth(result.width);
+            }
+            break;
+          } catch {
+            /* Try the page's original if a legacy custom value is invalid. */
+          }
+        }
+      }
+      if (id === seq.current) setError(String(e.message || e));
     } finally {
       if (id === seq.current) setRendering(false);
     }
   }
   useEffect(() => {
+    if (liveEditing) return;
     apply();
+    return () => {
+      seq.current++;
+    };
   }, []);
+  useEffect(() => {
+    if (!liveEditing) return;
+    const timer = setTimeout(() => apply(text), svg ? 450 : 0);
+    return () => {
+      clearTimeout(timer);
+      seq.current++;
+    };
+  }, [liveEditing, text]);
+  const polished = variant === 'polished';
+  const caption =
+    description ||
+    'Custom middleware reads the current request’s cookie before the cache lookup. Vercel Log Drains delivers the cookie record and the native request log; the collector verifies and matches them for display.';
   return (
-    <section className={large ? 'diagram teaching' : 'diagram'} id="diagram">
-      <div className="section-head">
-        <div>
-          <h2>Request flow</h2>
+    <section
+      className={`${large ? 'diagram teaching' : 'diagram'}${title !== 'Request flow' ? ' pilot-diagram' : ''}${polished ? ' pilot-polish' : ''}${liveEditing ? ' diagram-live' : ''}${liveEditing && editorOpen ? ' editing-live' : ''}${liveEditing && editorOpen && snippetsOpen ? ' show-snippets' : ''}`}
+      id="diagram"
+      data-diagram={requirement}
+    >
+      {polished ? (
+        // Comparison tabs can name the view; standalone diagrams retain their heading.
+        <div className="section-head diagram-caption">
+          <div>
+            <h2 className={large || !hideTitle ? undefined : 'visually-hidden'}>
+              {title}
+            </h2>
+            <p>{caption}</p>
+          </div>
+          <button onClick={() => setLarge(!large)}>
+            {large ? 'Close enlarged view' : 'Enlarge diagram'}
+          </button>
         </div>
-        <button onClick={() => setLarge(!large)}>
-          {large ? 'Close enlarged view' : 'Enlarge diagram'}
-        </button>
-      </div>
-      <p>
-        {description ||
-          'Custom middleware reads the current request’s cookie before the cache lookup. Vercel Log Drains delivers the cookie record and the native request log; the collector verifies and matches them for display.'}
-      </p>
+      ) : (
+        <>
+          <div className="section-head">
+            <div>
+              <h2>{title}</h2>
+            </div>
+            <button onClick={() => setLarge(!large)}>
+              {large ? 'Close enlarged view' : 'Enlarge diagram'}
+            </button>
+          </div>
+          <p>{caption}</p>
+        </>
+      )}
       <div className="diagram-grid">
         <div
           className="drawing"
           aria-label="Rendered request sequence"
+          style={
+            naturalWidth ? { '--diagram-natural-width': `${naturalWidth}px` } : undefined
+          }
           dangerouslySetInnerHTML={{ __html: svg }}
         />
         <details className="editor" onToggle={(e) => setEditorOpen(e.currentTarget.open)}>
           <summary>Edit Mermaid</summary>
-          {editorOpen && (
-            <Suspense fallback={<p role="status">Loading editor…</p>}>
-              <MermaidEditor value={text} onChange={setText} />
-            </Suspense>
+          {liveEditing && editorOpen && (
+            <div className="snippet-toolbar">
+              <button
+                aria-expanded={snippetsOpen}
+                onClick={() => setSnippetsOpen(!snippetsOpen)}
+              >
+                {snippetsOpen ? 'Hide snippets' : 'Diagram snippets'}
+              </button>
+            </div>
           )}
-          <div className="buttons">
-            <button onClick={() => apply()}>Apply diagram</button>
-            <button
-              onClick={() => {
-                setText(source);
-                apply(source);
-              }}
-            >
-              Reset original
-            </button>
-            <button
-              onClick={async () => {
-                await navigator.clipboard.writeText(text);
-                setNotice('Copied Mermaid.');
-              }}
-            >
-              Copy
-            </button>
-            <button onClick={() => download(`${requirement}.mmd`, text)}>
-              Download .mmd
-            </button>
+          <div
+            className={
+              liveEditing && editorOpen && snippetsOpen
+                ? 'editor-workspace with-snippets'
+                : 'editor-workspace'
+            }
+          >
+            <div className="editor-main">
+              {liveEditing && error && (
+                <p className="live-diagram-error" role="status">
+                  {error.startsWith('Configuration') ||
+                  error.startsWith('Keep the diagram')
+                    ? error
+                    : 'Mermaid needs a correction.'}{' '}
+                  Last valid diagram shown; your draft is kept.
+                </p>
+              )}
+              {editorOpen && (
+                <Suspense fallback={<p role="status">Loading editor…</p>}>
+                  <MermaidEditor
+                    value={text}
+                    onChange={changeText}
+                    syncRevision={liveEditing ? editorRevision : undefined}
+                  />
+                </Suspense>
+              )}
+              {liveEditing && (
+                <LiveDiagramVersions
+                  identity={requirement}
+                  text={text}
+                  source={source}
+                  onReplace={replaceText}
+                  valid={!rendering && !error && validatedText === text}
+                />
+              )}
+              <div className="buttons">
+                {!liveEditing && <button onClick={() => apply()}>Apply diagram</button>}
+                {!liveEditing && (
+                  <button
+                    onClick={() => {
+                      setText(source);
+                      apply(source);
+                    }}
+                  >
+                    Reset original
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(text);
+                    setNotice('Copied Mermaid.');
+                  }}
+                >
+                  Copy
+                </button>
+                <button onClick={() => download(`${requirement}.mmd`, text)}>
+                  Download .mmd
+                </button>
+              </div>
+              <p className="small">
+                {liveEditing
+                  ? 'Live preview updates after a short pause. Drafts and versions stay in this browser on this address.'
+                  : 'Diagram edits stay in this browser and do not change the demo.'}
+              </p>
+              {storageError && (
+                <p className="small" role="alert">
+                  {storageError}
+                </p>
+              )}
+              <p role="status">
+                {rendering ? 'Rendering edit; previous diagram remains visible…' : notice}
+              </p>
+            </div>
+            {liveEditing && editorOpen && snippetsOpen && <DiagramSnippets text={text} />}
           </div>
-          <p className="small">
-            Diagram edits stay in this browser and do not change the demo.
-          </p>
-          <p role="status">
-            {rendering ? 'Rendering edit; previous diagram remains visible…' : notice}
-          </p>
         </details>
       </div>
-      {error && (
+      {error && !liveEditing && (
         <div className="notice error" role="alert">
           <strong>Invalid edit · last valid diagram is stale</strong>
           <pre>{error}</pre>
@@ -233,47 +464,6 @@ function Diagram({
   );
 }
 
-function Source({ profile, name, children }) {
-  const [open, setOpen] = useState(false);
-  const source = profile.sources[name];
-  const revision = source?.revision || profile.revision;
-  if (!source) return null;
-  return (
-    <details className="source" onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary>{children}</summary>
-      <p className="small">
-        {profile.localPreview
-          ? 'Local source · unpublished'
-          : 'Source at this deployment'}{' '}
-        ·{' '}
-        <code>
-          {source.path}:{source.first}–{source.last}
-        </code>
-      </p>
-      {open && <CodeBlock source={source} />}
-      {!profile.localPreview && (
-        <a
-          href={`${profile.repo}/blob/${revision}/${source.path}#L${source.first}-L${source.last}`}
-          target="_blank"
-          rel="noopener"
-        >
-          Open these lines on GitHub ↗
-        </a>
-      )}
-      {profile.localPreview && source.committed && (
-        <a
-          className="small"
-          href={`${profile.repo}/blob/${profile.revision}/${source.committed.path}#L${source.committed.first}-L${source.committed.last}`}
-          target="_blank"
-          rel="noopener"
-        >
-          Compare committed source at {profile.revision.slice(0, 8)} (before these local
-          edits) ↗
-        </a>
-      )}
-    </details>
-  );
-}
 function Exercise({ profile }) {
   const [state, setState] = useState({
     receipts: [],
@@ -309,10 +499,10 @@ function Exercise({ profile }) {
                 ? 'Check the logs below to verify this request.'
                 : 'Request rejected; no successful content request counted.'}
             </p>
-            <details>
-              <summary>Response headers and timing</summary>
-              <pre>{JSON.stringify(r, null, 2)}</pre>
-            </details>
+            <p className="small">
+              Fill: <code>{r.headers['x-workshop-fill-id'] || 'Unavailable'}</code> ·
+              Request: <code>{r.headers['x-workshop-event-id'] || 'Unavailable'}</code>
+            </p>
           </>
         )}
       </div>
@@ -330,18 +520,6 @@ function Exercise({ profile }) {
     </div>
   );
   const e = state.evidence;
-  const sourceProfile = { ...profile, sources: { ...profile.sources } };
-  if (live) {
-    for (const [mappings, revision] of [
-      [state.session?.sourceMappings, state.session?.revision],
-      [e?.collectorSourceMappings, e?.collectorRevision],
-    ]) {
-      if (!mappings || !revision) continue;
-      for (const [key, mapping] of Object.entries(mappings))
-        sourceProfile.sources[key] =
-          mapping.last - mapping.first < 30 ? { ...mapping, revision } : null;
-    }
-  }
 
   return (
     <>
@@ -374,9 +552,6 @@ function Exercise({ profile }) {
                 'No test started.'
               )}
             </p>
-            <Source profile={sourceProfile} name="browserSession">
-              Code: prepare without fetching content
-            </Source>
           </li>
           <li>
             <h3>Send the page request with cookie A</h3>
@@ -390,9 +565,6 @@ function Exercise({ profile }) {
             </p>
             {buttons('A')}
             {result('A')}
-            <Source profile={sourceProfile} name="browserLab">
-              Code: set the cookie, then send the request
-            </Source>
           </li>
           <li>
             <h3>Send the same page request with cookie B</h3>
@@ -407,9 +579,6 @@ function Exercise({ profile }) {
             </p>
             {buttons('B')}
             {result('B')}
-            <Source profile={sourceProfile} name="middleware">
-              Code: log this request’s cookie before the cache lookup
-            </Source>
           </li>
         </ol>
         <p className="action-status" role="status" aria-live="polite">
@@ -436,18 +605,7 @@ function Exercise({ profile }) {
               >
                 Refresh logs
               </button>
-              <a
-                href={`${profile.dashboard}/${profile.team}/${profile.projects.request}/logs`}
-                target="_blank"
-                rel="noopener"
-              >
-                Open request project logs ↗
-              </a>
             </div>
-            <p className="small">
-              In the dashboard, search for <code>workshop-cookie-v1</code>. Dashboard
-              access requires project permission.
-            </p>
             <p role="status">
               {!live
                 ? 'UI preview: no live logs. Run this exercise on the request host after an approved release.'
@@ -486,18 +644,8 @@ function Exercise({ profile }) {
                     </tbody>
                   </table>
                 </div>
-                <details>
-                  <summary>Raw signed log evidence</summary>
-                  <pre>{JSON.stringify(e, null, 2)}</pre>
-                </details>
               </>
             )}
-            <Source profile={sourceProfile} name="verification">
-              Code: match the cookie log to the native request record
-            </Source>
-            <Source profile={sourceProfile} name="collector">
-              Code: verify the log delivery signature
-            </Source>
           </li>
         </ol>
         <div className="reset-test">
@@ -510,21 +658,10 @@ function Exercise({ profile }) {
             Reset test
           </button>
         </div>
-        <details>
-          <summary>Implementation notes</summary>
-          <p>
-            This demo logs only synthetic values of <code>workshop_choice</code>. The
-            collector verifies signed delivery, stores evidence in private Vercel Blob,
-            and matches records by request identity. Delayed or incomplete delivery stays
-            unverified; a cache header alone does not establish a log match.
-          </p>
-          <p>
-            Sessions last ten minutes and allow twelve requests. Each send obtains a
-            one-use ticket. The ticket check calls the collector before the cache lookup;
-            it is separate from the content-origin count and is demo plumbing, not a
-            production cost benchmark. If the session expires, start a fresh test.
-          </p>
-        </details>
+        <p className="small">
+          Sessions last ten minutes. If the session expires, start a fresh test. Delayed
+          or incomplete log delivery stays unverified.
+        </p>
       </section>
     </>
   );
@@ -533,10 +670,14 @@ function App() {
   const [p, setP] = useState(null),
     [message, setMessage] = useState(''),
     [page, setPage] = useState(
-      location.pathname === '/lab.html' ? 'r32' : location.hash.slice(1) || 'index',
+      location.pathname === '/lab.html' ? 'r32' : pageFromHash(),
     ),
     [status, setStatus] = useState('all'),
-    [category, setCategory] = useState('all');
+    [category, setCategory] = useState('all'),
+    [view, setView] = useState(() => {
+      const saved = readLocal('workshop-index-view');
+      return Object.hasOwn(indexViews, saved) ? saved : 'number';
+    });
   useEffect(() => {
     // Deployment-owned configuration only. Old browser overrides are never read.
     try {
@@ -546,7 +687,7 @@ function App() {
       .then(setP)
       .catch((e) => setMessage(e.message));
     const h = () => {
-      setPage(location.hash.slice(1) || 'index');
+      setPage(pageFromHash());
     };
     window.addEventListener('hashchange', h);
     return () => window.removeEventListener('hashchange', h);
@@ -557,7 +698,7 @@ function App() {
   const openLiveExercise =
     p && !p.localPreview && p.surface !== 'request' && page === 'r32';
   useEffect(() => {
-    if (openLiveExercise) location.replace(`${p.requestUrl}/#r32`);
+    if (openLiveExercise) location.replace(exerciseHref(p));
   }, [openLiveExercise, p]);
   if (openLiveExercise)
     return (
@@ -572,45 +713,46 @@ function App() {
         <p role="alert">{message}</p>
       </main>
     );
-  const exerciseUrl =
-    p.localPreview || p.surface === 'request' ? '#r32' : `${p.requestUrl}/#r32`;
+  const exerciseUrl = exerciseHref(p);
   const selected = catalog.filter(
     (r) =>
       (status === 'all' || r.status === status) &&
       (category === 'all' || r.category === category),
   );
+  const groups =
+    view === 'number'
+      ? [{ key: 'number', rows: [...selected].sort(byRequirementNumber) }]
+      : view === 'category'
+        ? categories.map((name) => ({
+            key: name,
+            title: name,
+            rows: selected.filter((r) => r.category === name).sort(byCategoryOrder(name)),
+          }))
+        : ['supported', 'workaround', 'partial', 'confirmation', 'gap'].map((key) => ({
+            key,
+            title: labels[key],
+            status: key,
+            rows: selected.filter((r) => r.status === key).sort(byRequirementNumber),
+          }));
   return (
     <>
-      <header>
-        <a className="brand" href="#index">
-          <span className="brand-mark">◈</span> CDN Workshop
-        </a>
-        <nav aria-label="Appearance">
-          <button
-            aria-label="Toggle theme"
-            onClick={() => {
-              const t =
-                document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-              document.documentElement.dataset.theme = t;
-              writeLocal('theme', t);
-            }}
-          >
-            ◐
-          </button>
-        </nav>
-      </header>
       <main>
-        {gapCatalog.some((r) => r.id.toLowerCase() === page) ? (
+        {isDesignPage(page) ? (
+          <LandingDesignPage
+            key={page}
+            page={page}
+            catalog={catalog}
+            exerciseUrl={exerciseUrl}
+          />
+        ) : gapCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <GapPage key={page} id={page} profile={p} Diagram={Diagram} />
         ) : cacheCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <CachePage key={page} id={page} profile={p} Diagram={Diagram} />
         ) : requirementCatalog.some((r) => r.id.toLowerCase() === page) ? (
           <RequirementPage key={page} id={page} Diagram={Diagram} profile={p} />
         ) : page === 'r32' ? (
-          <>
-            <a className="back" href="#index">
-              ← All requirements
-            </a>
+          <div className="page-polish">
+            <HomeLink className="back">← All requirements</HomeLink>
             <div className="hero">
               <span className="badge workaround">R32 · Workaround demonstrated</span>
               <h1>Can we log a cookie when the CDN serves a cached page?</h1>
@@ -621,44 +763,19 @@ function App() {
               </p>
               <p className="small">This example covers cookie logging within R32.</p>
             </div>
-            <LoggingNavigation id="r32" profile={p} />
-            <Diagram key="r32" />
-            <Exercise profile={p} />
+            <CookieArchitecture Diagram={Diagram} previousSource={original} />
+            <CookieWalkthrough>
+              <Exercise profile={p} />
+            </CookieWalkthrough>
             <section>
-              <h2>Mapping and remaining work</h2>
-              <ul className="limitations">
-                <li>
-                  The cookie is logged by middleware in a separate record and matched to
-                  the request log. It is not an automatic cookie field in the native
-                  request log.
-                </li>
-                <li>
-                  Cookie logging is demonstrated. The customer's other required fields and
-                  downstream log format still need to be mapped and verified.
-                </li>
-              </ul>
-              <details className="source">
-                <summary>Could firewall header logging capture the cookie?</summary>
-                <p>
-                  The documented Priority Projects feature captures headers on matched
-                  firewall rules, but always filters the Cookie header. It does not
-                  replace this selected-cookie workaround.
-                </p>
-                <a
-                  href="https://vercel.com/docs/vercel-firewall/firewall-observability#request-header-logging"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Request header logging documentation ↗
-                </a>
-              </details>
+              <LoggingNavigation id="r32" profile={p} />
               <p className="related">
                 <a href="#r31">← R31 · Request identity</a>
                 {' · '}
                 <a href="#r33">R33 · Log destinations →</a>
               </p>
             </section>
-          </>
+          </div>
         ) : (
           <>
             <div className="hero index-hero">
@@ -694,102 +811,54 @@ function App() {
                   ),
                 )}
               </div>
-              <label>
-                Category{' '}
-                <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option value="all">All categories</option>
-                  {[...new Set(catalog.map((r) => r.category))].map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="index-selectors">
+                <label>
+                  View{' '}
+                  <select
+                    value={view}
+                    onChange={(e) => {
+                      setView(e.target.value);
+                      writeLocal('workshop-index-view', e.target.value);
+                    }}
+                  >
+                    {Object.entries(indexViews).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Category{' '}
+                  <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                    <option value="all">All categories</option>
+                    {categories.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </div>
             <p className="small" role="status">
               {selected.length} requirement{selected.length === 1 ? '' : 's'} shown
             </p>
-            {(category === loggingCategory
-              ? ['logging']
-              : category === processingCategory
-                ? ['processing']
-                : category === routingCategory
-                  ? ['routing']
-                  : category === requestRuleCategory
-                    ? ['requestRule']
-                    : category === cookiesCategory
-                      ? ['cookies']
-                      : category === transportCategory
-                        ? ['transport']
-                        : ['supported', 'workaround', 'partial', 'confirmation', 'gap']
-            ).map((s) => {
-              const rows =
-                s === 'logging' ||
-                s === 'processing' ||
-                s === 'routing' ||
-                s === 'requestRule' ||
-                s === 'cookies' ||
-                s === 'transport'
-                  ? [...selected].sort(
-                      (a, b) =>
-                        (s === 'logging'
-                          ? loggingOrder
-                          : s === 'processing'
-                            ? processingOrder
-                            : s === 'routing'
-                              ? routingOrder
-                              : s === 'requestRule'
-                                ? requestRuleOrder
-                                : s === 'cookies'
-                                  ? cookiesOrder
-                                  : transportOrder
-                        ).indexOf(a.id.toLowerCase()) -
-                        (s === 'logging'
-                          ? loggingOrder
-                          : s === 'processing'
-                            ? processingOrder
-                            : s === 'routing'
-                              ? routingOrder
-                              : s === 'requestRule'
-                                ? requestRuleOrder
-                                : s === 'cookies'
-                                  ? cookiesOrder
-                                  : transportOrder
-                        ).indexOf(b.id.toLowerCase()),
-                    )
-                  : selected.filter((r) => r.status === s);
-              return (
+            {groups.map(
+              ({ key, title, status: groupStatus, rows }) =>
                 rows.length > 0 && (
-                  <section className="catalog-group" key={s}>
-                    <h2 className={s}>
-                      {s === 'logging'
-                        ? loggingCategory
-                        : s === 'processing'
-                          ? processingCategory
-                          : s === 'routing'
-                            ? routingCategory
-                            : s === 'requestRule'
-                              ? requestRuleCategory
-                              : s === 'cookies'
-                                ? cookiesCategory
-                                : s === 'transport'
-                                  ? transportCategory
-                                  : labels[s]}{' '}
-                      <span className="count">{rows.length}</span>
-                    </h2>
+                  <section className="catalog-group" key={key}>
+                    {title && (
+                      <h2 className={groupStatus}>
+                        {title} <span className="count">{rows.length}</span>
+                      </h2>
+                    )}
                     {rows.map((r) => (
                       <article className="requirement" key={r.id}>
                         <div>
                           <p className="eyebrow">
                             {r.category} <span> / {r.id}</span>
-                            {(s === 'logging' ||
-                              s === 'processing' ||
-                              s === 'routing' ||
-                              s === 'requestRule' ||
-                              s === 'cookies' ||
-                              s === 'transport') && (
-                              <span className={`badge ${r.status}`}>
-                                {labels[r.status]}
-                              </span>
-                            )}
+                            <span className={`badge ${r.status}`}>
+                              {labels[r.status]}
+                            </span>
                           </p>
                           <h3>{r.title}</h3>
                           <p>{r.note}</p>
@@ -807,9 +876,8 @@ function App() {
                       </article>
                     ))}
                   </section>
-                )
-              );
-            })}
+                ),
+            )}
             {!selected.length && (
               <div className="empty">
                 No requirements match both filters. Select All requirements and All
@@ -821,6 +889,12 @@ function App() {
       </main>
       <footer>
         <span>CDN Workshop · synthetic test data</span>
+        {import.meta.env.DEV && (
+          <span>
+            <a href="/checklist">Preparation checklist</a> ·{' '}
+            <a href="/agenda">Speaker notes</a>
+          </span>
+        )}
         <span>
           {p.localPreview ? 'Local UI preview' : p.environment} ·{' '}
           {p.localPreview ? 'base ' : ''}
@@ -831,4 +905,23 @@ function App() {
   );
 }
 document.documentElement.dataset.theme = readLocal('theme') || 'light';
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById('root')).render(
+  /^\/(checklist|agenda)\/?$/.test(location.pathname) ? (
+    import.meta.env.DEV ? (
+      <Suspense fallback={<main>Loading preparation…</main>}>
+        {location.pathname.replace(/\/$/, '') === '/agenda' ? (
+          <PreparationAgenda />
+        ) : (
+          <PreparationChecklist catalog={catalog} />
+        )}
+      </Suspense>
+    ) : (
+      <main>
+        <h1>Page not found</h1>
+        <a href="/#home">All requirements</a>
+      </main>
+    )
+  ) : (
+    <App />
+  ),
+);

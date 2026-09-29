@@ -235,6 +235,22 @@ section {
   padding: 0 6px;
   border-radius: 4px;
 }
+.index-selectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+}
+.index-selectors label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.index-selectors select {
+  min-width: 0;
+  max-width: 100%;
+}
 .filters label {
   font-size: 13px;
   color: var(--ds-gray-900);
@@ -762,5 +778,533 @@ button:disabled {
 @media (max-width: 800px) {
   .cookies-nav {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Six-page pilot: two views of the same requirement. */
+.diagram-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--ds-gray-300);
+}
+.diagram-tabs [role='tab'] {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 0;
+  color: var(--ds-gray-900);
+  border-bottom: 2px solid transparent;
+}
+.diagram-tabs [aria-selected='true'] {
+  color: var(--ds-gray-1000);
+  border-bottom-color: currentColor;
+  font-weight: 600;
+}
+.diagram-tabs [role='tab']:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.pattern-difference {
+  margin: 16px 0 24px;
+}
+.comparison .diagram {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  .pilot-diagram .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scoped requirement presentation (opt-in: .page-polish page wrapper, .pilot-polish
+   diagram variant). Hierarchy comes from spacing and type, not divider lines.
+   Only the six opted-in pages use these rules; the homepage is unchanged.
+   --------------------------------------------------------------------------- */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.page-polish .hero {
+  padding-bottom: 28px;
+}
+.page-polish section:not(.teaching) {
+  border-top: 0;
+  padding: 40px 0 0;
+}
+.page-polish .comparison .diagram:not(.teaching) {
+  padding-top: 20px;
+}
+.page-polish .diagram-tabs {
+  border-bottom: 0;
+  gap: 28px;
+}
+.page-polish .diagram-tabs [role='tab'] {
+  padding: 8px 0;
+  font-size: 15px;
+}
+.page-polish .diagram-caption {
+  align-items: flex-start;
+  gap: 24px;
+}
+.page-polish .diagram-caption p {
+  margin: 0;
+  max-width: 820px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.page-polish .diagram-caption button {
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.page-polish .teaching .diagram-caption h2 {
+  margin: 0 0 8px;
+}
+.page-polish .pattern-difference-below {
+  margin: 28px 0 0;
+  max-width: 820px;
+}
+.page-polish .pattern-difference-below h3 {
+  margin: 0 0 8px;
+}
+.page-polish .pattern-difference-below ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.page-polish .pattern-difference-below li {
+  color: var(--ds-gray-900);
+  margin: 8px 0;
+}
+.page-polish .pattern-difference-below li::marker {
+  color: var(--ds-gray-600);
+}
+.page-polish .implementation {
+  padding-top: 52px;
+}
+.page-polish .implementation h3 {
+  margin-top: 28px;
+}
+.page-polish .code-figure {
+  margin: 12px 0 8px;
+}
+.page-polish .code-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--ds-gray-900);
+}
+.page-polish .code-label code {
+  font-size: 12px;
+  color: var(--ds-gray-1000);
+}
+.page-polish .code-figure .highlighted-code pre,
+.page-polish .code-figure pre {
+  background: var(--ds-background-200) !important;
+  border: 1px solid var(--ds-gray-200);
+  border-radius: 8px;
+  padding: 18px 20px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.page-polish .related {
+  margin-top: 24px;
+}
+
+/* Diagram container: theme-aware surface, no white panel in dark mode. */
+.pilot-polish .diagram-grid {
+  margin-top: 20px;
+  border-color: var(--ds-gray-300);
+  border-radius: 8px;
+}
+.pilot-polish .drawing {
+  background: var(--ds-background-100);
+  padding: 20px 24px 12px;
+}
+.pilot-polish .drawing svg {
+  /* Auto margins center a narrow diagram yet collapse when it must scroll. */
+  margin: 0 auto;
+  /* Stop shrinking below ~72% of the rendered size (scroll inside instead) so
+     labels stay legible at presentation zoom; never upscale past 100%, so both
+     tabs share one text scale. */
+  min-width: calc(var(--diagram-natural-width, 0px) * 0.72);
+  max-width: var(--diagram-natural-width, none);
+  max-height: none;
+}
+.pilot-polish.teaching .drawing svg {
+  max-width: none;
+}
+.pilot-polish .editor {
+  border-top: 1px solid var(--ds-gray-200);
+  padding: 14px 22px;
+}
+.pilot-polish .editor summary {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ds-gray-900);
+}
+.pilot-polish .editor[open] {
+  padding-bottom: 22px;
+}
+
+/* Mermaid sequence styling. Mermaid emits an id-scoped stylesheet and inline
+   presentation attributes, so overrides need !important; they are scoped to
+   this variant and use theme tokens so light/dark toggles need no re-render. */
+.pilot-polish .drawing svg text {
+  font-family: 'Geist', sans-serif !important;
+}
+.pilot-polish .drawing svg rect.actor {
+  fill: var(--ds-background-100) !important;
+  stroke: var(--ds-gray-500) !important;
+  stroke-width: 1 !important;
+  rx: 6px;
+  ry: 6px;
+}
+.pilot-polish .drawing svg text.actor,
+.pilot-polish .drawing svg text.actor > tspan {
+  fill: var(--ds-gray-1000) !important;
+}
+/* Vercel approach only: stages that run inside Vercel share one subtle surface. */
+.pilot-polish .drawing svg rect.actor.vercel-actor {
+  fill: var(--ds-blue-100) !important;
+  stroke: var(--ds-blue-500) !important;
+}
+.pilot-polish .drawing svg .actor-line {
+  stroke: var(--ds-gray-500) !important;
+  stroke-width: 1px !important;
+}
+.pilot-polish .drawing svg .messageLine0,
+.pilot-polish .drawing svg .messageLine1 {
+  stroke: var(--ds-gray-1000) !important;
+  stroke-width: 1.25 !important;
+}
+.pilot-polish .drawing svg .messageLine1 {
+  stroke: var(--ds-gray-800) !important;
+  stroke-dasharray: 4 4 !important;
+}
+.pilot-polish .drawing svg marker path {
+  fill: var(--ds-gray-1000) !important;
+  stroke: var(--ds-gray-1000) !important;
+}
+.pilot-polish .drawing svg .messageText {
+  fill: var(--ds-gray-1000) !important;
+}
+/* alt frame: HIT and MISS stages. Accent marks the stage labels, not the messages. */
+.pilot-polish .drawing svg .loopLine {
+  stroke: var(--ds-blue-500) !important;
+  stroke-width: 1px !important;
+  stroke-dasharray: 5 4 !important;
+}
+.pilot-polish .drawing svg .labelBox {
+  fill: var(--ds-blue-100) !important;
+  stroke: var(--ds-blue-500) !important;
+}
+.pilot-polish .drawing svg .labelText {
+  fill: var(--ds-blue-900) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+.pilot-polish .drawing svg .loopText,
+.pilot-polish .drawing svg .loopText > tspan,
+.pilot-polish .drawing svg .sectionTitle,
+.pilot-polish .drawing svg .sectionTitle > tspan {
+  fill: var(--ds-blue-900) !important;
+  font-weight: 600 !important;
+}
+.pilot-polish .drawing svg rect.note {
+  fill: var(--ds-gray-100) !important;
+  stroke: var(--ds-gray-400) !important;
+  rx: 4px;
+  ry: 4px;
+}
+.pilot-polish .drawing svg .noteText,
+.pilot-polish .drawing svg .noteText > tspan {
+  fill: var(--ds-gray-900) !important;
+}
+@media (max-width: 800px) {
+  .page-polish .diagram-caption {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pilot-polish .drawing {
+    padding: 12px;
+  }
+  .pilot-polish .drawing svg {
+    min-width: min(720px, var(--diagram-natural-width, 720px));
+  }
+}
+
+/* Polished flowcharts share the sequence typography and neutral actor surfaces.
+   Keep decision diamonds and authored node shapes; do not infer roles from IDs. */
+.pilot-polish .drawing svg.flowchart .node > rect,
+.pilot-polish .drawing svg.flowchart .node > polygon,
+.pilot-polish .drawing svg.flowchart .node > path {
+  fill: var(--ds-background-100) !important;
+  stroke: var(--ds-gray-500) !important;
+  stroke-width: 1px !important;
+}
+/* Only plain boxes gain the actor corner radius. Authored rounded shapes retain it. */
+.pilot-polish .drawing svg.flowchart .node > rect.label-container:not([rx]):not([ry]) {
+  rx: 6px;
+  ry: 6px;
+}
+.pilot-polish .drawing svg.flowchart .node text,
+.pilot-polish .drawing svg.flowchart .node tspan {
+  font-family: 'Geist', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  fill: var(--ds-gray-1000) !important;
+}
+.pilot-polish .drawing svg.flowchart .edgeLabel text,
+.pilot-polish .drawing svg.flowchart .edgeLabel tspan {
+  font-family: 'Geist', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  fill: var(--ds-gray-1000) !important;
+}
+.pilot-polish .drawing svg.flowchart .nodeLabel,
+.pilot-polish .drawing svg.flowchart .edgeLabel {
+  color: var(--ds-gray-1000) !important;
+}
+.pilot-polish .drawing svg.flowchart .edgeLabel,
+.pilot-polish .drawing svg.flowchart .labelBkg {
+  background: var(--ds-background-100) !important;
+  fill: var(--ds-background-100) !important;
+}
+.pilot-polish .drawing svg.flowchart .edgeLabel rect {
+  fill: var(--ds-background-100) !important;
+}
+.pilot-polish .drawing svg.flowchart .flowchart-link {
+  stroke: var(--ds-gray-1000) !important;
+  stroke-width: 1.25px !important;
+}
+.page-polish > .source {
+  margin-top: 32px;
+}
+
+/* Keep flowchart labels readable at narrow widths; scroll the diagram, not the page. */
+.pilot-polish .drawing svg.flowchart {
+  min-width: calc(var(--diagram-natural-width, 0px) * 0.85);
+}
+@media (max-width: 800px) {
+  .pilot-polish .drawing svg.flowchart {
+    min-width: var(--diagram-natural-width, 720px);
+  }
+}
+
+/* R29 opt-in live editing: keep source and result together while presenting. */
+.diagram-live .diagram-versions {
+  margin-top: 14px;
+}
+.diagram-live .version-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.diagram-live .version-row input,
+.diagram-live .version-row select {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--ds-gray-400);
+  border-radius: 6px;
+  color: var(--ds-gray-1000);
+  background: var(--ds-background-100);
+}
+.diagram-live .version-row button {
+  flex-shrink: 0;
+}
+.diagram-live .live-diagram-error {
+  color: var(--ds-gray-900);
+  font-size: 13px;
+  margin: 10px 0;
+}
+.diagram-live .editor [role='status'] {
+  font-size: 13px;
+}
+@media (min-width: 1100px) {
+  .diagram-live.editing-live .diagram-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);
+    align-items: start;
+  }
+  .diagram-live.editing-live .drawing {
+    position: sticky;
+    top: 16px;
+  }
+  .diagram-live.editing-live .editor {
+    border-top: 0;
+    border-left: 1px solid var(--ds-gray-200);
+  }
+  .diagram-live.editing-live .mermaid-editor {
+    height: 300px;
+  }
+}
+
+/* R29 snippet reference, beside the source when opened. */
+.diagram-live .snippet-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.diagram-live .editor-main {
+  min-width: 0;
+}
+.diagram-live .editor-workspace.with-snippets {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 24px;
+  margin-top: 12px;
+  align-items: start;
+}
+.diagram-live .with-snippets .mermaid-editor {
+  margin-top: 0;
+  height: 380px;
+}
+.diagram-live.editing-live.show-snippets .diagram-grid {
+  display: block;
+}
+.diagram-live.show-snippets .drawing {
+  position: static;
+}
+.diagram-live.show-snippets .editor {
+  border-left: 0;
+  border-top: 1px solid var(--ds-gray-200);
+}
+.diagram-live .diagram-snippets {
+  min-width: 0;
+  border: 1px solid var(--ds-gray-300);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--ds-background-100);
+}
+.snippets-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.diagram-snippets .snippets-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.snippets-heading > span {
+  font-size: 11px;
+  color: var(--ds-gray-900);
+}
+.snippet-types {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+.snippet-types button {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.snippet-types button[aria-pressed='true'] {
+  background: var(--ds-gray-1000);
+  color: var(--ds-background-100);
+  border-color: var(--ds-gray-1000);
+}
+.diagram-snippets .snippet-hint,
+.diagram-snippets .snippet-copy-status {
+  font-size: 12px;
+  color: var(--ds-gray-900);
+  line-height: 1.5;
+  margin: 10px 0;
+}
+.diagram-snippets .snippet-copy-status {
+  margin-bottom: 0;
+}
+.snippet-list {
+  max-height: 430px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.snippet-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--ds-gray-200);
+}
+.snippet-item-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.snippet-preview {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  color: var(--ds-gray-900);
+}
+.snippet-preview text {
+  stroke: none;
+  fill: currentColor;
+  font-size: 9px;
+  text-anchor: middle;
+}
+.snippet-item-head strong {
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+  flex: 1;
+}
+.snippet-item-head button {
+  font-size: 11px;
+  padding: 4px 7px;
+  min-width: 45px;
+}
+.diagram-snippets .snippet-item pre {
+  margin: 8px 0 0;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--ds-gray-100);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+.diagram-snippets .snippet-item code {
+  font-size: 11px;
+}
+.diagram-snippets .snippet-item p {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ds-gray-900);
+}
+@media (max-width: 800px) {
+  .diagram-live .editor-workspace.with-snippets {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .diagram-live .with-snippets .mermaid-editor {
+    height: 320px;
+  }
+  .snippet-list {
+    max-height: 330px;
   }
 }

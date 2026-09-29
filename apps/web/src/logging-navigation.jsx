@@ -1,4 +1,5 @@
 import React from 'react';
+import { exerciseHref } from './home-navigation.js';
 
 export const loggingOrder = ['r31', 'r32', 'r33', 'r26', 'r34'];
 export const loggingCategory = 'Logging, reporting and measurement';
@@ -21,11 +22,7 @@ export function LoggingNavigation({ id, profile }) {
           <a
             key={r}
             aria-current={r === id ? 'page' : undefined}
-            href={
-              r === 'r32' && !profile.localPreview && profile.surface !== 'request'
-                ? `${profile.requestUrl}/#r32`
-                : `#${r}`
-            }
+            href={r === 'r32' ? exerciseHref(profile) : `#${r}`}
           >
             {r.toUpperCase()} · {topics[i]}
           </a>

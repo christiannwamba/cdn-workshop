@@ -80,9 +80,10 @@ monaco.languages.setLanguageConfiguration('mermaid', {
   ],
 });
 
-export default function MermaidEditor({ value, onChange }) {
+export default function MermaidEditor({ value, onChange, syncRevision }) {
   const host = useRef(null);
   const editor = useRef(null);
+  const syncedRevision = useRef(syncRevision);
   const changed = useRef(onChange);
   changed.current = onChange;
   useEffect(() => {
@@ -130,8 +131,14 @@ export default function MermaidEditor({ value, onChange }) {
     };
   }, []);
   useEffect(() => {
+    // Live typing owns the model. Only an explicit restore/reset may replace it;
+    // a delayed React echo must not overwrite newer keystrokes or move the cursor.
+    if (syncRevision !== undefined) {
+      if (syncedRevision.current === syncRevision) return;
+      syncedRevision.current = syncRevision;
+    }
     if (editor.current && editor.current.getValue() !== value)
       editor.current.setValue(value);
-  }, [value]);
+  }, [value, syncRevision]);
   return <div className="mermaid-editor" ref={host} />;
 }

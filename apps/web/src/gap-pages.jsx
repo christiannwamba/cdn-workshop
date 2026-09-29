@@ -1,3 +1,10 @@
+import {
+  CodeExample,
+  FoldedEvidence,
+  polishedDiagramLayout,
+} from './page-presentation.jsx';
+import { HomeLink } from './home-link.jsx';
+import { ComparisonDiagram } from './comparison-diagram.jsx';
 import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import observation from './gap-observations.json';
@@ -6,6 +13,7 @@ import previousDiagrams from './gap-diagram-previous.json';
 export const gapCatalog = [
   {
     id: 'R05',
+    implementation: '',
     title: 'Can we reject POSTs only when Content-Length is absent?',
     status: 'gap',
     category: 'Request policy',
@@ -14,14 +22,16 @@ export const gapCatalog = [
   },
   {
     id: 'R06',
+    implementation: 'Automatic HTTPS redirect · 308',
     title: 'Can the first HTTP redirect return 301?',
     status: 'partial',
     category: 'Redirects and headers',
-    note: 'Configured HTTPS routes returned 301; the automatic HTTP upgrade returned 308.',
+    note: 'The automatic HTTP-to-HTTPS upgrade returned 308, not the required 301.',
     implemented: true,
   },
   {
     id: 'R09',
+    implementation: 'Native configuration · application responses',
     title: 'Can we remove headers from every required response?',
     status: 'partial',
     category: 'Redirects and headers',
@@ -30,6 +40,7 @@ export const gapCatalog = [
   },
   {
     id: 'R29',
+    implementation: '',
     title: 'How do we replace SureRoute’s origin path optimization?',
     status: 'gap',
     category: 'Origin networking',
@@ -40,20 +51,18 @@ export const gapCatalog = [
 const diagrams = {
   r05: `sequenceDiagram
   participant C as Client
-  participant V as Vercel route and Function checks
-  C->>V: POST /native, no Content-Length
-  V-->>C: Header seen as missing
-  C->>V: POST /native, Content-Length 0
-  V-->>C: Header also seen as missing`,
+  participant V as Request policy
+  C->>V: POST with no Content-Length
+  V-->>C: Required: reject this request
+  C->>V: POST with Content-Length: 0
+  V-->>C: Required: allow past this check
+  Note over C,V: Tested Vercel checks see both headers as missing
+  Note over V: Original absent versus explicit zero is lost`,
   r06: `sequenceDiagram
-  participant C as Client
-  participant P as Platform HTTP entry
-  participant R as Configured HTTPS route
-  C->>P: HTTP /probe + query
-  P-->>C: 308 to HTTPS /probe + same query
-  Note over C,R: Separate test request below
-  C->>R: HTTPS /configured-redirect + query
-  R-->>C: 301 to /probe + same query`,
+  participant C as Browser
+  participant P as Vercel
+  C->>P: HTTP request with path and query
+  P-->>C: 308 to HTTPS, preserving path and query`,
   r09: `sequenceDiagram
   participant C as Client
   participant V as Vercel routing and responses
@@ -85,13 +94,24 @@ const diagrams = {
   O-->>A: Origin response
   A-->>V: Response`,
 };
+const priorR06TestDiagram = `sequenceDiagram
+  participant C as Client
+  participant P as Platform HTTP entry
+  participant R as Configured HTTPS route
+  C->>P: HTTP /probe + query
+  P-->>C: 308 to HTTPS /probe + same query
+  Note over C,R: Separate test request below
+  C->>R: HTTPS /configured-redirect + query
+  R-->>C: 301 to /probe + same query`;
+const priorFramingDiagram =
+  'sequenceDiagram\n  participant C as Client\n  participant V as Vercel route and Function checks\n  C->>V: POST /native, no Content-Length\n  V-->>C: Header seen as missing\n  C->>V: POST /native, Content-Length 0\n  V-->>C: Header also seen as missing';
 const copy = {
   r05: {
-    status: 'Required distinction unmet in test',
+    status: 'Gap · original header distinction unmet',
     intro:
       'The rule treats a missing Content-Length differently from Content-Length: 0. In our Vercel test, both looked missing, so the tested route and Function checks could not enforce that distinction.',
     scope: 'This example covers the missing-versus-zero rule within R05.',
-    flow: 'The same endpoint receives two empty POSTs with different headers.',
+    flow: 'The rule depends on the original header being present, not the body size. Both requests have an empty body.',
     decision:
       'Find a supported check that can tell these requests apart, or agree to change the rule.',
     detailTitle: 'Other method rules to map',
@@ -101,9 +121,9 @@ const copy = {
   r06: {
     status: 'Partial · first redirect differs',
     intro:
-      'The current policy requires 301 for HTTP-to-HTTPS redirects. Vercel returns an automatic 308 before configured route redirects run; a later 301 cannot replace that response.',
+      'The current policy requires 301 for HTTP-to-HTTPS redirects. Vercel upgrades HTTP to HTTPS automatically with 308; a way to return 301 for that first response has not been demonstrated.',
     scope: 'This example covers redirect status, not the full canonical-host policy.',
-    flow: 'These are two separate test requests, not a recorded journey through two redirects.',
+    flow: 'Vercel tells the browser to request the HTTPS URL. The first response is 308.',
     decision:
       'Agree whether the automatic 308 is acceptable, or obtain a supported way to return the required 301.',
     detailTitle: 'Canonical-host rules still to verify',
@@ -126,7 +146,7 @@ const copy = {
   r29: {
     status: 'Equivalent policy not demonstrated',
     intro:
-      'SureRoute optimizes the network path from the CDN to an external origin for non-cacheable no-store or bypass-cache traffic. The Vercel replacement needs a supported policy for that journey or an agreed alternative that meets the performance goal.',
+      'The customer uses SureRoute to optimize the CDN-to-external-origin path for non-cacheable no-store or bypass-cache traffic. An equivalent customer-configurable Vercel policy for that path has not been established. Performance against your origin still needs verification.',
     scope:
       'Evidence review: 24 September 2026. No parity experiment or performance comparison was run.',
     flow: 'Current SureRoute flow for non-cacheable traffic. The replacement decision sits outside this request path.',
@@ -225,292 +245,251 @@ function Provenance() {
   );
 }
 function Framing({ base }) {
-  const native = observation.framing.filter((r) => r.case.startsWith('native-'));
+  const rows = observation.framing
+    .filter((r) => r.case.startsWith('native-'))
+    .slice(0, 2);
   return (
     <section>
-      <h2>Compare the two requests</h2>
-      <ol className="exercise">
-        <li>
-          <h3>Check how each header arrives</h3>
-          <Recorded />
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Client sends</th>
-                  <th>Tested checks see</th>
-                </tr>
-              </thead>
-              <tbody>
-                {native.slice(0, 2).map((r, i) => (
-                  <tr key={r.case}>
-                    <td>{i === 0 ? 'No Content-Length' : 'Content-Length: 0'}</td>
-                    <td>
-                      {r.native === 'missing' && !r.contentLengthPresent
-                        ? 'Header missing'
-                        : 'See test details'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p>Both requests have an empty body, so body size cannot distinguish them.</p>
-          <SnapshotSource name="presence">
-            Code: check whether the header is present
-          </SnapshotSource>
-          <details className="source">
-            <summary>Control request and detailed results</summary>
-            <p>
-              The seven-byte control retained its length header. Both the native route
-              matcher and the Function reported the two empty requests as missing the
-              header. The direct <code>/probe</code> test returned the same Function
-              fields. These endpoints report what arrives; they do not reject requests.
-            </p>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Client header</th>
-                    <th>Route matcher</th>
-                    <th>Function: present</th>
-                    <th>Function: value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {native.map((r, i) => (
-                    <tr key={r.case}>
-                      <td>{['Absent', 'Content-Length: 0', 'Content-Length: 7'][i]}</td>
-                      <td>{r.native}</td>
-                      <td>{String(r.contentLengthPresent)}</td>
-                      <td>{r.contentLength ?? 'null'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <SnapshotSource name="methodMissing">
-              Config: match a missing header
-            </SnapshotSource>
-            <SnapshotSource name="methodPresent">
-              Config: match a present header
-            </SnapshotSource>
-            <Commands>{`# Seven-byte control\ncurl -q --http1.1 --max-time 20 --trace-ascii - -H 'Content-Type: application/octet-stream' --data-binary 'fixture' '${base}/native'`}</Commands>
-          </details>
-        </li>
-        <li>
-          <h3>Repeat the comparison from a terminal</h3>
-          <p>
-            Send the two requests to <code>{base}/native</code>. Compare the outgoing
-            Content-Length header with <code>contentLengthPresent</code> in each response.
-            Expect <code>false</code> for both if behavior is unchanged.
-          </p>
-          <Commands>{`# Absent: no body and no Content-Length header\ncurl -q --http1.1 --max-time 20 --trace-ascii - -X POST -H 'Content-Length:' '${base}/native'\n\n# Explicit zero: same path and no body\ncurl -q --http1.1 --max-time 20 --trace-ascii - -X POST -H 'Content-Length: 0' '${base}/native'`}</Commands>
-          <p className="small">
-            These commands use the hosted test endpoint. The local page does not send
-            them. Browser fetch cannot set this header precisely.
-          </p>
-          <p className="small">
-            <Link href={docs.config}>Vercel route conditions</Link>
-          </p>
-        </li>
-      </ol>
-      <Provenance />
+      <p>
+        Recorded 24 September 2026. Compare a POST without Content-Length with one
+        explicitly sending zero.
+      </p>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client sends</th>
+              <th>Tested checks see</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.case}>
+                <td>{i === 0 ? 'No Content-Length' : 'Content-Length: 0'}</td>
+                <td>
+                  {r.native === 'missing' && !r.contentLengthPresent
+                    ? 'Header missing'
+                    : 'Header present'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        To repeat, run both commands and compare contentLengthPresent in the responses.
+        Both recorded requests had an empty body.
+      </p>
+      <pre>
+        <code>{`# No Content-Length header\ncurl -q --http1.1 --max-time 20 -X POST -H 'Content-Length:' '${base}/native'\n\n# Explicit zero\ncurl -q --http1.1 --max-time 20 -X POST -H 'Content-Length: 0' '${base}/native'`}</code>
+      </pre>
     </section>
   );
 }
-function Redirects({ base, headers = false }) {
-  const rows = observation.branches.filter((r) =>
-    ['automatic-http-GET', 'configured-301-GET', ...(headers ? ['normal'] : [])].includes(
-      r.branch,
-    ),
-  );
+function Redirects({ base, headers }) {
   const names = {
     'automatic-http-GET': 'Automatic HTTP redirect',
     'configured-301-GET': 'Configured HTTPS redirect',
     normal: 'Application response',
-    'cache-fill': 'Application cache fill',
-    'cache-hit': 'Application cache hit',
-    'controlled-error': 'Application error',
-    'missing-static': 'Platform missing static file',
   };
+  const rows = observation.branches.filter(
+    (r) => Object.hasOwn(names, r.branch) && (headers || r.branch !== 'normal'),
+  );
   return (
     <section>
-      <h2>{headers ? 'Compare the response types' : 'Compare the two redirects'}</h2>
-      <ol className="exercise">
-        <li>
-          <h3>
-            {headers ? 'Inspect Server at the client' : 'Inspect the redirect status'}
-          </h3>
-          <Recorded>R06 and R09 use these same redirect captures.</Recorded>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Response type</th>
-                  <th>Status</th>
-                  {headers ? <th>Server</th> : <th>Location</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.branch}>
-                    <td>{names[r.branch]}</td>
-                    <td>{r.status}</td>
-                    {headers ? (
-                      <td>{r.server ?? 'Absent'}</td>
-                    ) : (
-                      <td>
-                        {r.branch === 'automatic-http-GET'
-                          ? 'HTTPS, same host + /probe + query'
-                          : '/probe + query'}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {headers ? (
-            <>
-              <p>The application response also removed synthetic X-Powered-By.</p>
-              <details className="source">
-                <summary>More results: cache, errors and transform markers</summary>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Response type</th>
-                        <th>Status</th>
-                        <th>Cache</th>
-                        <th>Server</th>
-                        <th>Transform</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {observation.branches.map((r) => (
-                        <tr key={r.branch}>
-                          <td>{names[r.branch]}</td>
-                          <td>{r.status}</td>
-                          <td>{r.cache ?? 'Absent'}</td>
-                          <td>{r.server ?? 'Absent'}</td>
-                          <td>{r.transform ?? 'Absent'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p>
-                  The recorded cache HIT reused the fill’s invocation ID. Server and
-                  synthetic X-Powered-By were absent on the cache and application-error
-                  responses. The platform 404 retained Server.
-                </p>
-              </details>
-              <SnapshotSource name="transforms">
-                Config: delete response headers
-              </SnapshotSource>
-              <SnapshotSource name="originHeaders">
-                Code: synthetic response headers to remove
-              </SnapshotSource>
-            </>
-          ) : (
-            <>
-              <SnapshotSource name="redirect">
-                Config: the explicit 301 route
-              </SnapshotSource>
-            </>
-          )}
-        </li>
-        <li>
-          <h3>Recheck without following redirects</h3>
-          <p>
-            Run these commands against the hosted test endpoint. Inspect the status,{' '}
-            <code>Location</code>
-            {headers ? ' and Server' : ''} in the terminal. Do not add <code>-L</code>: it
-            would follow the redirect.
-          </p>
-          <Commands>{`# Automatic HTTP first response: recorded 308, Server: Vercel\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base.replace('https:', 'http:')}/probe?example=1'\n\n# Configured HTTPS route: recorded 301, Server: Vercel\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base}/configured-redirect?example=1'${headers ? `\n\n# Application response: recorded 200, Server absent\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base}/probe'\n\n# Application error: recorded 500, Server absent\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base}/error'` : ''}`}</Commands>
-          <p className="small">
-            Expected values are from the dated run. The local page does not send these
-            requests. A browser may upgrade HTTP before sending it.{' '}
-            <Link href={headers ? docs.config : docs.redirect}>
-              {headers ? 'Vercel response transforms' : 'Vercel automatic HTTPS redirect'}
-            </Link>
-          </p>
-        </li>
-      </ol>
-      <Provenance />
-    </section>
-  );
-}
-function OriginBackground() {
-  return (
-    <details className="source">
-      <summary>Current setup and acceptance criteria</summary>
       <p>
-        The current SureRoute setup uses a custom map, a probe object and a 30-minute
-        lifetime for race statistics. Selecting a destination URL or hosting region does
-        not establish equivalent network-path optimization.
+        Recorded 24 September 2026.{' '}
+        {headers
+          ? 'Compare the Server header across application and redirect responses.'
+          : 'Compare the first HTTP redirect with the configured HTTPS redirect.'}
       </p>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Response</th>
+              <th>Status</th>
+              {headers && <th>Server</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.branch}>
+                <td>{names[r.branch]}</td>
+                <td>{r.status}</td>
+                {headers && <td>{r.server ?? 'Absent'}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p>
-        <Link href={docs.sureRoute}>Akamai SureRoute behavior</Link>
+        To repeat, inspect the response headers without following redirects. Do not add{' '}
+        <code>-L</code>.
       </p>
-      <p>
-        Vercel documents private connections between its points of presence and regions.
-        That does not establish a customer-configurable optimization policy for the onward
-        path to an external origin.
-      </p>
+      <pre>
+        <code>{`curl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base.replace('https:', 'http:')}/probe?example=1'\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base}/configured-redirect?example=1'${headers ? `\ncurl -q --http1.1 --max-time 20 -sS -D - -o /dev/null '${base}/probe'` : ''}`}</code>
+      </pre>
       <p className="small">
-        <Link href={docs.regions}>Vercel global network and regions</Link> · Documentation
-        checked 25 September 2026.
+        These commands send requests to the hosted example. Opening this page does not
+        rerun the test.
       </p>
-      <p>
-        Ask the networking/product team for the supported controls and operating contract.
-        Agree acceptance criteria such as p95 origin-fetch TTFB and failure recovery
-        before evaluating an alternative.
-      </p>
-    </details>
+    </section>
   );
 }
 export function GapPage({ id, profile, Diagram }) {
   const page = gapCatalog.find((r) => r.id.toLowerCase() === id);
   const content = copy[id];
   const base = profile.fixtures.platformGaps.url.replace(/\/$/, '');
+  const polished = ['r05', 'r06', 'r09', 'r29'].includes(id);
+  const Wrapper = polished ? 'div' : React.Fragment;
   return (
-    <>
-      <a className="back" href="#index">
-        ← All requirements
-      </a>
+    <Wrapper {...(polished ? { className: 'page-polish' } : {})}>
+      <HomeLink className="back">← All requirements</HomeLink>
       <div className="hero">
         <span className={`badge ${page.status}`}>
           {page.id} · {content.status}
         </span>
         <h1>{page.title}</h1>
         <p className="lede">{content.intro}</p>
-        <p className="small">{content.scope}</p>
+        {id !== 'r29' && <p className="small">{content.scope}</p>}
       </div>
-      <Diagram
-        key={id}
-        id={id}
-        source={diagrams[id]}
-        previousSource={previousDiagrams[id]}
-        description={content.flow}
-      />
-      {id === 'r05' ? (
-        <Framing base={base} />
-      ) : id === 'r29' ? null : (
-        <Redirects base={base} headers={id === 'r09'} />
+      {id === 'r06' ? (
+        <ComparisonDiagram
+          id={id}
+          Diagram={Diagram}
+          differencePlacement="below"
+          diagramProps={{
+            variant: 'polished',
+            hideTitle: true,
+            renderConfig: polishedDiagramLayout,
+          }}
+          difference="The HTTPS upgrade works, but the first response is 308 instead of the required 301. No workaround for that status-code requirement has been demonstrated."
+          required={{
+            source: `sequenceDiagram
+  participant C as Browser
+  participant P as CDN
+  C->>P: HTTP request with path and query
+  P-->>C: Required: 301 to HTTPS, preserving path and query`,
+            description:
+              'Required HTTP-to-HTTPS status. Confirm any additional host and path rules separately.',
+            actorRoles: {},
+          }}
+          approach={{
+            source: diagrams[id],
+            previousSource: [priorR06TestDiagram, ...[previousDiagrams[id]].flat()],
+            description: content.flow,
+            actorRoles: { P: 'vercel' },
+          }}
+        />
+      ) : id === 'r09' ? (
+        <ComparisonDiagram
+          id={id}
+          Diagram={Diagram}
+          differencePlacement="below"
+          diagramProps={{
+            variant: 'polished',
+            hideTitle: true,
+            renderConfig: polishedDiagramLayout,
+          }}
+          difference="Server was removed from the tested application responses, but remained on the automatic HTTP 308 and configured HTTPS 301 redirects."
+          required={{
+            source: `sequenceDiagram
+  participant C as Client
+  participant V as Vercel routing and responses
+  participant A as Application
+  participant T as Response header rules
+  alt Application response
+    C->>V: HTTPS /probe
+    V->>A: Request application
+    A-->>V: 200 with identifying headers
+    V->>T: Required removal of identifying headers
+    T-->>V: Remove Server and X-Powered-By
+    V-->>C: Required: 200 without those headers
+  else Automatic HTTP redirect
+    C->>V: HTTP /probe
+    V->>T: Required removal on redirect response
+    T-->>V: Remove Server if present
+    V-->>C: Required: redirect without Server
+  else Configured HTTPS redirect
+    C->>V: HTTPS /configured-redirect
+    V->>T: Required removal on redirect response
+    T-->>V: Remove Server if present
+    V-->>C: Required: 301 without Server
+  end`,
+            description:
+              'Desired removal across these response types. These logical stages describe the requirement, not a verified internal pipeline.',
+          }}
+          approach={{
+            source: diagrams[id],
+            previousSource: previousDiagrams[id],
+            description: content.flow,
+          }}
+        />
+      ) : (
+        <Diagram
+          key={id}
+          id={id}
+          liveEditing={id === 'r29'}
+          title={
+            ['r05', 'r29'].includes(id)
+              ? 'Our understanding of the requirement'
+              : undefined
+          }
+          variant={polished ? 'polished' : undefined}
+          renderConfig={polished ? polishedDiagramLayout : undefined}
+          source={diagrams[id]}
+          previousSource={
+            id === 'r05'
+              ? [priorFramingDiagram, ...[previousDiagrams[id]].flat()]
+              : previousDiagrams[id]
+          }
+          description={content.flow}
+        />
       )}
+      {id === 'r09' && (
+        <section className="implementation">
+          <h2>Implementation example</h2>
+          <p>
+            These native response transforms delete the two identifying headers. The
+            recorded application response applied them; the tested automatic HTTP 308 and
+            configured HTTPS 301 retained <code>Server</code>.
+          </p>
+          <CodeExample
+            source={{ ...observation.sources.transforms, first: undefined }}
+            role="Native response transforms · compacted"
+            code={`{
+  "src": "/(.*)",
+  "continue": true,
+  "transforms": [
+    { "type": "response.headers", "op": "delete", "target": { "key": "server" } },
+    { "type": "response.headers", "op": "delete", "target": { "key": "x-powered-by" } }
+  ]
+}`}
+          />
+          <p className="small">
+            From the configuration verified on 24 September 2026; the diagnostic marker
+            transform is omitted. The recorded response headers are in the demo.
+          </p>
+        </section>
+      )}
+      {polished && id !== 'r29' ? (
+        <>
+          <p>{content.decision}</p>
+          <FoldedEvidence title="Demo">
+            {id === 'r05' ? (
+              <Framing base={base} />
+            ) : (
+              <Redirects base={base} headers={id === 'r09'} />
+            )}
+          </FoldedEvidence>
+        </>
+      ) : id === 'r29' ? null : (
+        <Redirects base={base} />
+      )}
+
       <section>
-        <h2>Decision</h2>
-        <p>{content.decision}</p>
-        {content.detail && (
-          <details className="source">
-            <summary>{content.detailTitle}</summary>
-            <p>{content.detail}</p>
-          </details>
-        )}
-        {id === 'r29' && <OriginBackground />}
+        {id === 'r29' && <p>{content.decision}</p>}
         <p className="related">
           Related:{' '}
           {gapCatalog
@@ -532,6 +511,6 @@ export function GapPage({ id, profile, Diagram }) {
             ))}
         </p>
       </section>
-    </>
+    </Wrapper>
   );
 }

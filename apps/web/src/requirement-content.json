@@ -1,14 +1,15 @@
 {
   "r26": {
+    "implementation": "To confirm",
     "category": "Logging, reporting and measurement",
     "status": "confirmation",
     "scope": "Custom log labels tested 27 September 2026 · equivalent reports and cost attribution are not established.",
     "title": "How do we preserve reporting and cost groups?",
     "statusText": "Needs confirmation",
     "note": "Log labels demonstrated; required reports and cost breakdowns must be defined before claiming CP-code parity.",
-    "intro": "The requirement groups traffic for reporting as well as grouping content for purge. Custom fields can label current requests for downstream reports; cache tags address purge groups separately. We still need the required reports and cost breakdowns to assess whether this split preserves the outcome.",
-    "diagram": "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label: demonstrated]\n C -.-> D[Required reports and cost allocation: to define]\n E[Cached content] -.-> F[Cache tags: separate purge mapping]\n F -.-> G[Group invalidation]",
-    "flow": "Solid arrows show the tested log-label path. Dotted arrows are proposed reporting and purge mappings; neither was demonstrated by the label test.",
+    "intro": "Traffic groups must preserve the reporting and cost breakdowns the customer uses. Which reports, branch attribution and access requirements must survive, and who will validate those outputs?",
+    "diagram": "flowchart LR\n T[Traffic across customer services] --> G[Agreed reporting groups]\n G --> R[Required traffic reports]\n G --> C[Required cost breakdowns]\n R --> V[Reporting owner validates outputs]\n C --> V\n Q[Open: reports, attribution and access] -.-> G",
+    "flow": "Our understanding of the reporting need, not a demonstrated reporting implementation. Custom log labels have been tested; equivalent native billing or CP-code reports have not. Purge groups are a separate R25 mapping.",
     "sectionTitle": "Compare the recorded labels",
     "paragraphs": [
       "The synthetic A and B inputs selected different labels before the cache lookup. These names model reporting dimensions; they do not reproduce the customer’s security or waiting-room branches."
@@ -47,18 +48,28 @@
         "code": "const eventId = crypto.randomUUID();\nconst event = {\n  // Synthetic branch-selection excerpt; event envelope omitted.\n  run,\n  eventId,\n  cookieState: selected.length === 0 ? 'missing' : valid ? 'valid' : 'invalid',\n  cookie: valid ? value : null,\n  branch:\n    valid && value!.startsWith('fixture-B')\n      ? 'illustrative-B'\n      : 'illustrative-default',\n  instrumentationMs: performance.now() - started,\n};\n"
       }
     ],
-    "previousDiagram": "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label]\n C --> D[Reporting consumer]\n E[Cached content] --> F[Cache tags]\n F --> G[Group invalidation]"
+    "previousDiagram": [
+      "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label]\n C --> D[Reporting consumer]\n E[Cached content] --> F[Cache tags]\n F --> G[Group invalidation]",
+      "flowchart LR\n A[Current request] --> B[Custom branch evaluation]\n B --> C[Structured log label: demonstrated]\n C -.-> D[Required reports and cost allocation: to define]\n E[Cached content] -.-> F[Cache tags: separate purge mapping]\n F -.-> G[Group invalidation]"
+    ],
+    "diagramTitle": "Our understanding of the requirement",
+    "presentation": {
+      "actorRoles": {},
+      "decisionTitle": "What needs confirmation",
+      "evidenceTitle": "Recorded labels and mapping details"
+    }
   },
   "r31": {
+    "implementation": "Native request ID + custom log join",
     "category": "Logging, reporting and measurement",
     "status": "supported",
     "scope": "Owned test recorded 27 September 2026 · current-request identity on MISS and HIT. Full retry and subrequest propagation is not demonstrated here.",
     "title": "Can we trace each request through the logs?",
     "statusText": "Supported mapping",
     "note": "Native request identity and log correlation demonstrated; origin and retry identifiers need an explicit propagation contract.",
-    "intro": "The requirement is a unique reference for each request, visible in CDN logs and available to send to the origin. Vercel provides request IDs and request logs; application correlation fields can be forwarded for origin work. A cached content reference must remain separate from the current request ID.",
-    "diagram": "sequenceDiagram\n participant A as Request A\n participant C as CDN cache\n participant O as Content origin\n participant B as Request B\n participant L as Native request logs\n A->>C: Same content URL, first request\n C->>O: MISS, fetch content\n O-->>C: Content with fill reference\n C-->>A: New request identity, fill reference\n C-->>L: Record for A\n B->>C: Same URL, later request\n C-->>B: HIT, new request identity, same fill\n C-->>L: Record for B",
-    "flow": "Recorded relationship between successive requests and a shared content fill. The arrows describe the logical flow, not an internal platform trace.",
+    "intro": "Vercel request logs identify each current request, including cache hits. In the tested integration, the collector joins a custom log record to its native request record using the exact requestId; the cached content fill stays separate.",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant C as Vercel CDN\n participant O as Content origin\n participant D as Vercel Log Drains\n participant L as Log consumer\n B->>C: Request A, same public URL\n C->>O: MISS: fetch content\n O-->>C: Public content with fill reference\n C-->>B: Content\n C--)D: A: native request and custom log records\n B->>C: Request B, same public URL\n C-->>B: HIT: same content, no origin call\n C--)D: B: distinct current-request records\n D--)L: Deliver records asynchronously\n Note over D,L: Join custom and native records by exact requestId\n Note over B,C: Content fill is shared, request identities are distinct",
+    "flow": "Logical relationship demonstrated on the owned MISS/HIT path. The custom log envelope and native record share a requestId; this is not a universal response-header parsing rule or proof of propagation through every origin, retry or destination.",
     "sectionTitle": "Compare current request and cached fill",
     "paragraphs": [
       "A fetched public content on a MISS. B requested the same URL and received a HIT: its native request ID changed, while the content fill ID stayed the same. One content-origin call was recorded for this path. Open R32 next to make the same comparison in a real browser and match each current request to its cookie log."
@@ -97,18 +108,42 @@
         "id": "r33",
         "label": "Send logs to destinations"
       }
-    ]
+    ],
+    "previousDiagram": [
+      "sequenceDiagram\n participant A as Request A\n participant C as CDN cache\n participant O as Content origin\n participant B as Request B\n participant L as Native request logs\n A->>C: Same content URL, first request\n C->>O: MISS, fetch content\n O-->>C: Content with fill reference\n C-->>A: New request identity, fill reference\n C-->>L: Record for A\n B->>C: Same URL, later request\n C-->>B: HIT, new request identity, same fill\n C-->>L: Record for B"
+    ],
+    "diagramTitle": "Request identity and log correlation",
+    "presentation": {
+      "actorRoles": {
+        "C": "vercel",
+        "D": "vercel"
+      },
+      "decisionTitle": "Customer integration to agree",
+      "evidenceTitle": "Recorded results and mapping details",
+      "implementationIntro": "The collector first selects the custom emission for the browser action, then matches its envelope requestId to a native record. This is consumer code from the tested integration, not a platform API for generating or forwarding identifiers.",
+      "implementationSources": [
+        {
+          "title": "Match the native request record",
+          "label": "Owned collector · after selecting one custom emission",
+          "path": "apps/collector/lib/evidence.mjs",
+          "first": 110,
+          "last": 114,
+          "code": "const ns =\n  es.length === 1\n    ? native.filter((x) => x.record.requestId === es[0].record.requestId)\n    : [];\nconst joined = es.length === 1 && ns.length === 1 && !!ns[0].record.requestId;"
+        }
+      ]
+    }
   },
   "r33": {
+    "implementation": "Native configuration",
     "category": "Logging, reporting and measurement",
     "status": "supported",
     "scope": "Owned HTTP destinations tested 27 September 2026 · New Relic and Botify ingestion has not been tested.",
     "title": "Can logs go to all-traffic and bot-only destinations?",
     "statusText": "Supported mapping",
     "note": "Native all-traffic and filtered delivery demonstrated. Vendor endpoints, format and exact bot policy remain customer setup.",
-    "intro": "The requirement sends all request logs to New Relic and the selected major-bot subset to Botify when enabled. Configure one Vercel Log Drain for all required requests and a second with a native User-Agent filter. The test uses two owned HTTP destinations in place of the vendors.",
-    "diagram": "flowchart LR\n R[Native request logs] --> A[All-traffic Drain]\n A --> D[Owned destination A]\n R --> F{Googlebot text matches?}\n F -->|Yes| B[Filtered Drain]\n B --> E[Owned destination B]\n F -->|No| N[No delivery to B]",
-    "flow": "The recorded filter matches User-Agent text. It does not authenticate a bot or implement the customer’s complete flag and bot policy.",
+    "intro": "Use independent Vercel Log Drains to send all required request logs to one destination and a filtered subset to another. Native User-Agent filtering and delivery to two owned destinations are demonstrated; New Relic and Botify formats and the customer’s selection policy remain setup.",
+    "diagram": "flowchart LR\n R[Native request logs] --> A[All-traffic Drain]\n R --> F{Googlebot in User-Agent?}\n F -->|Yes| B[Filtered Drain]\n F -->|No| N[No filtered delivery]\n A -.->|Async batches| D[All-traffic receiver]\n B -.->|Async batches| E[Filtered receiver]",
+    "flow": "Both paths delivered to owned HTTP destinations in the recorded test. User-Agent text matching is not verified-bot identity; the complete customer bot list, enablement flag and vendor ingestion still need configuration and validation.",
     "sectionTitle": "Compare deliveries by request group",
     "paragraphs": [
       "The all-traffic destination received 20 native request records. Ten synthetic Googlebot requests also reached the filtered destination; ten human requests did not. Both destinations verified signed deliveries."
@@ -156,17 +191,38 @@
         "last": 8,
         "code": "if (name === 'bots')\n  config.filter = {\n    version: 'v2',\n    filter: { type: 'odata', text: \"contains(log/userAgent, 'Googlebot')\" },\n  };\n"
       }
-    ]
+    ],
+    "previousDiagram": [
+      "flowchart LR\n R[Native request logs] --> A[All-traffic Drain]\n A --> D[Owned destination A]\n R --> F{Googlebot text matches?}\n F -->|Yes| B[Filtered Drain]\n B --> E[Owned destination B]\n F -->|No| N[No delivery to B]"
+    ],
+    "diagramTitle": "Independent native log destinations",
+    "presentation": {
+      "actorRoles": {},
+      "decisionTitle": "Customer integration to agree",
+      "evidenceTitle": "Recorded results and mapping details",
+      "implementationIntro": "The recorded configuration adds this filter only to the second Drain. The all-traffic Drain has no User-Agent filter. This excerpt is the native filter configuration; destination credentials and provisioning are omitted.",
+      "implementationSources": [
+        {
+          "title": "Config: recorded bot filter",
+          "label": "Test configuration · rerun 27 September 2026 · formatting expanded for readability",
+          "path": "scripts/drains.mjs",
+          "first": 8,
+          "last": 8,
+          "code": "if (name === 'bots')\n  config.filter = {\n    version: 'v2',\n    filter: { type: 'odata', text: \"contains(log/userAgent, 'Googlebot')\" },\n  };\n"
+        }
+      ]
+    }
   },
   "r34": {
+    "implementation": "To confirm",
     "category": "Logging, reporting and measurement",
     "status": "confirmation",
     "title": "How do we keep mPulse measurement working?",
     "statusText": "Needs confirmation",
     "note": "Retain mPulse; the reports, alerts and measurement dependencies in use need confirmation.",
-    "intro": "The requirement is to preserve the browser-performance reports and alerts in use. Retaining mPulse through its application loader is the proposed approach. Loader ownership is ordinary integration work; the open question is which events, reports and Akamai-specific inputs must survive.",
-    "diagram": "sequenceDiagram\n participant A as Application page\n participant B as Browser\n participant M as mPulse collection\n A-->>B: Page with approved loader integration\n B->>B: Apply agreed consent and measurement policy\n B->>M: Allowed performance beacons\n M->>M: Existing events and dashboards",
-    "flow": "Proposed browser integration. No customer measurement or beacon-delivery test has been run.",
+    "intro": "Keep mPulse and the browser-performance reports and alerts the customer uses. Which events and Akamai-specific measurement inputs do those outputs depend on, and who owns the loader, consent and application integration?",
+    "diagram": "sequenceDiagram\n participant A as Application page\n participant B as Browser\n participant M as mPulse collection\n participant R as Reports and alerts\n A-->>B: Deliver the retained mPulse loader\n B->>B: Apply consent and measurement policy\n B--)M: Allowed performance and business events\n M--)R: Feed the required measurements\n Note over A,R: Confirm events, network inputs and ownership",
+    "flow": "Our understanding of the retained mPulse measurement journey. No customer beacon, event or dashboard validation has been run. Loader integration alone does not establish every report or alert, and no Web Analytics or Speed Insights equivalence is implied.",
     "sectionTitle": "Keep measurement separate from CDN routing",
     "paragraphs": [
       "Akamai documents an application loader for Boomerang. If the current setup injects it at the CDN, an application owner must take over delivery and preserve consent and Timing-Allow-Origin settings.",
@@ -190,9 +246,19 @@
         "label": "Request logs"
       }
     ],
-    "scope": "Proposed retained mPulse integration · no browser beacon, event or dashboard validation has been run."
+    "scope": "Proposed retained mPulse integration · no browser beacon, event or dashboard validation has been run.",
+    "previousDiagram": [
+      "sequenceDiagram\n participant A as Application page\n participant B as Browser\n participant M as mPulse collection\n A-->>B: Page with approved loader integration\n B->>B: Apply agreed consent and measurement policy\n B->>M: Allowed performance beacons\n M->>M: Existing events and dashboards"
+    ],
+    "diagramTitle": "Our understanding of the requirement",
+    "presentation": {
+      "actorRoles": {},
+      "decisionTitle": "What needs confirmation",
+      "evidenceTitle": "Measurement dependencies and references"
+    }
   },
   "r38": {
+    "implementation": "Middleware + Function",
     "title": "Can we run custom code at the edge?",
     "status": "supported",
     "category": "Processing",
@@ -235,30 +301,30 @@
         "url": "https://vercel.com/docs/caching/cdn-cache"
       }
     ],
-    "sources": [
-      {
-        "title": "Existing example: custom request logic",
-        "label": "Workshop Middleware excerpt · custom cookie logging, not PIM",
-        "path": "apps/request-demo/middleware.ts",
-        "first": 55,
-        "last": 71,
-        "code": "  const selected = (request.headers.get('cookie') || '')\n    .split(';')\n    .map((x) => x.trim())\n    .filter((x) => x.startsWith('workshop_choice='));\n  const value =\n    selected.length === 1 ? selected[0].slice('workshop_choice='.length) : null;\n  const valid = value === 'fixture-A' || value === 'fixture-B';\n  console.log(\n    JSON.stringify({\n      kind: 'workshop-cookie-v1',\n      run,\n      eventId,\n      ...(browser ? { slot } : {}),\n      cookieState: selected.length === 0 ? 'missing' : valid ? 'valid' : 'invalid',\n      cookie: valid ? value : null,\n    }),\n  );"
-      }
-    ]
+    "presentation": {
+      "actorRoles": {
+        "M": "vercel",
+        "E": "vercel",
+        "F": "vercel"
+      },
+      "evidenceTitle": "Placement details and migration scope",
+      "decisionTitle": "PIM migration input"
+    }
   },
   "r39": {
-    "title": "Can a failed request retry once without repeating processing?",
-    "status": "workaround",
+    "implementation": "Function",
+    "title": "Can we retry a request without running the same code twice?",
+    "status": "supported",
     "category": "Processing",
-    "note": "Custom browser retry and loop guard demonstrated. Confirm actual failure policy and whether literal query bytes matter.",
-    "intro": "The current failure rule returns a 302 to the same path with ewresponse=retry and x-ew-rp-error: true. In this custom Function example, the browser follows that redirect, and the retry marker skips the parent processing before the backend is called.",
-    "statusText": "Workaround · bounded retry demonstrated",
-    "scope": "Live example on an owned test service · recorded fallback from 27 September 2026. The customer PIM program is not implemented.",
-    "diagram": "sequenceDiagram\n participant B as Browser\n participant F as Custom Function\n participant P as Test processing\n participant O as Test backend\n B->>F: GET /checkout?cart=123\n F->>P: Run eligible parent processing\n P-->>F: Failure status\n F-->>B: 302 with error header and retry Location\n B->>F: GET /checkout?cart=123&ewresponse=retry\n Note over F: Marker present — skip parent processing\n F->>O: Fetch terminal response\n O-->>F: 200 or 503\n F-->>B: Terminal response without another redirect",
-    "flow": "The retry is another browser request. The Function does not fetch its own retry URL.",
+    "note": "The request handler implements the demonstrated retry decision and skips custom processing on the marked request.",
+    "intro": "The Function handles a processing failure by redirecting the browser with ewresponse=retry. On that request the handler runs again, skips only the PIM processing step and continues to the backend.",
+    "statusText": "Supported mapping · retry/skip demonstrated",
+    "scope": "Implementation: custom Function logic.",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant F as Request handler (Function)\n participant P as Custom processing (mock)\n participant O as Test backend\n B->>F: GET /checkout?cart=123\n F->>P: Run eligible custom processing\n P-->>F: Handled failure status\n F-->>B: 302 Location with ewresponse=retry\n B->>F: GET /checkout?cart=123&ewresponse=retry\n Note over F: Handler runs, skip custom processing\n F->>O: Fetch backend response\n O-->>F: 200 or 503\n F-->>B: Final response without another redirect",
+    "flow": "The browser follows the redirect. The Function runs again, but skips the custom processing step.",
     "sectionTitle": "Follow the browser retry",
     "paragraphs": [
-      "The marked request skips processing and calls the backend once. Query values and order survive; percent-escape case can change (%2f → %2F), so byte-identical preservation is not claimed."
+      "As introduced in R38, PIM is custom code running on Akamai. A surrounding failure rule directs a browser retry using ewresponse=retry. The Vercel handler implements that same decision as part of its custom logic."
     ],
     "table": {
       "headers": ["Case", "Responses", "Observation"],
@@ -269,12 +335,12 @@
       ]
     },
     "observation": "The recorded browser runs returned 302 → 200 and 302 → 503, each with processing=1 and backend=1. A direct marked request returned 200 with processing=0 and backend=1. These are saved observations, not a new run.",
-    "detail": "Query values, duplicate-parameter order and empty values were retained. Percent-escape case normalized (%2f → %2F); literal query-byte identity is not demonstrated. Failure matching uses case-sensitive substring exclusions for success and unimplementedHandler, without trimming; confirm this with customer golden cases. Only GET enters the deployed retry branch. Counters are independent records from owned test endpoints, not native Log Drain records.",
-    "decision": "Confirm PIM failure statuses, terminal response policy and whether query strings must remain byte-identical. The bounded retry works; the full PIM program remains the separate R38 question.",
+    "detail": "Query values, duplicate-parameter order and empty values were retained. Percent-escape case normalized (%2f → %2F); literal query-byte identity is not demonstrated. Failure matching uses case-sensitive substring exclusions for success and unimplementedHandler, without trimming; confirm this with customer golden cases. Only GET enters the deployed retry branch. Counters are independent records from owned test endpoints, not native Log Drain records. The 302 also sets x-ew-rp-error:true. The marker is a control-flow signal, not authorization. This demonstrates handled processing statuses, not automatic platform retries or recovery from a runtime crash. Routing Middleware equivalence and the actual customer PIM program have not been tested. The sample guard skips processing when the ewresponse parameter is present, regardless of its value; the retry it generates uses ewresponse=retry.",
+    "decision": "Confirm the actual PIM failure statuses that should trigger a retry, the final backend response policy and whether query strings must remain byte-identical.",
     "related": [
       {
         "id": "r38",
-        "label": "Custom code"
+        "label": "Can we run custom code at the edge?"
       },
       {
         "id": "r40",
@@ -286,12 +352,12 @@
     "detailTitle": "Query encoding and test policy",
     "exercise": {
       "url": "https://argos-ws-processing.vercel.app/#r39",
-      "label": "Open the live retry example",
-      "intro": "In the example tab, open DevTools → Network and enable Preserve log. Each launch creates a fresh test namespace.",
+      "label": "Open the hosted retry example",
+      "intro": "In this separate hosted example, open DevTools → Network and enable Preserve log. Each launch creates a fresh test namespace; the local workshop preview does not execute the retry handler.",
       "steps": [
         {
           "title": "Run browser retry, then inspect both requests",
-          "text": "Click Run browser retry. The browser navigates to /checkout?cart=123, receives 302 with x-ew-rp-error:true, then follows Location to the same path with cart=123&ewresponse=retry. Expect a final 200. Use browser Back, then Read counters: processing=1 and backend=1. The marked response header x-poc-parent-executed:false confirms the processing was skipped.",
+          "text": "Click Run browser retry. The browser navigates to /checkout?cart=123, receives 302, then follows Location to the same path with cart=123&ewresponse=retry. The handler runs again, skips the processing step and calls the backend. Expect a final 200. Use browser Back, then Read counters: processing=1 and backend=1. The marked response header x-poc-parent-executed:false confirms that step was skipped.",
           "sources": [
             {
               "title": "Code: skip processing when the marker is present",
@@ -300,14 +366,6 @@
               "first": 7,
               "last": 7,
               "code": "if (u.searchParams.has('ewresponse'))\n  return { run: false, reason: 'ewresponse-present' };"
-            },
-            {
-              "title": "Code: append the retry marker",
-              "label": "Owned test source · verified 27 September 2026 · excerpt formatted for readability",
-              "path": "06-processing-retry/lib/retry.mjs",
-              "first": 17,
-              "last": 22,
-              "code": "export function retryLocation(url) {\n  const u = new URL(url);\n  if (u.searchParams.has('ewresponse'))\n    throw Error('Never append a second retry marker');\n  // Read raw search; do not round-trip original parameters through URLSearchParams.\n  return (\n    u.pathname +\n    u.search +\n    (u.search ? (u.search.endsWith('&') ? '' : '&') : '?') +\n    'ewresponse=retry'\n  );\n}\n"
             }
           ]
         },
@@ -317,16 +375,19 @@
         }
       ],
       "reset": "Each launch starts fresh. Fresh namespace clears the current counter selection; it does not delete earlier evidence."
-    }
+    },
+    "previousDiagram": "sequenceDiagram\n participant B as Browser\n participant F as Custom Function\n participant P as Test processing\n participant O as Test backend\n B->>F: GET /checkout?cart=123\n F->>P: Run eligible parent processing\n P-->>F: Failure status\n F-->>B: 302 with error header and retry Location\n B->>F: GET /checkout?cart=123&ewresponse=retry\n Note over F: Marker present — skip parent processing\n F->>O: Fetch terminal response\n O-->>F: 200 or 503\n F-->>B: Terminal response without another redirect",
+    "diagramTitle": "Vercel solution"
   },
   "r40": {
+    "implementation": "Function",
     "title": "Can we link an internal request to the request that caused it?",
     "status": "workaround",
     "category": "Processing",
     "note": "Custom IDs link an outgoing request to its parent; the receiver reads and logs them for correlation.",
-    "intro": "The browser sends request A to a Function. That Function sends a new request B to a backend, carrying B’s ID and parent A in a signed header. The receiver records both IDs so we can link B back to A.",
+    "intro": "Request B needs its own identity and a link to the browser request A that caused it. Custom code assigns and forwards those IDs; the receiving backend reads and records them so its log of B can be linked to A.",
     "statusText": "Workaround · child identity demonstrated",
-    "scope": "A and B are IDs assigned by the demo code. This test uses two regular Functions; the actual PIM program is not implemented.",
+    "scope": "",
     "diagram": "sequenceDiagram\n participant B as Browser\n participant P as First Function\n participant S as Backend service\n participant L as Demo log store\n B->>P: Start the example\n Note over P: Give this request ID A\n P->>L: Record request A\n Note over P: Prepare outgoing request B, linked to A\n P->>S: Send request with signed header: parent A, request B\n S->>S: Verify signed header\n S->>L: Record request B and its parent A\n S-->>P: Return result\n P-->>B: Return response",
     "flow": "First delivery shown. The backend is a second Function in this test. The demo also repeats B once for a duplicate check, omitted from this diagram.",
     "sectionTitle": "Find the link between A and B",
@@ -390,32 +451,60 @@
       "reset": "Run owned child example again starts a fresh namespace. Fresh namespace under R39 clears the counter selection without deleting stored evidence."
     },
     "detailTitle": "Duplicate check, trust and logging scope",
-    "previousDiagram": "sequenceDiagram\n participant P as Parent Function\n participant C as Child Function\n participant L as Test event ledger\n P->>C: Signed parent and child IDs, depth 1\n C->>L: Record child ID\n L-->>C: New event\n C-->>P: duplicate false\n P->>C: Same signed parent and child IDs\n C->>L: Record same child ID\n L-->>C: Existing event\n C-->>P: duplicate true\n Note over C: No further child request"
+    "previousDiagram": "sequenceDiagram\n participant P as Parent Function\n participant C as Child Function\n participant L as Test event ledger\n P->>C: Signed parent and child IDs, depth 1\n C->>L: Record child ID\n L-->>C: New event\n C-->>P: duplicate false\n P->>C: Same signed parent and child IDs\n C->>L: Record same child ID\n L-->>C: Existing event\n C-->>P: duplicate true\n Note over C: No further child request",
+    "presentation": {
+      "requiredDiagram": "sequenceDiagram\n participant B as Browser\n participant P as First handler\n participant S as Backend service\n participant L as Logs\n B->>P: Request A\n P->>L: Record A\n P->>S: New request B, linked to parent A\n S->>L: Record B with parent A\n S-->>P: Result\n P-->>B: Response",
+      "requiredFlow": "Two HTTP requests, two identities. Returning a response does not create another child request.",
+      "actorRoles": {
+        "P": "vercel",
+        "S": "vercel"
+      },
+      "difference": "The demonstrated link uses custom IDs and receiver logging in two regular Functions, at one child level. Caller-side outbound logging alone does not create a receiver-side record. The demo’s signing and duplicate ledger are additional plumbing, not native Log Drain deduplication or exactly-once business execution.",
+      "implementationIntro": "The ID assignments, outgoing header and receiver event below come from the owned example. Signing binds the IDs into one marker; validation, timeouts, duplicate delivery and response handling are omitted from these focused excerpts and remain in the full source below.",
+      "implementationSources": [
+        {
+          "path": "06-processing-retry/api/subrequest.mjs",
+          "title": "Create A and B, then carry their link",
+          "label": "Owned source · 27 September 2026 · selected statements, formatting expanded",
+          "code": "const parentId = randomUUID(), childId = randomUUID();\nawait event(run, 'parent', { parentId }, parentId);\nconst token = sign({\n  run, parentId, childId, depth: 1, expires: Date.now() + 30000,\n});\n// Selected fetch options; timeout and delivery handling omitted.\nawait fetch(target, { headers: { 'x-demo-child': token } });"
+        },
+        {
+          "path": "06-processing-retry/api/child.mjs",
+          "title": "Record B with its parent A",
+          "label": "Owned source · 27 September 2026 · non-contiguous statements; validation omitted",
+          "code": "const data = verify(req.headers.get('x-demo-child') || '');\n// Existing marker, run and depth validation occurs here.\nconst receipt = await event(\n  data.run, 'child', { parentId: data.parentId, depth: 1 }, data.childId,\n);"
+        }
+      ],
+      "decisionTitle": "Map the participating receivers",
+      "evidenceTitle": "Child-request walkthrough and recorded results",
+      "evidenceScope": "A and B are IDs assigned by the demo code. This test uses two regular Functions; the actual PIM program is not implemented."
+    }
   },
   "r19": {
-    "title": "How do cookies and headers choose application and static destinations?",
-    "status": "workaround",
+    "implementation": "Native configuration",
+    "title": "How do cookies and headers choose application and asset destinations?",
+    "status": "supported",
     "category": "Routing and admission",
-    "note": "Custom Function preserves the cookie/header distinction; owned HTTPS destination selection is demonstrated.",
-    "intro": "The current cookie and header rules choose different destinations: the cookie switches the application origin, while either signal switches static content. This custom Function reproduces that distinction with owned HTTPS test destinations.",
-    "statusText": "Workaround · conditional routing demonstrated",
-    "scope": "Live owned example, with a dated fallback. Public/internal are test destination labels; private connectivity and access authorization are separate.",
-    "diagram": "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Host-scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Host-scoped cookie OR incoming header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
-    "flow": "The cookie changes both destinations and sets the outgoing internal-cell header. The incoming header alone changes only static selection.",
-    "sectionTitle": "Compare application and static selection",
+    "note": "Native CDN rules preserve the distinct application and asset choices; all eight combinations verified.",
+    "intro": "Vercel native routing rules use the internal-cell cookie to select alternate application and asset destinations. The x-argos-internal-cell header alone switches only assets, such as images, CSS and JavaScript.",
+    "statusText": "Supported · native destination selection demonstrated",
+    "scope": "Implementation: native routing configuration.",
+    "diagram": "flowchart TD\n B[Browser: application or asset request] --> R[Native Vercel CDN rules]\n R --> P{Asset path?}\n P -->|Yes| S{Scoped cookie OR header is true?}\n S -->|Yes| T[Alternate images, CSS and JavaScript]\n S -->|No| U[Normal images, CSS and JavaScript]\n P -->|No: application path| C{Scoped cookie is true?}\n C -->|Yes| I[Alternate application]\n C -->|No| A[Normal application]",
+    "flow": "Each request is rewritten to its selected destination without a redirect. The cookie branch also sets the outgoing x-argos-internal-cell header to true. A header-only application request stays on the normal origin.",
+    "sectionTitle": "Compare an application request and an asset request",
     "paragraphs": [],
     "table": {
-      "headers": ["Input", "Application destination", "Static destination"],
+      "headers": ["Input", "Application destination", "Asset destination"],
       "rows": [
-        ["Neither", "public-main", "public-static"],
-        ["Cookie only", "internal-main", "internal-static"],
-        ["Header only", "public-main", "internal-static"],
-        ["Both", "internal-main", "internal-static"]
+        ["Neither", "Normal (public-main)", "Normal (public-static)"],
+        ["Cookie only", "Alternate (internal-main)", "Alternate (internal-static)"],
+        ["Header only", "Normal (public-main)", "Alternate (internal-static)"],
+        ["Both", "Alternate (internal-main)", "Alternate (internal-static)"]
       ]
     },
-    "observation": "All eight combinations reached the expected owned HTTPS origin in the 24 September test.",
-    "detail": "The source requires cookie=true on the scoped host to change the application origin; an incoming true header also sets the internal flag used for static routing. The sample uses /static/ to identify assets, literal lowercase true and the first duplicate cookie. Duplicate-cookie handling and the real asset matcher need agreement. Its negative hostname cases are simulated inputs, not DNS or private-origin tests.",
-    "decision": "The stated destination-selection behavior is demonstrated with custom routing. Confirm the actual asset paths and destination configuration; establish private connectivity and authorized access in the separate access-control design.",
+    "observation": "28 September 2026: all eight combinations passed through deployed native CDN rules. Host/path negatives and literal-value cases also passed.",
+    "detail": "The deployed router contains only native routes and static files. It uses /shop and /shop/* for application requests, /static/* for assets, and its exact owned hostname for cookie scope; the source scopes the cookie to customer subdomains. Separate cookie and header rules implement OR, with cookie first so it also sets the outgoing header. Fixed paths on an existing owned origin recorder represent the four destinations. Its Function only reports what arrived; no Function chooses the route. The destination prefix identifies the test endpoint, followed by the original request path. Query values, order and repeated parameters survived; + was normalized to %20, so this is not byte-for-byte query preservation. Explicit case-sensitive matching accepts literal lowercase true. Duplicate-cookie behavior is recorded as a sample observation, not established customer parity.",
+    "decision": "Map the real application and asset paths and destination hosts. Private-origin access, authorization and independent Host/SNI requirements need their own checks.",
     "related": [
       {
         "id": "r35",
@@ -426,50 +515,64 @@
         "label": "Admission"
       }
     ],
-    "previousDiagram": "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Scoped cookie OR header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
+    "previousDiagram": [
+      "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Host-scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Host-scoped cookie OR incoming header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]",
+      "flowchart TD\n R[Incoming request] --> P{Static path?}\n P -->|No| C{Scoped cookie is true?}\n C -->|Yes| I[Internal application destination]\n C -->|No| A[Public application destination]\n P -->|Yes| S{Scoped cookie OR header is true?}\n S -->|Yes| T[Internal static destination]\n S -->|No| U[Public static destination]"
+    ],
     "recorded": true,
-    "recordedTitle": "Recorded fallback · 24 September 2026",
+    "recordedTitle": "Recorded results · 28 September 2026",
     "exercise": {
-      "url": "https://argos-ws-routing.vercel.app/#r19",
-      "label": "Open the live routing example",
-      "intro": "The example has an Inputs table with Application and Static content columns. Each destination link sends a fresh request: the selected row sets or clears the browser cookie and adds the header when needed. The result appears as HTTP status and JSON below the table.",
+      "url": "https://argos-ws-native-routing.vercel.app/",
+      "label": "Open the hosted native-routing example",
+      "intro": "This separate hosted example has Application and Assets buttons in each row. They set or clear a real browser cookie and send the selected header; the result names the destination that received the request. Local preview does not run native CDN rules.",
       "steps": [
         {
-          "title": "Compare the public destinations",
-          "text": "In the neither row, click public main under Application, then public static under Static content. After each click, inspect origin.destination in the result below the table: public-main, then public-static. Application requests /shop/cart; Static content requests /static/fixture.css."
+          "title": "Compare normal destinations",
+          "text": "In Neither, click Application, then Assets. Inspect destination below the table: public-main, then public-static. These represent the normal application and normal asset store."
         },
         {
           "title": "See the header-only distinction",
-          "text": "In the header row, click public main, then internal static. Inspect origin.destination: public-main, then internal-static. The header changes the static destination without changing the application destination.",
+          "text": "In Header only, click Application, then Assets. Expect public-main and internal-static: the application stays normal while CSS goes to the alternate asset store.",
           "sources": [
             {
-              "title": "Code: preserve the cookie and header distinction",
-              "label": "Owned test source · formatting expanded for readability",
-              "path": "07-supported-routing/lib/legacy-routing.mjs",
-              "first": 110,
-              "last": 118,
-              "code": "const inHostScope = String(hostname)\n  .toLowerCase()\n  .endsWith(`.${hostSuffix.toLowerCase()}`);\nconst cookie =\n  inHostScope &&\n  cookieValue(requestHeaders.get('cookie'), 'internal-cell') === 'true';\nconst header = requestHeaders.get('x-argos-internal-cell') === 'true';\nconst internalCell = cookie || header;\nif (cookie) requestHeaders.set('x-argos-internal-cell', 'true');\nconst isStatic = pathname.startsWith(staticPrefix);\nconst origin = isStatic\n  ? internalCell\n    ? internalStaticOrigin\n    : publicStaticOrigin\n  : cookie\n    ? internalOrigin\n    : publicOrigin;\n"
+              "title": "Configuration: cookie OR header selects alternate assets",
+              "label": "Exact deployed asset rules · whitespace compacted; ordered cookie, header, default",
+              "path": "vercel.json",
+              "code": "[\n  {\n    \"src\": \"^(/static/.*)$\",\n    \"caseSensitive\": true,\n    \"dest\": \"https://argos-ws-routing.vercel.app/origins/internal-static$1\",\n    \"has\": [{\"type\": \"host\", \"value\": {\"eq\": \"argos-ws-native-routing.vercel.app\"}}, {\"type\": \"cookie\", \"key\": \"internal-cell\", \"value\": {\"re\": \"(?-i)^true$\"}}],\n    \"transforms\": [{\"type\": \"request.headers\", \"op\": \"set\", \"target\": {\"key\": \"x-argos-internal-cell\"}, \"args\": \"true\"}]\n  },\n  {\n    \"src\": \"^(/static/.*)$\",\n    \"caseSensitive\": true,\n    \"dest\": \"https://argos-ws-routing.vercel.app/origins/internal-static$1\",\n    \"has\": [{\"type\": \"header\", \"key\": \"x-argos-internal-cell\", \"value\": {\"re\": \"(?-i)^true$\"}}]\n  },\n  {\n    \"src\": \"^(/static/.*)$\",\n    \"caseSensitive\": true,\n    \"dest\": \"https://argos-ws-routing.vercel.app/origins/public-static$1\"\n  }\n]"
             }
           ]
         },
         {
-          "title": "Select both internal destinations with the cookie",
-          "text": "In the cookie row, click internal main, then internal static. Expect internal-main and internal-static; origin.received shows x-argos-internal-cell set to true. Repeat the two links in the both row: the destinations stay internal."
+          "title": "Switch both destinations with the cookie",
+          "text": "In Cookie only, click both buttons. Expect internal-main and internal-static; received shows x-argos-internal-cell: true. Repeat Both: the destinations stay alternate. requestedURL and responseURL match, and redirected is false."
         }
       ],
-      "reset": "Operator utility: npm run reset from the owned 07-supported-routing demo directory restores normal mode. Every input link replaces the example cookie state."
-    }
+      "reset": "Clear test cookie in the example resets the browser cookie. Every request button also replaces that test cookie state."
+    },
+    "detailTitle": "Implementation scope and test details",
+    "docs": [
+      {
+        "label": "Deployed routing configuration",
+        "url": "https://argos-ws-native-routing.vercel.app/routing-config.json"
+      },
+      {
+        "label": "Native routes reference",
+        "url": "https://vercel.com/docs/project-configuration/vercel-json#routes"
+      }
+    ],
+    "diagramTitle": "Vercel solution"
   },
   "r35": {
+    "implementation": "Function \u00b7 operator switch",
     "title": "Can an operator show a holding page at the same URL?",
     "status": "workaround",
     "category": "Routing and admission",
     "note": "Custom 503 response and authenticated deployment selection demonstrate the requested page delivery.",
-    "intro": "The current requirement calls for a controlled sorry, holding or custom response page. The tested custom Function returns a packaged 503 at the requested URL when its deployment setting is enabled. An authenticated operator selects between the normal and holding deployments.",
+    "intro": "A holding page returns a maintenance or sorry response at the requested URL. In the verified example, an operator selects a normal or holding deployment, and a Function returns the configured response. This demonstrates page delivery, not visitor admission.",
     "statusText": "Workaround · controlled holding demonstrated",
-    "scope": "Live owned example, with a dated fallback. Operator commands use the existing routing-demo checkout and Vercel login.",
-    "diagram": "flowchart LR\n B[Browser request] --> D[Active deployment]\n O[Authenticated operator] -.->|Select deployment for alias| D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> R[Response at the same URL]\n N --> R",
-    "flow": "The dotted arrow selects a prebuilt deployment for the stable alias. Requests in /shop or /shop/* receive its configured response; switching takes time to propagate.",
+    "scope": "",
+    "diagram": "flowchart TB\n B[Browser request] --> D[Active deployment]\n O[Authenticated operator] -.->|Select deployment for alias| D\n D --> M{Function: holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> R[Response at the same URL]\n N --> R",
+    "flow": "Verified operator-switch example: the dotted arrow selects a prebuilt deployment for the stable alias. Its Function checks /shop and /shop/*; switching takes time to propagate. This demonstrates one implementation, not a requirement to use a Function.",
     "sectionTitle": "Compare the response at the same cart URL",
     "paragraphs": [],
     "table": {
@@ -493,7 +596,11 @@
         "label": "Admission"
       }
     ],
-    "previousDiagram": "flowchart LR\n O[Authenticated operator] -.->|Select deployment for alias| D[Active deployment]\n B[Browser request] --> D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> B\n N --> B",
+    "previousDiagram": [
+      "flowchart LR\n O[Authenticated operator] -.->|Select deployment for alias| D[Active deployment]\n B[Browser request] --> D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> B\n N --> B",
+      "flowchart LR\n B[Browser request] --> D[Active deployment]\n O[Authenticated operator] -.->|Select deployment for alias| D\n D --> M{Holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> R[Response at the same URL]\n N --> R",
+      "flowchart LR\n B[Browser request] --> D[Active deployment]\n O[Authenticated operator] -.->|Select deployment for alias| D\n D --> M{Function: holding enabled and path in scope?}\n M -->|Yes| H[Packaged 503 response]\n M -->|No| N[Normal response path]\n H --> R[Response at the same URL]\n N --> R"
+    ],
     "recorded": true,
     "recordedTitle": "Recorded fallback · 24 September 2026",
     "exercise": {
@@ -525,22 +632,42 @@
         }
       ],
       "reset": "Restore after presenting: npm run reset. The /shop and /shop/* paths are the only paths placed into holding mode."
+    },
+    "presentation": {
+      "requiredDiagram": "flowchart TB\n B[Browser request] --> P{Holding active for this path?}\n O[Operator] -.->|Activate or restore service| P\n P -->|Yes| H[Holding response]\n P -->|No| N[Normal response]\n H --> R[Return at the same URL]\n N --> R",
+      "requiredFlow": "Deliver the agreed holding response for selected paths and restore normal service at the same URL. Visitor admission is a separate decision in R36.",
+      "differenceTitle": "What the tested implementation adds",
+      "difference": "The operator selects a prebuilt deployment and its Function returns the holding response. Switching has propagation latency. This proves one implementation; it does not establish that a Function is necessary.",
+      "implementationIntro": "The selected deployment supplies the holding flag. These lines return the 503 page for /shop and /shop/*; the surrounding handler and page HTML are omitted.",
+      "implementationSources": [
+        {
+          "title": "Code: return the holding response for selected paths",
+          "label": "Owned test source · formatting expanded for readability",
+          "path": "07-supported-routing/api/index.mjs",
+          "first": 6,
+          "last": 9,
+          "code": "res.setHeader('Cache-Control', 'no-store');\n// HOLDING_ENABLED is read from the selected deployment environment.\nconst inScope = u.pathname === '/shop' || u.pathname.startsWith('/shop/');\nif (enabled && inScope) {\n  res.statusCode = 503;\n  res.setHeader('Retry-After', '60');\n  res.setHeader('Content-Type', 'text/html; charset=utf-8');\n  return res.end(holdingPage);\n}\n"
+        }
+      ],
+      "decisionTitle": "Customer policy to map"
     }
   },
   "r36": {
+    "implementation": "Queue-it + Middleware \u00b7 proposed",
     "title": "Who is allowed through the waiting room?",
     "status": "workaround",
     "category": "Routing and admission",
     "note": "Queue-it or equivalent through Routing Middleware is the proposed admission mapping; customer integration is not yet demonstrated.",
-    "intro": "The current waiting room controls access to checkout and login, with temporary privilege and waiting cookies. The proposed Vercel mapping integrates Queue-it or an equivalent service through Routing Middleware, so its admission decision is applied before protected requests reach the application.",
+    "intro": "The current waiting room controls access to checkout and login and remembers temporary visitor admission. Queue-it or an equivalent service would own that admission state. In our proposed Vercel mapping, a connector in Routing Middleware validates it before access to protected content and the application.",
     "statusText": "Workaround · integration proposed",
-    "scope": "Explanation of a proposed integration. No Argos connector, queue capacity or fairness behavior has been verified.",
-    "diagram": "flowchart LR\n V[Visitor requests protected path] --> M[Routing Middleware and admission integration]\n M --> D{Admission service decision}\n D -->|Admitted or authorized bypass| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting experience]\n W -->|Recheck under provider policy| M",
-    "flow": "Proposed logical flow: the integration enforces admission before the protected application. The waiting experience and recheck protocol depend on the selected provider.",
+    "scope": "",
+    "diagram": "sequenceDiagram\n  participant V as Visitor browser\n  participant M as Proposed Middleware connector\n  participant Q as Queue-it\n  participant A as Protected cache / application\n  V->>M: Request protected path\n  alt No valid admission state\n    M-->>V: Redirect to Queue-it\n    V->>Q: Follow redirect\n    Q-->>V: Return with signed token when admitted\n    V->>M: Request protected path with token\n    M->>M: Validate token and create session cookie\n    M->>A: Continue admitted request\n    A-->>V: Response with session cookie\n  else Valid session cookie\n    M->>A: Continue admitted request\n    A-->>V: Response\n  end",
+    "flow": "Illustrative Queue-it server/edge connector flow. Routing Middleware is our proposed Vercel placement; it is not an explicit Queue-it recommendation for Vercel. The Argos integration has not been demonstrated.",
     "sectionTitle": "Separate the page from admission",
     "paragraphs": [
-      "R35 demonstrates returning a holding page. R36 also needs a service that decides who may proceed and validates temporary admission state on subsequent requests. Queue-it or an equivalent service supplies that admission behavior; the integration and operations still need an owner.",
-      "Map the current checkout/login scope and visitor-state lifetimes to the selected service. Agree capacity, bypass and failure behavior before testing the full flow. Missing policy choices are implementation work, not evidence that the outcome is unsupported."
+      "R35 returns a holding response. R36 decides who may proceed and remembers that decision across requests. Queue-it supplies the waiting room and admission state; the connector checks protected paths and the visitor’s token or session cookie.",
+      "In the documented server/edge flow, the browser is redirected to Queue-it when needed, then returns with a token. The connector validates it and creates a session cookie for later requests. This does not imply a remote admission lookup on every request.",
+      "Map the checkout/login scope and visitor-state lifetimes to the selected service. Capacity, bypass and failure policy still need agreement and an end-to-end test; missing customer configuration is not itself a capability gap."
     ],
     "observation": null,
     "detail": "The supplied configuration uses 503 waiting responses, a 600-second privilege cookie, a 30-second waiting-room cookie and a five-minute static response TTL. They serve different purposes and are not assumed to transfer unchanged to a vendor connector. The public Vercel article describes a custom implementation approach; it is not a managed product commitment or proof of this customer integration.",
@@ -559,11 +686,18 @@
         "label": "Custom code"
       }
     ],
-    "previousDiagram": "flowchart LR\n V[Visitor request] --> D[Admission decision]\n D -->|Admitted| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting response]\n W -->|Recheck under agreed policy| D",
+    "previousDiagram": [
+      "flowchart LR\n V[Visitor request] --> D[Admission decision]\n D -->|Admitted| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting response]\n W -->|Recheck under agreed policy| D",
+      "flowchart LR\n V[Visitor requests protected path] --> M[Routing Middleware and admission integration]\n M --> D{Admission service decision}\n D -->|Admitted or authorized bypass| A[Protected application and agreed processing]\n D -->|Wait| W[Waiting experience]\n W -->|Recheck under provider policy| M"
+    ],
     "docs": [
       {
-        "label": "Queue-it integration options",
-        "url": "https://queue-it.com/developers/connectors/"
+        "label": "Queue-it connector flow",
+        "url": "https://queue-it.com/developers/connectors/node-js-connector/"
+      },
+      {
+        "label": "Queue-it edge flow and integration options",
+        "url": "https://queue-it.com/developers/how-queue-it-works/"
       },
       {
         "label": "Routing Middleware",
@@ -573,18 +707,30 @@
         "label": "Custom waiting-room guidance",
         "url": "https://vercel.com/i/virtual-waiting-room#how-to-build-a-virtual-waiting-room-on-vercel-in-5-steps"
       }
-    ]
+    ],
+    "presentation": {
+      "requiredDiagram": "sequenceDiagram\n participant V as Visitor browser\n participant G as Admission gate\n participant W as Waiting room\n participant A as Protected content\n V->>G: Request checkout or login\n alt Visitor must wait\n G-->>V: Send to waiting experience\n V->>W: Wait under admission policy\n W-->>V: Allow return when admitted\n V->>G: Return with admission state\n G->>A: Continue admitted request\n A-->>V: Protected response\n else Visitor already admitted\n G->>A: Continue using temporary admission state\n A-->>V: Protected response\n end",
+      "requiredFlow": "Required behavior: control access to checkout and login and remember temporary admission. This describes the outcome, not the current CDN’s internal implementation.",
+      "differenceTitle": "Proposed integration to validate",
+      "difference": "Queue-it owns the queue and admission state. Our proposed Routing Middleware connector validates the returned token and later session cookie before protected content; it does not call a remote admission service on every request. This placement is our mapping, not an explicit Queue-it recommendation for Vercel, and the Argos integration is untested.",
+      "actorRoles": {
+        "M": "vercel"
+      },
+      "evidenceTitle": "Connector flow, customer settings and sources",
+      "decisionTitle": "Integration to agree"
+    }
   },
   "r37": {
-    "title": "Which Queue-it control wins when rules overlap?",
+    "implementation": "Queue-it + Middleware \u00b7 proposed",
+    "title": "How do enable, bypass and test controls affect Queue-it?",
     "status": "workaround",
     "category": "Routing and admission",
     "note": "Ordered controls and a Queue-it integration can preserve the outcome; active connector and final policy need confirmation.",
-    "intro": "The source has separate Queue-it enable controls and a processing bypass-event flag. The proposed mapping carries their effective order into a Queue-it integration through Routing Middleware, with admission enforced before protected requests reach the application.",
+    "intro": "Queue-it provides admission; the customer’s enable, bypass and test controls determine how its integration is applied. A separate PIM processing bypass-event flag can change later. The proposed Vercel mapping preserves those controls and their order in Routing Middleware around the connector.",
     "statusText": "Workaround · integration proposed",
-    "scope": "Explanation of the source constraints and proposed integration. No customer Queue-it connector or admission flow has been tested.",
-    "diagram": "flowchart LR\n E[Queue-it enable and disable controls] --> P[Effective policy]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later PIM bypass-event overrides] --> P\n P --> C[Routing Middleware and Queue-it integration]\n C --> D{Admission decision}\n D -->|Proceed| A[Protected application]\n D -->|Wait| H[Waiting experience]",
-    "flow": "Inputs to the proposed effective policy, not a captured execution sequence. Confirm the active connector and rule order; a PIM bypass-event flag is not itself a Queue-it admission token.",
+    "scope": "",
+    "diagram": "flowchart TB\n E[Enable, bypass and test controls] --> M[Proposed Middleware: apply controls in order]\n M -->|Queue-it applies| C[Connector enforces Queue-it admission — R36]\n M -->|Off or authorized bypass| A[Continue without the Queue-it gate]\n E -.-> B[Separate PIM bypass-event flag]\n O[Later eligible PIM branch] -->|Reset to false| B",
+    "flow": "Inputs to the proposed integration, not a captured execution sequence. Queue-it owns admission; customer controls govern how the connector is applied. A later PIM bypass-event reset changes a separate processing flag, not the Queue-it enable setting or visitor admission.",
     "sectionTitle": "Preserve separate flags and later overrides",
     "paragraphs": [
       "Queue-it starts off. The test header can turn it on or off; the configured IP bypass branch turns it off. These source branches also set the processing bypass-event flag to true.",
@@ -601,13 +747,12 @@
       {
         "id": "r38",
         "label": "Custom code"
-      },
-      {
-        "id": "r42",
-        "label": "Rule order"
       }
     ],
-    "previousDiagram": "flowchart LR\n E[Enable and disable controls] --> P[Ordered policy — to confirm]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later processing overrides] --> P\n P --> C[Approved connector integration]\n C --> D[Effective wait or admit decision]",
+    "previousDiagram": [
+      "flowchart LR\n E[Enable and disable controls] --> P[Ordered policy — to confirm]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later processing overrides] --> P\n P --> C[Approved connector integration]\n C --> D[Effective wait or admit decision]",
+      "flowchart LR\n E[Queue-it enable and disable controls] --> P[Effective policy]\n B[Authorized bypass rules] --> P\n W[Waiting-room state] --> P\n O[Later PIM bypass-event overrides] --> P\n P --> C[Routing Middleware and Queue-it integration]\n C --> D{Admission decision}\n D -->|Proceed| A[Protected application]\n D -->|Wait| H[Waiting experience]"
+    ],
     "table": {
       "headers": ["Source condition", "Queue-it state", "Processing bypass-event flag"],
       "rows": [
@@ -623,18 +768,27 @@
     },
     "docs": [
       {
-        "label": "Queue-it integration options",
-        "url": "https://queue-it.com/developers/connectors/"
+        "label": "Queue-it connector flow",
+        "url": "https://queue-it.com/developers/connectors/node-js-connector/"
       },
       {
         "label": "Routing Middleware",
         "url": "https://vercel.com/docs/routing-middleware"
       }
-    ]
+    ],
+    "presentation": {
+      "requiredDiagram": "flowchart TB\n E[Enable, bypass and test controls] --> P[Apply customer rule precedence]\n P -->|Queue-it applies| C[Enforce waiting-room admission]\n P -->|Off or authorized bypass| A[Continue without the Queue-it gate]\n E -.-> B[Separate PIM bypass-event flag]\n O[Later eligible PIM branch] -->|Reset to false| B",
+      "requiredFlow": "Required control relationships: apply enable, bypass and test precedence around admission, while preserving the separate PIM bypass-event flag. This is not a captured execution trace.",
+      "differenceTitle": "Preserve the control distinctions",
+      "difference": "The proposed Middleware integration applies the customer’s ordered controls around the Queue-it connector. A later PIM bypass-event reset changes a processing flag; it does not disable Queue-it or admit everyone. The active connector and effective policy still need validation.",
+      "evidenceTitle": "Exact source constraints and integration details",
+      "decisionTitle": "Effective policy to confirm"
+    }
   },
   "r01": {
+    "implementation": "Native configuration",
     "title": "Which hosts serve production and staging?",
-    "intro": "The current property serves the main site, mobile, chat and failover hosts, plus a vendor staging address. Vercel custom domains and a separate staging deployment provide the host mapping; the vendor-owned staging name needs a replacement.",
+    "intro": "Vercel custom domains map each production hostname to its project and deployment. A separate staging assignment provides the test entry point; agree a replacement for the vendor-owned staging name.",
     "status": "supported",
     "category": "Request and rule mappings",
     "note": "Native production and staging host mapping. Agree the inventory, ownership and replacement staging address.",
@@ -668,11 +822,17 @@
       }
     ],
     "statusText": "Supported mapping",
-    "scope": "Documented native mapping · customer domains have not been migrated."
+    "scope": "",
+    "presentation": {
+      "decisionTitle": "Host inventory and ownership",
+      "evidenceTitle": "Mapping details and supporting references"
+    },
+    "diagramTitle": "Assign each hostname to its environment"
   },
   "r02": {
+    "implementation": "Native configuration",
     "title": "Where should each service path go?",
-    "intro": "The current property selects separate application and asset origins. Vercel external rewrites forward service paths to existing backends while keeping the visitor’s URL; the applications can remain at those origins.",
+    "intro": "Native external rewrites send service paths to the selected application or asset backend while keeping the visitor’s URL. Existing applications can stay at those origins.",
     "status": "supported",
     "category": "Request and rule mappings",
     "note": "Native external rewrites cover service forwarding. Translate the ordered destination, Host, path and query contract.",
@@ -710,16 +870,33 @@
       }
     ],
     "statusText": "Supported mapping",
-    "scope": "Documented external rewrites · customer service routes remain to be configured."
+    "scope": "",
+    "presentation": {
+      "decisionTitle": "Customer setup to agree",
+      "evidenceTitle": "Mapping details and supporting references",
+      "differenceTitle": "Agree the origin hostname contract",
+      "difference": "A rewrite does not independently set the outgoing Host to the public hostname. Confirm whether the origin accepts the destination Host or trusted X-Forwarded-Host; R03 covers that contract.",
+      "implementationIntro": "This illustrative rule maps /service/products?sort=price to https://origin.example.com/products?sort=price. It removes the /service prefix and retains the query; it does not redirect the browser.",
+      "implementationSources": [
+        {
+          "title": "Configuration: one external service route",
+          "path": "illustrative-vercel.json",
+          "label": "Synthetic configuration · schema checked locally; not deployed",
+          "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"rewrites\": [\n    {\n      \"source\": \"/service/:path*\",\n      \"destination\": \"https://origin.example.com/:path*\"\n    }\n  ]\n}\n"
+        }
+      ]
+    },
+    "diagramTitle": "Select the destination by path"
   },
   "r04": {
+    "implementation": "Function",
     "title": "Which visitor IP should the origin trust?",
-    "intro": "The current rule discards incoming True-Client-IP and sends the trusted visitor address to the origin. A custom Function adapter can retain that header name by replacing it from Vercel-provided IP metadata.",
+    "intro": "The origin needs a trustworthy visitor IP under the True-Client-IP name, replacing any value supplied by the visitor. A custom Function adapter sets that header from trusted Vercel metadata on the direct-ingress path.",
     "status": "workaround",
     "category": "Request and rule mappings",
     "note": "Custom True-Client-IP replacement passed recorded direct-ingress spoof checks. A front-CDN trust contract remains conditional.",
-    "diagram": "flowchart LR\n  A[Visitor connects to Vercel] --> B[Platform IP metadata]\n  B --> C[Custom adapter replaces True-Client-IP]\n  C --> D[Owned origin]\n  E[Visitor-supplied IP headers] -. cannot select replacement .-> C",
-    "flow": "Direct-ingress mapping exercised by the recorded test. A CDN in front changes the trust boundary.",
+    "diagram": "flowchart TB\n  A[Visitor connects directly to Vercel] --> B[Platform derives visitor IP]\n  B --> C[Function replaces True-Client-IP]\n  C --> D[Forward to origin]\n  E[Caller-supplied True-Client-IP] -. discarded .-> C",
+    "flow": "Direct-to-Vercel mapping demonstrated in the recorded sample. IP-format validation does not establish the provenance of a header.",
     "sectionTitle": "Preserve the trust boundary",
     "paragraphs": [
       "If the origin can consume the platform’s forwarded IP value, keep that native value. If it requires the True-Client-IP name, overwrite it from trusted platform metadata before forwarding; never fall back to the visitor-supplied header.",
@@ -744,7 +921,7 @@
       }
     ],
     "statusText": "Workaround · direct path recorded",
-    "scope": "Custom header adapter · owned direct-to-Vercel proof recorded 17 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded verification · 17 September 2026",
     "table": {
@@ -761,11 +938,32 @@
       ]
     },
     "observation": "A Node Function read x-vercel-forwarded-for and overwrote True-Client-IP. Keyed fingerprints verified the value without displaying visitor IPs. No front-CDN topology or fresh live spoof test is claimed.",
-    "previousDiagram": "flowchart LR\n  A[Visitor request] --> B[Vercel trusted IP metadata]\n  B --> C[Replace True-Client-IP]\n  C --> D[Origin request]\n  E[Client-supplied True-Client-IP] -. ignored .-> C"
+    "previousDiagram": [
+      "flowchart LR\n  A[Visitor request] --> B[Vercel trusted IP metadata]\n  B --> C[Replace True-Client-IP]\n  C --> D[Origin request]\n  E[Client-supplied True-Client-IP] -. ignored .-> C",
+      "flowchart LR\n  A[Visitor connects to Vercel] --> B[Platform IP metadata]\n  B --> C[Custom adapter replaces True-Client-IP]\n  C --> D[Owned origin]\n  E[Visitor-supplied IP headers] -. cannot select replacement .-> C"
+    ],
+    "presentation": {
+      "decisionTitle": "Confirm the ingress topology",
+      "evidenceTitle": "Adapter details and recorded checks · 17 September 2026",
+      "requiredDiagram": "flowchart TB\n  A[Visitor request] --> B[Establish trusted visitor IP]\n  B --> C[Replace True-Client-IP]\n  C --> D[Origin receives trusted address]\n  E[Caller-supplied True-Client-IP] -. discarded .-> C",
+      "requiredFlow": "Required trust outcome. This is not an internal trace of the current CDN.",
+      "differenceTitle": "Custom header mapping, with a defined trust boundary",
+      "difference": "The Function preserves the True-Client-IP name by replacing its value. The 17 September spoof checks cover direct ingress only. Another CDN in front requires a verified trusted-forwarding arrangement; the original visitor IP is not established for that topology.",
+      "implementationIntro": "Adapted from the recorded adapter: read the platform-derived value, reject a missing or invalid single IP, and replace the outgoing header. This assumes the verified direct-to-Vercel ingress; it must not be used to trust an arbitrary caller’s headers.",
+      "implementationSources": [
+        {
+          "title": "Replace the outgoing value",
+          "path": "illustrative-ip-adapter.mjs",
+          "label": "Adapted handling · direct-ingress assumption; not a complete proxy",
+          "code": "import { isIP } from 'node:net';\n\nconst ip = request.headers.get('x-vercel-forwarded-for')?.trim();\nif (!ip || !isIP(ip)) {\n  throw new Error('Trusted platform IP is required');\n}\nconst outgoing = new Headers();\noutgoing.set('true-client-ip', ip);\n// Add only the other headers allowed by the origin contract.\n"
+        }
+      ]
+    }
   },
   "r07": {
+    "implementation": "Native configuration",
     "title": "Do old homepage URLs still reach the homepage?",
-    "intro": "The current rules send legacy homepage and StoreCatalogDisplay paths to / with a 301 while preserving query parameters. Vercel configured redirects can express those rules with an explicit 301 status.",
+    "intro": "Native configured redirects send the legacy homepage paths to / with an explicit 301 and retain the query parameters. Each source pattern must match the intended legacy URLs without catching similar paths.",
     "status": "supported",
     "category": "Request and rule mappings",
     "note": "Native configured 301 redirects cover legacy URLs. Carry over exact matches and query policy.",
@@ -807,16 +1005,33 @@
       }
     ],
     "statusText": "Supported mapping",
-    "scope": "Documented native 301 rules · synthetic configuration checked locally."
+    "scope": "",
+    "presentation": {
+      "decisionTitle": "Exact matches to carry over",
+      "evidenceTitle": "Mapping details and supporting references",
+      "differenceTitle": "Configured 301 is a separate rule",
+      "difference": "This legacy-path redirect uses statusCode: 301. The automatic HTTP-to-HTTPS upgrade is a separate 308 behavior covered in R06.",
+      "implementationIntro": "Illustrative native configuration: /legacy-home.htm?campaign=demo becomes /?campaign=demo. The source contains no wildcard; exact customer servlet patterns still need translation.",
+      "implementationSources": [
+        {
+          "title": "Configuration: synthetic legacy homepage 301",
+          "path": "illustrative-vercel.json",
+          "label": "Synthetic configuration · schema checked locally; not deployed",
+          "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"redirects\": [\n    {\n      \"source\": \"/legacy-home.htm\",\n      \"destination\": \"/\",\n      \"statusCode\": 301\n    }\n  ]\n}\n"
+        }
+      ]
+    },
+    "diagramTitle": "Redirect only matching legacy URLs"
   },
   "r08": {
+    "implementation": "Native configuration",
     "title": "Can the required headers reach the right recipient?",
-    "intro": "The current rules set the brand marker on both origin requests and browser responses, request Chrome client hints, and allow the named mPulse origins to read timing data. Native request and response transforms express these additions and replacements.",
+    "intro": "Native request and response transforms put headers on the correct side of the exchange: the brand marker goes to both origin and browser, while client-hint and timing headers go to the browser.",
     "status": "supported",
     "category": "Request and rule mappings",
     "note": "Native transforms cover brand, conditional client hints and timing headers. Keep request and response directions distinct.",
-    "diagram": "sequenceDiagram\n  participant B as Browser\n  participant R as Request rules\n  participant O as Origin\n  participant S as Response rules\n  B->>R: Incoming headers\n  R->>O: Replaced request headers\n  O->>S: Origin response\n  S->>B: Required response headers",
-    "flow": "Proposed request and response stages. Final response behavior can differ on early platform responses, as shown in R09.",
+    "diagram": "sequenceDiagram\n  participant B as Browser\n  participant R as Vercel request rules\n  participant O as Origin\n  participant S as Vercel response rules\n  B->>R: Request /service/products\n  R->>O: Request with x-demo-brand: demo\n  O-->>S: Origin response\n  S-->>B: Response with x-demo-brand: demo",
+    "flow": "Logical request and response directions for the synthetic brand example. Early platform responses have separate boundaries, as shown in R09.",
     "sectionTitle": "Check each direction separately",
     "paragraphs": [
       "Set x-argos-brand=arg separately on the outgoing request and response. Accept-CH is a browser response header under the Chrome User-Agent condition; it asks for hints on later requests. Timing-Allow-Origin is also a response header, scoped to the configured monitoring origins.",
@@ -841,7 +1056,7 @@
       }
     ],
     "statusText": "Supported mapping",
-    "scope": "Documented native header operations · synthetic configuration checked locally.",
+    "scope": "",
     "sources": [
       {
         "title": "Configuration: replace a synthetic brand in both directions",
@@ -849,15 +1064,39 @@
         "label": "Synthetic configuration · schema checked locally; not deployed",
         "code": "{\n  \"$schema\": \"https://openapi.vercel.sh/vercel.json\",\n  \"routes\": [\n    {\n      \"src\": \"/service/(.*)\",\n      \"continue\": true,\n      \"transforms\": [\n        {\n          \"type\": \"request.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-demo-brand\"\n          },\n          \"args\": \"demo\"\n        },\n        {\n          \"type\": \"response.headers\",\n          \"op\": \"set\",\n          \"target\": {\n            \"key\": \"x-demo-brand\"\n          },\n          \"args\": \"demo\"\n        }\n      ]\n    }\n  ]\n}\n"
       }
+    ],
+    "presentation": {
+      "decisionTitle": "Header policy to carry over",
+      "evidenceTitle": "Mapping details and supporting references",
+      "actorRoles": {
+        "R": "vercel",
+        "S": "vercel"
+      },
+      "differenceTitle": "Direction and condition are part of the policy",
+      "difference": "Accept-CH asks the browser for hints on later requests; Timing-Allow-Origin lets the configured monitoring origins read timing data. Request conditions do not inspect an origin’s response Content-Type, and Host has its own forwarding contract in R03.",
+      "implementationIntro": "The same marker needs two set operations: request.headers changes what the origin receives; response.headers changes what the browser receives. This is the existing synthetic native configuration, shortened only for display.",
+      "implementationSources": [
+        {
+          "title": "Configuration: replace a synthetic brand in both directions",
+          "path": "illustrative-vercel.json",
+          "label": "Illustrative configuration · schema checked 27 September; $schema omitted",
+          "code": "{\n  \"routes\": [{\n    \"src\": \"/service/(.*)\",\n    \"continue\": true,\n    \"transforms\": [\n      { \"type\": \"request.headers\", \"op\": \"set\",\n        \"target\": { \"key\": \"x-demo-brand\" }, \"args\": \"demo\" },\n      { \"type\": \"response.headers\", \"op\": \"set\",\n        \"target\": { \"key\": \"x-demo-brand\" }, \"args\": \"demo\" }\n    ]\n  }]\n}"
+        }
+      ]
+    },
+    "diagramTitle": "Set origin-request and browser-response headers separately",
+    "previousDiagram": [
+      "sequenceDiagram\n  participant B as Browser\n  participant R as Request rules\n  participant O as Origin\n  participant S as Response rules\n  B->>R: Incoming headers\n  R->>O: Replaced request headers\n  O->>S: Origin response\n  S->>B: Required response headers"
     ]
   },
   "r18": {
+    "implementation": "Function",
     "title": "How do flags and per-request values keep their order?",
-    "intro": "The property mixes shared settings with variables changed during one request. Use deployment configuration for stable settings, Global Config for selected operational toggles, and fresh request-local state for ordered overrides.",
+    "intro": "Shared settings supply defaults, while each request needs its own values and ordered overrides. Custom code creates fresh state for every request and applies changes at the stage where their inputs are available.",
     "status": "workaround",
     "category": "Request and rule mappings",
     "note": "Custom request-local state preserves defaults and overrides. Recorded isolation proof; customer stage order still needs translation.",
-    "diagram": "flowchart LR\n  A[Deployment settings or shared toggle] --> B[Create fresh state for this request]\n  C[This request inputs] --> D[Apply ordered request overrides]\n  B --> D\n  D --> E[Select destination or response]\n  E --> F[Apply response-stage logic in selected handler]",
+    "diagram": "flowchart TB\n  A[Deployment settings or shared toggle] --> B[Create fresh state for this request]\n  C[This request inputs] --> D[Apply ordered request overrides]\n  B --> D\n  D --> E[Select destination or response]\n  E --> F[Apply response-stage logic in selected handler]",
     "flow": "Proposed stage and lifetime model. A later response result cannot influence a destination decision that already happened.",
     "sectionTitle": "Give each value a lifetime",
     "paragraphs": [
@@ -879,11 +1118,11 @@
     "related": [
       {
         "id": "r42",
-        "label": "Rule order"
+        "label": "Same-request WAF result"
       }
     ],
     "statusText": "Workaround · request state recorded",
-    "scope": "Custom state translation · isolation and environment checks recorded 17 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded verification · 17 September 2026",
     "table": {
@@ -900,16 +1139,37 @@
       ]
     },
     "observation": "The sample used a representative defaults → environment → configuration → request → parser order. It does not establish the complete customer rule graph.",
-    "previousDiagram": "flowchart LR\n  A[Environment configuration] --> B[Fresh request state]\n  C[Request inputs] --> B\n  B --> D[Ordered conditions]\n  D --> E[Final routing and log values]"
+    "previousDiagram": [
+      "flowchart LR\n  A[Environment configuration] --> B[Fresh request state]\n  C[Request inputs] --> B\n  B --> D[Ordered conditions]\n  D --> E[Final routing and log values]",
+      "flowchart LR\n  A[Deployment settings or shared toggle] --> B[Create fresh state for this request]\n  C[This request inputs] --> D[Apply ordered request overrides]\n  B --> D\n  D --> E[Select destination or response]\n  E --> F[Apply response-stage logic in selected handler]"
+    ],
+    "presentation": {
+      "decisionTitle": "Map each variable’s stage and lifetime",
+      "evidenceTitle": "State mapping and recorded checks · 17 September 2026",
+      "requiredDiagram": "flowchart TB\n  A[Shared defaults and environment] --> B[Independent state for each request]\n  B --> C[Apply request-stage overrides in order]\n  C --> D[Use final request values for routing]\n  D --> E[Apply later overrides when response is available]",
+      "requiredFlow": "Required value lifetime and evaluation order. The diagram describes the outcome, not the internal implementation of the current CDN.",
+      "differenceTitle": "Translate the order into request-local code",
+      "difference": "Custom code owns the initialization and last writer at each stage. Mutable visitor state stays within one request; shared configuration supplies settings only. A response result cannot change an earlier routing decision, and access to a trusted WAF result remains the separate R42 question.",
+      "implementationIntro": "Adapted from the recorded state helper, with synthetic settings and unrelated parsing omitted. Every call allocates a new object; environment and request overrides then run in order. Inputs are already classified by the caller, not treated as a firewall verdict.",
+      "implementationSources": [
+        {
+          "title": "Fresh defaults and ordered overrides",
+          "path": "illustrative-request-state.mjs",
+          "label": "Adapted state pattern · representative order, not the full customer rule graph",
+          "code": "function stateForRequest(environment, featureFlag, overrides = {}) {\n  const state = { network: 'not-known', featureFlag: 'off', isMobile: false };\n  if (environment === 'production') state.network = 'prd';\n  else if (environment === 'preview' || environment === 'staging') {\n    state.network = 'stg';\n  }\n  state.featureFlag = featureFlag;\n  if (Object.hasOwn(overrides, 'isMobile')) {\n    state.isMobile = overrides.isMobile;\n  }\n  return state;\n}\n"
+        }
+      ]
+    }
   },
   "r41": {
+    "implementation": "Native configuration",
     "title": "Who owns each redirect rule?",
-    "intro": "The source asks whether redirects belong in one site-wide policy or path-based groups. Vercel supports deployment-managed rules and native Bulk Redirects management; grouping by path or owner is an authoring choice.",
+    "intro": "Redirects can be maintained as reviewed deployment configuration or through native Bulk Redirects management. Group rules by path or owner in the chosen workflow, then publish them with deliberate precedence and rollback.",
     "status": "supported",
     "category": "Request and rule mappings",
     "note": "Native redirect management supports the outcome. Select rule types, volume, ownership and publishing controls.",
-    "diagram": "flowchart LR\n  A[Path or owner groups] --> B[Choose rule types and precedence]\n  B --> C[Reviewed deployment configuration]\n  B --> D[Eligible Bulk Redirects staging]\n  C --> E[Publish and retain rollback version]\n  D --> E",
-    "flow": "Two supported publishing choices. Ownership and approval policy must be agreed for the selected workflow; no live governance exercise is implied.",
+    "diagram": "flowchart TB\n  A[Path or owner groups] --> B[Choose rule types and precedence]\n  B --> C[Reviewed deployment configuration]\n  B --> D[Eligible Bulk Redirects staging]\n  C --> E[Publish deployment version]\n  D --> F[Promote Bulk Redirects version]",
+    "flow": "Alternative publishing workflows. Bulk Redirects runs before deployment routes; neither workflow establishes customer approvals or per-path permissions by itself.",
     "sectionTitle": "Separate ownership from precedence",
     "paragraphs": [
       "For configuration redirects, keep source groups under their owners and publish a deliberate combined order through version control. Review overlaps and loops before release, and retain a known version for rollback.",
@@ -934,36 +1194,47 @@
       },
       {
         "id": "r42",
-        "label": "Precedence"
+        "label": "Same-request WAF result"
       }
     ],
     "statusText": "Supported mapping",
-    "scope": "Documented management options · customer governance has not been configured.",
-    "previousDiagram": "flowchart LR\n  A[Team and path rule groups] --> B[Review overlaps and priority]\n  B --> C[One published rule order]\n  C --> D[Versioned change and rollback]"
+    "scope": "",
+    "previousDiagram": [
+      "flowchart LR\n  A[Team and path rule groups] --> B[Review overlaps and priority]\n  B --> C[One published rule order]\n  C --> D[Versioned change and rollback]",
+      "flowchart LR\n  A[Path or owner groups] --> B[Choose rule types and precedence]\n  B --> C[Reviewed deployment configuration]\n  B --> D[Eligible Bulk Redirects staging]\n  C --> E[Publish and retain rollback version]\n  D --> E"
+    ],
+    "presentation": {
+      "decisionTitle": "Ownership and publishing policy",
+      "evidenceTitle": "Mapping details and supporting references",
+      "differenceTitle": "Management surfaces have different scope",
+      "difference": "Deployment configuration publishes with the application. Bulk Redirects offers a separate staged workflow for eligible simple path rules, with dashboard/API/CLI management. Plan capacity, matching and query options must fit the policy; these controls are not interchangeable."
+    },
+    "diagramTitle": "Choose a publishing workflow"
   },
   "r42": {
-    "title": "Which rule wins when several conditions match?",
-    "intro": "The property combines ordinary request conditions with later overrides and WAF-dependent decisions. Native matchers and custom Middleware cover ordinary predicates; the WAF-result input and its availability at the consuming stage need confirmation.",
+    "implementation": "To confirm",
+    "title": "Can our code read which firewall rule matched this request?",
+    "intro": "Akamai exposes matched firewall rules during request handling so later rules can label bot traffic, choose a reporting group or change delivery. In the tested Vercel Node Middleware path, a real WAF match did not expose a trusted generic matched-rule result.",
     "status": "confirmation",
     "category": "Request and rule mappings",
-    "note": "Host/path/method/cookie/header conditions have mappings. Confirm the required WAF result and when it is available.",
-    "diagram": "flowchart LR\n  A[Initialize request state] --> B[Evaluate available conditions]\n  B --> C[Apply ordered overrides]\n  C --> D[Choose response or destination]\n  E[Required security result] -. availability unresolved .-> B",
-    "flow": "Logical translation model, not an asserted Vercel internal execution trace. Only values available at a given stage can influence that stage.",
-    "sectionTitle": "Test overlapping conditions",
+    "note": "Tested Node Middleware lacked a trusted generic WAF-match result; an equivalent same-request interface remains unconfirmed.",
+    "diagram": "sequenceDiagram\n participant R as Incoming request\n participant W as Firewall evaluation\n participant H as Later request handling\n R->>W: Evaluate this request\n W->>H: Continue the same request\n W-->>H: Required trusted matched-rule result\n H->>H: Use result to label traffic,<br/>select reporting or change delivery",
+    "flow": "Required outcome: later handling consumes a trusted result from the firewall evaluation of this same request, before choosing its behavior. This is the customer ask, not a verified Vercel interface.",
+    "sectionTitle": "The missing input is the firewall result",
     "paragraphs": [
-      "Use native host, path, header, cookie and query conditions, route method matching, or explicit custom logic for compound decisions. Match client IP only after establishing the trust boundary in R04. Audience sampling remains the separate R17 policy.",
-      "Translate request decisions and response-stage changes separately. The source captures triggered WAF rules and uses them for later reporting, optimization and bot-classification branches. A firewall’s existence does not establish an equivalent result accessible at those points."
+      "Ordinary request conditions and rule ordering are supported. Repeating a path or header condition in Middleware does not consume the firewall verdict and cannot stand in for a managed detection.",
+      "A genuine log-only match was independently confirmed, but Middleware received no trusted generic result through the inspected request interface. A caller-supplied x-vercel-waf-rule-id passed through unchanged, so that header cannot be trusted as a verdict."
     ],
-    "decision": "Have the security and delivery owners identify the required WAF-derived value, its supported interface and when the consuming rule can read it. Translate ordinary overlap and last-writer rules alongside that specific dependency.",
-    "detail": "No unsupported ordinary matching capability is identified. Needs confirmation records an unknown security-result contract, not a demonstrated platform gap. Do not substitute a client header for a WAF result, or treat numeric Akamai rule IDs as Vercel equivalents.",
+    "decision": "Confirm the customer detections and a supported, trusted result available before the downstream branch; no equivalent generic matched-rule interface is verified.",
+    "detail": "The test and reviewed code/API contracts support a limitation for the inspected custom-WAF-rule → Node Middleware path, not universal absence across every rule, entitlement or future interface. BotID verdicts, JA fingerprints and gated bot-classification metadata are different signals. Their supported availability, trust and equivalence to the customer detections have not been verified. Firewall configuration APIs and historical logs do not provide the required same-request result.",
     "docs": [
       {
-        "label": "Route conditions and transforms",
-        "url": "https://vercel.com/docs/project-configuration/vercel-json"
+        "label": "WAF rule configuration",
+        "url": "https://vercel.com/docs/vercel-firewall/vercel-waf/rule-configuration"
       },
       {
-        "label": "Routing Middleware",
-        "url": "https://vercel.com/docs/routing-middleware"
+        "label": "Routing Middleware API",
+        "url": "https://vercel.com/docs/routing-middleware/api"
       }
     ],
     "related": [
@@ -976,16 +1247,46 @@
         "label": "IP trust boundary"
       }
     ],
-    "statusText": "Needs confirmation · WAF input",
-    "scope": "Ordinary predicates are supported · required security-result availability remains unresolved."
+    "statusText": "Needs confirmation · same-request WAF result",
+    "scope": "",
+    "previousDiagram": [
+      "flowchart LR\n  A[Initialize request state] --> B[Evaluate available conditions]\n  B --> C[Apply ordered overrides]\n  C --> D[Choose response or destination]\n  E[Required security result] -. availability unresolved .-> B",
+      "flowchart TD\n  R[Incoming request] --> W[WAF rule matches: Log and continue]\n  W --> M[Node Routing Middleware receives request]\n  W -. recorded afterward .-> T[Firewall observability]\n  M -. trusted match result unavailable in tested path .-> D[Required later branch: label traffic or choose reporting group]"
+    ],
+    "recorded": true,
+    "recordedTitle": "Recorded three-request check · 28 September 2026",
+    "table": {
+      "headers": ["Request", "Observed in Node Middleware"],
+      "rows": [
+        ["Baseline", "No matched-rule result; request returned 200."],
+        [
+          "Real log-only WAF match",
+          "No trusted matched-rule result; request returned 200."
+        ],
+        [
+          "Nonmatch with forged x-vercel-waf-rule-id",
+          "Caller-supplied value arrived unchanged; request returned 200."
+        ]
+      ]
+    },
+    "observation": "Independent firewall telemetry recorded 1 Log and 2 Allow in the isolated one-minute window. Runtime logs joined all three requests to their captured observations. The firewall telemetry was an aggregate, not a per-request-ID match event. The temporary rule is now disabled; these are recorded results.",
+    "detailTitle": "Scope and possible alternatives",
+    "diagramTitle": "Required same-request result",
+    "presentation": {
+      "differenceTitle": "What remains unverified",
+      "difference": "A real log-only WAF match was confirmed, but the tested Node Middleware interface exposed no trusted generic matched-rule result. A forged lookalike header passed through unchanged. This is a scoped finding; later firewall logs and repeating a request condition do not supply the required verdict.",
+      "evidenceTitle": "Recorded WAF check and interface scope · 28 September 2026",
+      "decisionTitle": "What needs confirmation"
+    }
   },
   "r11": {
+    "implementation": "Function",
     "title": "How should CONSENTMGR change consent and cookies?",
-    "intro": "The current CONSENTMGR branch reads legacy consent categories when its feature flag is on and expires selected experiment cookies on decline. A custom Vercel Function demonstrated those known branches; the same parsing logic can be integrated into Routing Middleware.",
+    "intro": "When the legacy consent branch is enabled, CONSENTMGR controls consent categories and expires selected experiment cookies on decline. Custom parsing and response-cookie expiry implement the known branches on Vercel; the exact legacy expressions and order with OptanonConsent still need to be supplied.",
     "status": "workaround",
     "category": "Cookies and consent",
     "note": "Custom parsing and cookie expiry demonstrated; exact legacy grammar and effective rule order remain configuration inputs.",
-    "diagram": "flowchart LR\n A[CONSENTMGR exists] --> B{Feature flag on?}\n B -->|No| C[No legacy branch changes]\n B -->|Yes| D[Custom parser and category rules]\n D --> E[Request-local consent state]\n D --> F[Response cookie expiry on decline]\n F --> G[Browser updates later requests]",
+    "diagram": "flowchart TB\n A[CONSENTMGR exists] --> B{Feature flag on?}\n B -->|No| C[No legacy branch changes]\n B -->|Yes| D[Custom parser and category rules]\n D --> E[Request-local consent state]\n D --> F[Response cookie expiry on decline]\n F --> G[Browser updates later requests]",
     "flow": "Logical mapping of the legacy branch. Response expiry and any explicit origin-request mutation are separate operations; precedence with OptanonConsent is still an input.",
     "sectionTitle": "Keep the category policy explicit",
     "paragraphs": [
@@ -1010,9 +1311,12 @@
         "label": "Cookie lifecycle"
       }
     ],
-    "previousDiagram": "flowchart LR\n  A[Request cookies] --> B{Legacy branch enabled?}\n  B -->|No| C[Keep initial consent state]\n  B -->|Yes| D[Parse CONSENTMGR]\n  D --> E[Apply category decisions]\n  E --> F[Expire affected cookies]",
+    "previousDiagram": [
+      "flowchart LR\n  A[Request cookies] --> B{Legacy branch enabled?}\n  B -->|No| C[Keep initial consent state]\n  B -->|Yes| D[Parse CONSENTMGR]\n  D --> E[Apply category decisions]\n  E --> F[Expire affected cookies]",
+      "flowchart LR\n A[CONSENTMGR exists] --> B{Feature flag on?}\n B -->|No| C[No legacy branch changes]\n B -->|Yes| D[Custom parser and category rules]\n D --> E[Request-local consent state]\n D --> F[Response cookie expiry on decline]\n F --> G[Browser updates later requests]"
+    ],
     "statusText": "Workaround · custom consent parser",
-    "scope": "Custom mechanism · known branches recorded on 17 September; local parser checks repeated on 27 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded browser evidence · 17 September 2026",
     "table": {
@@ -1028,15 +1332,34 @@
         ]
       ]
     },
-    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested.",
+    "presentation": {
+      "evidenceScope": "Custom mechanism · known branches recorded on 17 September; local parser checks repeated on 27 September 2026.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "requiredDiagram": "flowchart TB\n A[CONSENTMGR and enabled legacy branch] --> B[Apply the recorded category decisions]\n B --> C[Use consent state in later rules]\n B --> D[Expire the selected experiment cookies on decline]\n D --> E[Browser stops sending those cookies later]",
+      "requiredFlow": "Required consent and browser-cookie outcomes; this does not describe internal Akamai execution.",
+      "difference": "The demonstrated Function uses custom consent logic and emits expiry headers. A Middleware integration is possible but was not the recorded execution path. Response expiry changes later browser requests; changing the current origin-bound Cookie requires a separate action. The exact timestamp/id grammar and cross-cookie precedence remain inputs.",
+      "differenceTitle": "What changes with Vercel",
+      "implementationIntro": "After the enabled branch has parsed a valid c7 marker, functional decline expires the selected cookie. This adapted action uses a synthetic cookie name and the recorded host-only Path=/ scope; the other categories and parsing are omitted. Match the actual stored Domain and Path before expiring a customer cookie.",
+      "implementationSources": [
+        {
+          "path": "consent-action.js",
+          "label": "Adapted from owned parseConsentMgr / assignCategory / expireCookie",
+          "title": "Apply a category decision and expire its cookie",
+          "code": "if (values.has('c7')) {\n  consent.functional = values.get('c7') === '1' ? 'accepted' : 'declined';\n  if (values.get('c7') === '0') {\n    response.headers.append('Set-Cookie',\n      'experiment_group=; Path=/; Max-Age=0; Secure');\n  }\n}"
+        }
+      ]
+    }
   },
   "r12": {
+    "implementation": "Function",
     "title": "How should OptanonConsent groups affect the request?",
-    "intro": "The current OptanonConsent branch extracts groups and applies category decisions, including cookie expiry. Custom parsing in a Vercel Function demonstrated the known groups. The exact performance predicate and order relative to legacy consent still need to be supplied.",
+    "intro": "OptanonConsent groups control category decisions and selected cookie expiry. Custom parsing on Vercel demonstrated the known group branches; the individual performance condition called V2STACK and the order with legacy consent remain unresolved.",
     "status": "workaround",
     "category": "Cookies and consent",
     "note": "Known group parsing and expiry demonstrated; exact V2STACK expression and cross-cookie order remain missing.",
-    "diagram": "flowchart LR\n A[OptanonConsent] --> B[Extract groups]\n B --> C{Groups 1-4 all accepted?}\n C -->|Yes| D[Accept all categories]\n C -->|No| E{Group 1 accepted?}\n E -->|No| F[No matching category change]\n E -->|Yes| G[Groups 3 and 4 plus group 2 with V2STACK]\n G --> H[Consent state and selected cookie expiry]",
+    "diagram": "flowchart TB\n A[OptanonConsent] --> B[Extract groups]\n B --> C{Groups 1-4 all accepted?}\n C -->|Yes| D[Accept all categories]\n C -->|No| E{Group 1 accepted?}\n E -->|No| F[No matching category change]\n E -->|Yes| G[Groups 3 and 4 plus group 2 with V2STACK]\n G --> H[Consent state and selected cookie expiry]",
     "flow": "Logical source branches. The individual performance expression and cross-source precedence are deliberately unresolved.",
     "sectionTitle": "Preserve the group gate",
     "paragraphs": [
@@ -1061,9 +1384,12 @@
         "label": "Cookie lifecycle"
       }
     ],
-    "previousDiagram": "flowchart LR\n  A[OptanonConsent cookie] --> B[Extract groups field]\n  B --> C{Group 1 accepted?}\n  C -->|Yes| D[Evaluate category groups]\n  C -->|No| E[Keep applicable prior state]\n  D --> F[Update consent and cookie expiry]",
+    "previousDiagram": [
+      "flowchart LR\n  A[OptanonConsent cookie] --> B[Extract groups field]\n  B --> C{Group 1 accepted?}\n  C -->|Yes| D[Evaluate category groups]\n  C -->|No| E[Keep applicable prior state]\n  D --> F[Update consent and cookie expiry]",
+      "flowchart LR\n A[OptanonConsent] --> B[Extract groups]\n B --> C{Groups 1-4 all accepted?}\n C -->|Yes| D[Accept all categories]\n C -->|No| E{Group 1 accepted?}\n E -->|No| F[No matching category change]\n E -->|Yes| G[Groups 3 and 4 plus group 2 with V2STACK]\n G --> H[Consent state and selected cookie expiry]"
+    ],
     "statusText": "Workaround · custom consent parser",
-    "scope": "Custom mechanism · known groups recorded on 17 September; local parser checks repeated on 27 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded browser evidence · 17 September 2026",
     "table": {
@@ -1079,11 +1405,30 @@
         ]
       ]
     },
-    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested.",
+    "presentation": {
+      "evidenceScope": "Custom mechanism · known groups recorded on 17 September; local parser checks repeated on 27 September 2026.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "requiredDiagram": "flowchart TB\n A[OptanonConsent groups] --> B{All four groups accepted?}\n B -->|Yes| C[Accept all categories]\n B -->|No| D{Group 1 accepted?}\n D -->|No| E[No individual category change]\n D -->|Yes| F[Apply category conditions]\n F --> G[Update consent and expire selected cookies]",
+      "requiredFlow": "Required group gate and resulting cookie changes. The individual performance condition is still missing.",
+      "difference": "The Function parser implements the known group gates and expiry actions. Its supplied true/false V2STACK test input does not reconstruct the missing customer expression. The all-accepted branch is separate, and no winner is assumed when both consent cookies exist.",
+      "differenceTitle": "What changes with Vercel",
+      "implementationIntro": "Focused exact statements after the group-1 gate and separate all-accepted branch. Groups 3 and 4 update functional and marketing consent; assignCategory also queues the selected cookie expiries on decline. The individual performance/V2STACK branch is omitted because its customer expression is missing.",
+      "implementationSources": [
+        {
+          "path": "lib/state.mjs",
+          "label": "Exact selected statements from the owned helper",
+          "title": "Apply the known functional and marketing groups",
+          "code": "for (const [key, category] of [['3', 'functional'], ['4', 'marketing']]) {\n  if (values.has(key)) { assignCategory(out, category, values.get(key)); out.matched = true; }\n}"
+        }
+      ]
+    }
   },
   "r13": {
+    "implementation": "Function",
     "title": "Can each visitor receive only their own cookie changes?",
-    "intro": "The current rules create and expire browser cookies and sometimes also update the Cookie header sent to the origin. Vercel provides those two operations separately. Owned tests demonstrated visitor isolation by keeping cookie-bearing responses uncached and sharing only public content.",
+    "intro": "Vercel can change the Cookie sent to the origin for this request and use Set-Cookie to change the browser’s later requests. Keep visitor-specific responses private and uncached; share only public content that contains no visitor state.",
     "status": "supported",
     "category": "Cookies and consent",
     "note": "Request/response cookie APIs and safe shared-cache policies; independent-visitor evidence is recorded.",
@@ -1118,7 +1463,7 @@
     ],
     "previousDiagram": "sequenceDiagram\n  participant B as Browser\n  participant L as Per-request cookie logic\n  participant C as Content path and cache\n  B->>L: Current request cookies\n  L->>C: Deliberately updated request Cookie\n  C-->>L: Content response\n  L-->>B: Visitor-specific Set-Cookie changes",
     "statusText": "Supported · cookie lifecycle",
-    "scope": "Native APIs with route policy · recorded independent-browser evidence from 17 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded browser evidence · 17 September 2026",
     "table": {
@@ -1139,15 +1484,37 @@
         ]
       ]
     },
-    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested."
+    "observation": "Owned Function and independent Chrome contexts. These saved results were re-read for this review; the temporary origin has not been restored or freshly tested.",
+    "presentation": {
+      "evidenceScope": "Native APIs with route policy · recorded independent-browser evidence from 17 September 2026.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "actorRoles": {
+        "F": "vercel",
+        "C": "vercel"
+      },
+      "differenceTitle": "Keep visitor state out of shared content",
+      "difference": "Set-Cookie updates browser storage for later requests; it does not change the Cookie already sent upstream. Expiry must match the stored cookie’s Domain and Path. The separate public-cache recording contains no visitor state or Set-Cookie; it does not establish adding visitor-specific cookies to a cached HIT.",
+      "implementationIntro": "Adapted from the recorded Function adapter. forward is the outgoing request’s Headers; out is this visitor’s response Headers. The owned helpers serialize the cookie change and expiry. These are two separate actions, shown together for comparison; request forwarding and response construction are omitted.",
+      "implementationSources": [
+        {
+          "path": "cookie-actions.js",
+          "label": "Adapted from owned api/index.mjs · two distinct actions",
+          "title": "Request Cookie and response Set-Cookie",
+          "code": "// Current origin request only; browser storage is unchanged.\nforward.set('cookie', mutateRequestCookie(\n  headers.get('cookie') || '', { poc_visitor: 'origin-only' }\n));\n\n// This visitor’s browser storage changes after the response.\nout.set('cache-control', 'private, no-store');\nout.append('set-cookie', visitorCookie('', { expire: true }));"
+        }
+      ]
+    },
+    "diagramTitle": "Private cookie changes and public content"
   },
   "r14": {
+    "implementation": "Function",
     "title": "How do affiliate and loyalty links become cookies?",
-    "intro": "The current rules remember affiliate cjevent and loyaltysignal link values in same-named cookies. A Vercel Function demonstrated query extraction and response-cookie serialization. Routing Middleware is another integration option, with the same agreed value and attribute rules.",
+    "intro": "Affiliate and loyalty query values need to become corresponding browser cookies. Custom extraction and cookie serialization implement this mapping on Vercel; the recorded Function example preserves the requested attributes and makes duplicate, empty and encoded-value handling explicit.",
     "status": "workaround",
     "category": "Cookies and consent",
     "note": "Custom extraction demonstrated in a Function, including browser storage and encoded values.",
-    "diagram": "flowchart LR\n A[cjevent or loyaltysignal in query] --> B[Custom extraction and serialization]\n B --> C[Same-named response cookies]\n C --> D[Browser sends values on later requests]",
+    "diagram": "flowchart TB\n A[cjevent or loyaltysignal in query] --> B[Custom extraction and serialization]\n B --> C[Same-named response cookies]\n C --> D[Browser sends values on later requests]",
     "flow": "The demonstrated Function mapping. Effective policy comes from the customer rules; no new consent gate is assumed.",
     "sectionTitle": "Keep the recorded attributes",
     "paragraphs": [
@@ -1168,9 +1535,12 @@
         "label": "Cookie lifecycle"
       }
     ],
-    "previousDiagram": "flowchart LR\n  A[Affiliate or loyalty query value] --> B[Extract using agreed rules]\n  B --> C[Apply effective consent condition]\n  C --> D[Set corresponding response cookie]",
+    "previousDiagram": [
+      "flowchart LR\n  A[Affiliate or loyalty query value] --> B[Extract using agreed rules]\n  B --> C[Apply effective consent condition]\n  C --> D[Set corresponding response cookie]",
+      "flowchart LR\n A[cjevent or loyaltysignal in query] --> B[Custom extraction and serialization]\n B --> C[Same-named response cookies]\n C --> D[Browser sends values on later requests]"
+    ],
     "statusText": "Workaround · query-to-cookie logic",
-    "scope": "Custom mechanism · recorded Function/browser evidence from 17 September; local checks repeated on 27 September 2026.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Recorded browser evidence · 17 September 2026",
     "table": {
@@ -1194,22 +1564,41 @@
         "label": "Exact tested Function helper; fixture policies shown in comments",
         "code": "export const AFFILIATE_MAX_AGE = 395 * 24 * 60 * 60;\n\nexport function affiliateCookies(url, now = new Date()) {\n  const query = new URL(url, 'https://fixture.invalid').searchParams;\n  const expires = new Date(now.getTime() + AFFILIATE_MAX_AGE * 1000).toUTCString();\n  // URLSearchParams: first duplicate wins; an explicitly empty value creates an\n  // empty cookie. Domain and SameSite omitted, not inferred from source.\n  return ['cjevent', 'loyaltysignal'].filter(name => query.has(name)).map(name =>\n    `${name}=${encodeURIComponent(query.get(name))}; Path=/; Secure; Max-Age=${AFFILIATE_MAX_AGE}; Expires=${expires}`);\n}"
       }
-    ]
+    ],
+    "presentation": {
+      "evidenceScope": "Custom mechanism · recorded Function/browser evidence from 17 September; local checks repeated on 27 September 2026.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "requiredDiagram": "flowchart TB\n A[Affiliate or loyalty link] --> B{Named query value present?}\n B -->|No| C[No corresponding cookie change]\n B -->|Yes| D[Store the value in its response cookie]\n D --> E[Browser sends it on later matching requests]",
+      "requiredFlow": "Required query-to-cookie outcome. Apply any wider effective rule condition supplied by the customer.",
+      "difference": "The demonstrated Function extracts the query value and serializes a Set-Cookie header; this does not mean a Function is the only possible integration. The example takes the first duplicate, preserves an empty value, and encodes the stored value. No consent gate was stated in these source rows.",
+      "differenceTitle": "What changes with Vercel",
+      "implementationIntro": "Adapted single-identifier action from the recorded helper; loyaltysignal uses the same pattern. URLSearchParams decodes once and takes the first duplicate. The host-only cookie uses Path=/, Secure, no HttpOnly and a requested 395-day lifetime; Domain and SameSite are omitted in this example.",
+      "implementationSources": [
+        {
+          "path": "query-cookie.js",
+          "label": "Adapted from owned affiliateCookies · one identifier",
+          "title": "Copy the link value into a cookie",
+          "code": "const query = new URL(request.url).searchParams;\nif (query.has('cjevent')) {\n  const value = encodeURIComponent(query.get('cjevent'));\n  const maxAge = 395 * 24 * 60 * 60;\n  const expires = new Date(Date.now() + maxAge * 1000).toUTCString();\n  response.headers.append('Set-Cookie',\n    `cjevent=${value}; Path=/; Secure; Max-Age=${maxAge}; Expires=${expires}`);\n}"
+        }
+      ]
+    }
   },
   "r15": {
+    "implementation": "To confirm",
     "title": "What decides the analytics channel cookie?",
-    "intro": "The current rule creates analytics_channel when absent, defaults it to ecomm and changes it to mcomm using physical device dimensions. Cookie creation has a Vercel implementation path; an equivalent source for that physical-size decision is unresolved.",
+    "intro": "The rule keeps an existing analytics_channel cookie; when absent, it starts with ecomm and selects mcomm using physical device dimensions. Vercel can set the resulting cookie, but the required physical-size data source and units have not been identified.",
     "status": "confirmation",
     "category": "Cookies and consent",
     "note": "Cookie-setting is supported; the required physical-device classification input has no established replacement.",
-    "diagram": "flowchart LR\n  A{Cookie already present?} -->|Yes| B[Retain existing value]\n  A -->|No| C[Start with ecomm]\n  C --> D{Physical size condition?}\n  D -->|Matches| E[Use mcomm]\n  D -->|Does not match| F[Use ecomm]\n  E --> G[Response and upstream Cookie]\n  F --> G",
+    "diagram": "flowchart TB\n  A{Cookie already present?} -->|Yes| B[Retain existing value]\n  A -->|No| C[Start with ecomm]\n  C --> D{Physical height ≤145 and width ≤80?}\n  D -->|Matches| E[Use mcomm]\n  D -->|Does not match| F[Use ecomm]\n  E --> G[Response and upstream Cookie]\n  F --> G",
     "flow": "Current decision as summarized. The physical-size input in the proposed replacement has not been established.",
     "sectionTitle": "Preserve the input meaning",
     "paragraphs": [
       "The source uses physical height at most 145 and width at most 80; the supplied summary does not name the units. When analytics_channel is absent, this overrides ecomm with mcomm, writes both the response cookie and outgoing Cookie header, and requests path / and expiry on 31 December 2038.",
       "Browser viewport or screen resolution does not supply those physical dimensions. A user-agent mobile label is also different. The R13 lifecycle proof establishes cookie mechanics only; it supplies no physical-device database or classification parity."
     ],
-    "decision": "Identify the physical-size data source and units, or agree a revised classification rule, then confirm persistence and both cookie directions.",
+    "decision": "Which data source and units should supply the required physical height and width, or what revised classification rule is acceptable?",
     "detail": "Retain an existing analytics_channel unless the agreed policy says otherwise. The 2038 date is the source’s requested expiry, not guaranteed browser retention. The unresolved item is the input to the decision, not whether Vercel can write the resulting cookie.",
     "docs": [
       {
@@ -1228,15 +1617,27 @@
       }
     ],
     "statusText": "Needs confirmation · physical-device input",
-    "scope": "Decision page · no customer physical-device classification has been tested."
+    "scope": "",
+    "presentation": {
+      "evidenceScope": "Decision page · no customer physical-device classification has been tested.",
+      "decisionTitle": "What needs confirmation",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "differenceTitle": "The input is unresolved",
+      "difference": "Viewport dimensions, screen resolution and a user-agent mobile label are not physical device measurements. Cookie-setting support does not establish an equivalent classifier."
+    },
+    "diagramTitle": "Our understanding of the requirement",
+    "previousDiagram": [
+      "flowchart LR\n  A{Cookie already present?} -->|Yes| B[Retain existing value]\n  A -->|No| C[Start with ecomm]\n  C --> D{Physical size condition?}\n  D -->|Matches| E[Use mcomm]\n  D -->|Does not match| F[Use ecomm]\n  E --> G[Response and upstream Cookie]\n  F --> G"
+    ]
   },
   "r16": {
+    "implementation": "To confirm",
     "title": "Which requests should count as mobile?",
-    "intro": "The current rule sets mobile state and forwards is_mobile=true when Device_Profile says mobile OR an incoming is_mobile header is true. Vercel can apply a custom classifier and forward the result to application or redirect rules; the replacement device data and trusted-header policy must be agreed.",
+    "intro": "A request counts as mobile when its device profile says mobile OR an accepted incoming is_mobile header is true. Vercel can apply custom classification and forward the resulting flag, but the replacement device groups and trusted-header policy must be agreed.",
     "status": "workaround",
     "category": "Cookies and consent",
     "note": "Custom classification and explicit header forwarding; exact Device_Profile matching is not established.",
-    "diagram": "flowchart LR\n A[Agreed device classifier] --> C{Mobile OR permitted incoming true?}\n B[Incoming is_mobile under agreed trust policy] --> C\n C -->|Yes| D[Mobile state and outgoing true]\n C -->|No| E[Initial false or agreed unknown handling]\n D --> F[Application or ordered redirect rules]\n E --> F",
+    "diagram": "flowchart TB\n A[Agreed device classifier] --> C{Mobile OR permitted incoming true?}\n B[Incoming is_mobile under agreed trust policy] --> C\n C -->|Yes| D[Mobile state and outgoing true]\n C -->|No| E[Initial false or agreed unknown handling]\n D --> F[Application or ordered redirect rules]\n E --> F",
     "flow": "Custom replacement of the source OR rule. Signal trust, unknown handling and later precedence remain explicit integration decisions.",
     "sectionTitle": "Define the device cases",
     "paragraphs": [
@@ -1257,24 +1658,46 @@
         "label": "Physical device input"
       }
     ],
-    "previousDiagram": "flowchart LR\n  A[User-agent classification] --> C[Agreed mobile decision]\n  B[Approved trusted signal] --> C\n  C --> D[Request state]\n  D --> E[Origin header and dependent rules]",
+    "previousDiagram": [
+      "flowchart LR\n  A[User-agent classification] --> C[Agreed mobile decision]\n  B[Approved trusted signal] --> C\n  C --> D[Request state]\n  D --> E[Origin header and dependent rules]",
+      "flowchart LR\n A[Agreed device classifier] --> C{Mobile OR permitted incoming true?}\n B[Incoming is_mobile under agreed trust policy] --> C\n C -->|Yes| D[Mobile state and outgoing true]\n C -->|No| E[Initial false or agreed unknown handling]\n D --> F[Application or ordered redirect rules]\n E --> F"
+    ],
     "statusText": "Workaround · custom device classification",
-    "scope": "Custom mapping · device matrix and redirect behavior have not been customer-validated."
+    "scope": "",
+    "presentation": {
+      "evidenceScope": "Custom mapping · device matrix and redirect behavior have not been customer-validated.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "requiredDiagram": "flowchart TB\n A[Device profile says mobile] --> C{Either signal true?}\n B[Incoming is_mobile is true] --> C\n C -->|Yes| D[Mobile state and forwarded true]\n C -->|No| E[Initial mobile state remains false]\n D --> F[Dependent application or redirect rules]\n E --> F",
+      "requiredFlow": "Source OR behavior: incoming false does not cancel a mobile profile. This states the required decisions, not a device-database implementation.",
+      "difference": "The replacement needs explicit device definitions and header trust. User-agent classification is a candidate input, not exact Device_Profile parity or reliable physical-device identification. Define tablets and unknown devices, then verify the forwarding and redirect order; no customer classification suite has run.",
+      "differenceTitle": "What changes with Vercel",
+      "implementationIntro": "Illustrative OR and forwarding step only. deviceIsMobile must be supplied by the agreed classifier; trustedIncomingMobile is true only for an accepted caller signal. This does not implement the missing device matrix, unknown-device handling or redirect policy.",
+      "implementationSources": [
+        {
+          "path": "mobile-forwarding.js",
+          "label": "Illustrative mapping · not customer-validated",
+          "title": "Forward the agreed mobile result",
+          "code": "const isMobile = deviceIsMobile || trustedIncomingMobile;\nif (isMobile) {\n  upstreamHeaders.set('is_mobile', 'true');\n}"
+        }
+      ]
+    }
   },
   "r17": {
+    "implementation": "To confirm",
     "title": "How does a visitor keep the same experiment group?",
-    "intro": "The source names audience buckets and an audience-segmentation Cloudlet, but not who assigns visitors or with what weights. If an existing assignment service survives migration, Vercel can consume its cookie. Otherwise the agreed allocation and persistence logic needs a custom implementation.",
+    "intro": "A visitor should retain the same experiment group under the agreed persistence policy. The source names audience buckets but does not establish the allocator’s owner, weights or identity and consent rules; those inputs determine whether an existing assignment can be reused or a replacement is needed.",
     "status": "confirmation",
     "category": "Cookies and consent",
     "note": "Illustrative assignment persists; real allocator ownership, weights, identity and consent policy are missing.",
-    "diagram": "flowchart LR\n  A[Consent and eligibility] --> B{Valid existing assignment?}\n  B -->|Yes| C[Reuse group]\n  B -->|No| D[Apply agreed allocation]\n  D --> E[Persist under agreed policy]\n  C --> F[Select content variant]\n  E --> F",
-    "flow": "Proposed assignment design. Weights, eligibility, stable identity and reassignment are customer decisions, not implemented defaults.",
+    "diagram": "flowchart TB\n  A[Consent and eligibility] --> B{Valid existing assignment?}\n  B -->|Yes| C[Reuse group]\n  B -->|No| D[Apply agreed allocation]\n  D --> E[Persist under agreed policy]\n  C --> F[Select content variant]\n  E --> F",
+    "flow": "Requested persistent grouping. Allocation, eligibility and consent remain customer inputs; this is not a validated allocation implementation.",
     "sectionTitle": "Distinguish assignment from cached variants",
     "paragraphs": [
       "Bucket numbers and a Bot bucket do not establish traffic percentages. First identify the assignment owner and whether it remains after Akamai is removed. Then recover eligibility, identity, weights, lifetime, consent, bot treatment and reassignment rules.",
       "The owned cache example chooses A or B with an illustrative 50/50 algorithm, sets a private no-store assignment cookie and retains a valid cookie on later calls. It also permits explicit demo transitions. Those mechanics do not define the customer’s policy; R24 separately demonstrates public content variants."
     ],
-    "decision": "Confirm the surviving assignment owner, or obtain its actual allocation and consent/reassignment contract before implementing a replacement.",
+    "decision": "Will an existing assignment owner survive migration, or must a replacement implement its supplied allocation, identity and consent/reassignment contract?",
     "detail": "The illustrative cookie is host-only, Path=/, one day, Secure, HttpOnly and SameSite=Lax. The code contains no real customer identity, consent gate, bot policy or production weighting. Cookie-clearing consent branches may affect later assignment and must be reconciled.",
     "docs": [
       {
@@ -1293,7 +1716,7 @@
       }
     ],
     "statusText": "Needs confirmation · assignment policy",
-    "scope": "Decision page · illustrative persistence example is separate from customer allocation.",
+    "scope": "",
     "sources": [
       {
         "title": "Owned illustrative assignment handler",
@@ -1317,15 +1740,27 @@
         ]
       ]
     },
-    "observation": "Fresh check of the existing illustrative assignment endpoint. It confirms persistence and isolated cookie stores, not statistical allocation, customer consent or production identity rules."
+    "observation": "Fresh check of the existing illustrative assignment endpoint. It confirms persistence and isolated cookie stores, not statistical allocation, customer consent or production identity rules.",
+    "presentation": {
+      "evidenceScope": "Decision page · illustrative persistence example is separate from customer allocation.",
+      "decisionTitle": "What needs confirmation",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "differenceTitle": "Persistence is demonstrated; allocation is unresolved",
+      "difference": "The recorded example retains an illustrative assignment cookie. Its 50/50 selection, one-day lifetime and manual transitions do not define the customer’s weights, identity, bot treatment or consent/reassignment policy."
+    },
+    "diagramTitle": "Our understanding of the requirement",
+    "previousDiagram": [
+      "flowchart LR\n  A[Consent and eligibility] --> B{Valid existing assignment?}\n  B -->|Yes| C[Reuse group]\n  B -->|No| D[Apply agreed allocation]\n  D --> E[Persist under agreed policy]\n  C --> F[Select content variant]\n  E --> F"
+    ]
   },
   "r25": {
+    "implementation": "Native configuration",
     "title": "Can related pages be purged together?",
-    "intro": "The consent rules append a cookie-list group tag while preserving existing tags. Vercel supports native tags on cached responses and targeted invalidation or deletion. The translation must attach the group through each applicable consent branch at the cache layer that stores the content.",
+    "intro": "Vercel’s native cache tags can group cached responses for targeted invalidation or deletion. For the cookie-list rules, preserve existing tags and append the required group in each applicable branch at the cache layer that stores the content.",
     "status": "supported",
     "category": "Cookies and consent",
     "note": "Native grouped purge is supported; branch-specific attachment and cache-layer integration remain configuration work.",
-    "diagram": "flowchart LR\n A{Cookie-list path in an applicable consent branch?} -->|Yes| B[Preserve tags and append group at storage layer]\n A -->|No| C[Keep existing tags]\n B --> D[Tagged cached responses]\n E{Targeted purge choice} -->|Invalidate| F[Next request gets stale while refreshing]\n E -->|Delete| G[Next request waits for regeneration]\n D --> E",
+    "diagram": "flowchart TB\n A{Cookie-list path in an applicable consent branch?} -->|Yes| B[Preserve tags and append group at storage layer]\n A -->|No| C[Keep existing tags]\n B --> D[Tagged cached responses]\n E{Targeted purge choice} -->|Invalidate| F[Next request gets stale while refreshing]\n E -->|Delete| G[Next request waits for regeneration]\n D --> E",
     "flow": "Native tag mapping with source-specific attachment logic still to integrate. Purge groups are separate from R26 reporting groups.",
     "sectionTitle": "Choose what purge means",
     "paragraphs": [
@@ -1346,24 +1781,45 @@
         "label": "Reporting groups"
       }
     ],
-    "previousDiagram": "flowchart LR\n  A[Cookie-list response] --> B[Keep existing tags and append group tag]\n  B --> C[Cached tagged content]\n  D[Chosen purge operation] --> C\n  C --> E[Next request refreshes under chosen policy]",
+    "previousDiagram": [
+      "flowchart LR\n  A[Cookie-list response] --> B[Keep existing tags and append group tag]\n  B --> C[Cached tagged content]\n  D[Chosen purge operation] --> C\n  C --> E[Next request refreshes under chosen policy]",
+      "flowchart LR\n A{Cookie-list path in an applicable consent branch?} -->|Yes| B[Preserve tags and append group at storage layer]\n A -->|No| C[Keep existing tags]\n B --> D[Tagged cached responses]\n E{Targeted purge choice} -->|Invalidate| F[Next request gets stale while refreshing]\n E -->|Delete| G[Next request waits for regeneration]\n D --> E"
+    ],
     "statusText": "Supported · native cache tags",
-    "scope": "Native mapping · documentation checked 27 September 2026; no customer tag or purge test."
+    "scope": "",
+    "presentation": {
+      "evidenceScope": "Native mapping · documentation checked 27 September 2026; no customer tag or purge test.",
+      "decisionTitle": "Customer policy to map",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "differenceTitle": "Match the storage layer and purge behavior",
+      "difference": "Invalidate serves stale content while refreshing on the next request; delete makes the next request wait for regeneration. Attach tags where the response is stored—visitor logic that runs only on misses cannot be assumed to retag an existing HIT. A CDN purge does not establish browser or unrelated upstream-cache invalidation.",
+      "implementationIntro": "Illustrative native response header, using synthetic group names. An eligible Function or external-origin response keeps its existing tag and adds the selected cookie-list group. Emit it at the storing cache layer in each applicable branch; this example does not perform a purge or prove attachment across all layers.",
+      "implementationSources": [
+        {
+          "path": "response-headers.http",
+          "label": "Native header · documentation checked 27 September 2026",
+          "title": "Preserve a tag and add the group",
+          "code": "Vercel-Cache-Tag: existing-group, production-cookie-list"
+        }
+      ]
+    },
+    "diagramTitle": "Tag stored content, then choose the purge behavior"
   },
   "r30": {
+    "implementation": "To confirm",
     "title": "Which compression and resource hints must remain?",
-    "intro": "The source enables Brotli, including non-cacheable content, and has branch-dependent automatic hints. Vercel supplies CDN compression and applications can emit explicit resource hints. Whether those hints replace the required adaptive behavior depends on what is actually active.",
+    "intro": "The requirement combines Brotli delivery, including non-cacheable responses, with branch-dependent automatic resource hints. Native compression is supported on Vercel; the unresolved question is which active learned hints must be preserved and whether application-owned hints satisfy that requirement.",
     "status": "confirmation",
     "category": "Cookies and consent",
     "note": "Native compression is supported; the active learned-hint requirement is not established.",
-    "diagram": "flowchart LR\n  A[Response content] --> B[Negotiated CDN compression]\n  B --> C[Browser response]\n  D[Effective resource-hint policy] --> E[Application headers or markup]\n  E --> C",
-    "flow": "Two separate proposed concerns: transfer encoding and resource discovery. Compression does not establish adaptive-hint equivalence.",
+    "diagram": "flowchart TB\n A[Required response types] --> B[Compressed transfer to the browser]\n C[Active learned-hint policy to confirm] --> D[Discover required connections and fonts early]\n B --> E[Browser receives content]\n D --> E",
+    "flow": "Two required outcomes: compressed transfer and early discovery of useful resources. Native compression does not establish learned-hint equivalence.",
     "sectionTitle": "Separate compression from learned hints",
     "paragraphs": [
       "Compression negotiates a supported encoding for eligible content types. Check Content-Encoding on the required cached and uncached response types. A compressed response proves byte-transfer behavior; it says nothing about which connections or fonts the browser discovers early.",
       "The source ultimately disables Resource Optimizer; AB testing and its template parameter are also off. Automatic push, preconnect and font preload settings differ in the WAF branch. Do not invent requirements from the disabled options. Recover the effective enabled hints before deciding whether application-managed preconnect/preload is an acceptable replacement for automatic learning."
     ],
-    "decision": "Identify the active and useful automatic hints, then agree their application-owned replacement or establish the required learned-hint capability.",
+    "decision": "Which automatic hints are active and useful in the effective branches, and must they remain learned automatically or may the application own an explicit resource list?",
     "detail": "Explicit application hints choose known resources; they are not an established equivalent of a service that learns resources automatically. Native compression is supported independently. No universal HTTP push or adaptive-acceleration parity is asserted.",
     "docs": [
       {
@@ -1386,7 +1842,7 @@
       }
     ],
     "statusText": "Needs confirmation · active resource hints",
-    "scope": "Native compression plus a resource-hint decision · no adaptive-learning parity claim.",
+    "scope": "",
     "recorded": true,
     "recordedTitle": "Owned response checks · 27 September 2026",
     "table": {
@@ -1402,38 +1858,59 @@
         ]
       ]
     },
-    "observation": "Fresh checks of existing owned endpoints. The private JSON response does not demonstrate non-cacheable compression; representative customer responses and active hints still need validation."
+    "observation": "Fresh checks of existing owned endpoints. The private JSON response does not demonstrate non-cacheable compression; representative customer responses and active hints still need validation.",
+    "presentation": {
+      "evidenceScope": "Native compression plus a resource-hint decision · no adaptive-learning parity claim.",
+      "decisionTitle": "What needs confirmation",
+      "evidenceTitle": "Mapping details and recorded evidence",
+      "differenceTitle": "Compression and learned hints are separate",
+      "difference": "Public HTML was recorded with Brotli and gzip. The small private JSON example was uncompressed, so it does not prove the requested non-cacheable coverage. Explicit preconnect/preload can name known resources, but automatic learning equivalence is unverified. Disabled optimizer, AB and template options create no additional requirement."
+    },
+    "diagramTitle": "Our understanding of the requirement",
+    "previousDiagram": [
+      "flowchart LR\n  A[Response content] --> B[Negotiated CDN compression]\n  B --> C[Browser response]\n  D[Effective resource-hint policy] --> E[Application headers or markup]\n  E --> C"
+    ]
   },
   "r03": {
+    "implementation": "To confirm",
     "category": "TLS and transport",
     "status": "workaround",
-    "scope": "Owned hosted controls rechecked 27 September 2026; saved results below. Live use requires an awake Mac and a fresh, approximately one-hour raw TCP tunnel.",
-    "title": "Can the origin use the required Host, SNI and certificate policy?",
-    "statusText": "Workaround · custom origin TLS controls",
-    "note": "Custom destination, Host, SNI and trust controls demonstrated; native safe rejection failed in the owned test.",
-    "intro": "The current origin policy separates the connection destination, HTTP Host, TLS server name and certificate trust. A custom Node.js proxy provides those controls and rejects invalid certificates before sending an HTTP request. The tested native rewrite did not provide the required safe rejection.",
-    "diagram": "sequenceDiagram\n participant V as Visitor\n participant E as Vercel HTTPS entry\n participant F as Custom Node.js proxy\n participant O as Origin TLS server\n V->>E: Visitor TLS connection - R10\n E->>F: HTTP request\n F->>O: Connect to destination using selected SNI\n O-->>F: Present certificate\n Note over F: Check trusted CA and certificate name\n alt Valid certificate\n F->>O: HTTP request with separately chosen Host\n O-->>F: Origin response\n F-->>V: 200\n else Wrong name or untrusted CA\n F-->>V: 502 without origin HTTP request\n end",
-    "flow": "Visitor TLS and origin TLS are separate connections. This diagram shows the custom path; the native rewrite comparison is a separate test.",
-    "sectionTitle": "Compare trust and name controls",
+    "scope": "",
+    "title": "Which hostname does the origin receive?",
+    "statusText": "Workaround · conditional Host override",
+    "note": "Native forwarding may suffice; a Function fallback is demonstrated if the origin requires the public name in actual Host.",
+    "intro": "A visitor requests public.example.com, but the backend lives at origin.example.com. Native forwarding sends the destination as HTTP Host (the requested website name) and the public name in X-Forwarded-Host; a tested Function fallback applies if the origin must receive the public name in actual Host.",
+    "diagram": "sequenceDiagram\n participant V as Visitor\n participant E as Vercel\n participant F as Function fallback\n participant O as Origin\n V->>E: public.example.com\n Note over E,O: Choose the route to match the origin contract\n alt Origin accepts destination Host\n E->>O: Native rewrite to origin.example.com\n Note over E,O: Host: origin.example.com<br/>X-Forwarded-Host: public.example.com\n O-->>V: Response through Vercel\n else Origin requires public name in actual Host\n E->>F: Custom forwarding\n F->>O: Connect to origin.example.com<br/>Host: public.example.com\n O-->>F: Origin response\n F-->>V: Response through Vercel\n end",
+    "flow": "These are alternative configurations, not an automatic retry. Use native forwarding if the origin accepts its destination name and uses the forwarded public name where needed.",
+    "sectionTitle": "Choose the simplest route the origin accepts",
     "paragraphs": [
-      "With the dedicated test CA and correct name, the origin reported SNI origin-a.workshop.test and HTTP Host app-b.workshop.test. Changing the name or removing that CA trust caused the custom path to fail before an origin HTTP response."
+      "If the origin accepts Host: origin.example.com and uses trusted X-Forwarded-Host for public URLs, native forwarding can work. An extra header cannot fix ingress that rejects the request before reading it, or change SNI or certificate identity.",
+      "If unadaptable ingress requires public.example.com in the actual Host field, the tested Node.js Function can set it independently. It can also control TLS identity and trust, but a separate SNI name or private CA has not been established as a customer need."
     ],
     "table": {
-      "headers": ["Path / control", "Observed response", "Origin HTTP response"],
+      "headers": ["Check", "Recorded finding"],
       "rows": [
-        ["Custom: trusted CA + correct name", "200; authorized=true", "Received"],
-        ["Custom: wrong name", "502; ERR_TLS_CERT_ALTNAME_INVALID", "Not received"],
-        ["Custom: untrusted CA", "502; UNABLE_TO_VERIFY_LEAF_SIGNATURE", "Not received"],
         [
-          "Native forwarding: private CA + mismatched name",
-          "200; expected safe rejection unmet",
-          "Received"
+          "Native Host override",
+          "Two tested mechanisms still sent the destination Host. Reviewed forwarding code also supplies the original name in X-Forwarded-Host."
+        ],
+        [
+          "Custom Function",
+          "Independent Host and TLS settings worked; wrong-name and untrusted-CA controls failed before origin HTTP."
+        ],
+        [
+          "Native synthetic certificate control",
+          "Returned 200 for the private-CA, mismatched certificate in this path; not a finding about every Vercel TLS path."
+        ],
+        [
+          "Placement comparison",
+          "A cacheable Function control made one origin call across MISS → 3 HITs; direct Middleware forwarding made four. The original TLS demonstration remains no-store."
         ]
       ]
     },
-    "observation": "Native safe-rejection expectation FAILED: the private-CA, name-mismatched origin returned 200. This is a scoped finding for this rewrite configuration, not a claim about every Vercel origin path.",
-    "detail": "Current rewrite documentation describes external forwarding but does not establish independently configurable CA trust, TLS identity and certificate-name validation for this route. The native test used a raw TCP tunnel that does not terminate TLS. Custom controls kept rejectUnauthorized=true, used a dedicated application CA, and produced no origin HTTP events for invalid names or untrusted CA. Hostname and resolved IPv4 destinations, Host A/B and SNI A/B were tested. Customer CA-set membership, name-match precedence, private reachability, retry policy and caching still need implementation; the successful sample is not that implementation.",
-    "decision": "Agree the required destination, Host and CA/name policy and whether to use this custom proxy; a native route needs a verified safe-rejection configuration before selection.",
+    "observation": "These are completed owned checks and source review, not a new customer-origin test. The temporary test origin is stopped.",
+    "detail": "The source establishes a forwarded public Host, not that the origin rejects its destination hostname. The reviewed native path does not preserve an independently overridden Host. Its synthetic certificate result does not establish universal missing validation or a customer private-CA requirement. The Function demonstrated explicit name/trust checks. Any origin must consume forwarded public-name metadata only through its trusted ingress.",
+    "decision": "Does the origin require public.example.com in actual Host, or can it accept origin.example.com and use trusted X-Forwarded-Host for the public name?",
     "related": [
       {
         "id": "r10",
@@ -1450,124 +1927,148 @@
     ],
     "sources": [
       {
-        "title": "Code: separate origin identity and trust settings",
-        "label": "Owned test source · verified 27 September 2026 · selected lines, formatting expanded",
+        "title": "Configuration: native forwarding",
+        "label": "Illustrative vercel.json · placeholder origin · not deployed",
+        "path": "vercel.json",
+        "code": "{\n  \"rewrites\": [{\n    \"source\": \"/:path*\",\n    \"destination\": \"https://origin.example.com/:path*\"\n  }]\n}\n"
+      },
+      {
+        "title": "Code: conditional Function fallback",
+        "label": "Adapted owned test excerpt · placeholder names · surrounding handler omitted",
         "path": "03-origin-tls/lib/upstream.mjs",
-        "first": 6,
-        "last": 12,
-        "code": "const hostname = ip ? (await lookup(dest.hostname, { family: 4 })).address : dest.hostname;\nconst servername = mode === 'wrong-name'\n  ? 'wrong.workshop.test'\n  : `origin-${identity === 'b' ? 'b' : 'a'}.workshop.test`;\nconst httpHost = host === 'A' ? 'app-a.workshop.test' : 'app-b.workshop.test';\nconst out = https.request({\n  hostname, port: dest.port, servername, path,\n  headers: { host: httpHost, authorization: 'Bearer ' + token },\n  ca: mode === 'untrusted' ? undefined : ca,\n  rejectUnauthorized: true, agent: false, signal,\n}, response => resolve({ response, facts, diagnostic, out }));\n"
+        "code": "https.request({\n  hostname: \"origin.example.com\", // connection destination\n  servername: \"origin.example.com\", // TLS name\n  headers: { host: \"public.example.com\" }, // HTTP website name\n  rejectUnauthorized: true,\n  // The test also supplies its dedicated CA and request options.\n});\n"
       }
     ],
     "docs": [
       {
-        "label": "External rewrites · checked 27 Sep",
+        "label": "External rewrites",
         "url": "https://vercel.com/docs/routing/rewrites"
       }
     ],
-    "previousDiagram": "sequenceDiagram\n participant C as Client\n participant F as Custom proxy Function\n participant O as Owned TLS origin\n C->>F: Request an approved test case\n F->>O: Connect to destination with selected SNI and CA trust\n alt Certificate accepted\n F->>O: HTTP request with independently selected Host\n O-->>F: Origin response\n F-->>C: 200 with recorded TLS facts\n else Wrong name or untrusted CA\n F-->>C: 502 before origin HTTP response\n end",
-    "exercise": {
-      "url": "https://argos-ws-origin-tls.vercel.app/#r03",
-      "label": "Open origin TLS controls",
-      "intro": "After the presenter runs the origin readiness check, compare the required acceptance and rejection cases. A connection or DNS error means the temporary dependency needs recovery.",
-      "steps": [
+    "previousDiagram": [
+      "sequenceDiagram\n participant C as Client\n participant F as Custom proxy Function\n participant O as Owned TLS origin\n C->>F: Request an approved test case\n F->>O: Connect to destination with selected SNI and CA trust\n alt Certificate accepted\n F->>O: HTTP request with independently selected Host\n O-->>F: Origin response\n F-->>C: 200 with recorded TLS facts\n else Wrong name or untrusted CA\n F-->>C: 502 before origin HTTP response\n end",
+      "sequenceDiagram\n participant V as Visitor\n participant E as Vercel HTTPS entry\n participant F as Custom Node.js proxy\n participant O as Origin TLS server\n V->>E: Visitor TLS connection - R10\n E->>F: HTTP request\n F->>O: Connect to destination using selected SNI\n O-->>F: Present certificate\n Note over F: Check trusted CA and certificate name\n alt Valid certificate\n F->>O: HTTP request with separately chosen Host\n O-->>F: Origin response\n F-->>V: 200\n else Wrong name or untrusted CA\n F-->>V: 502 without origin HTTP request\n end"
+    ],
+    "recorded": true,
+    "recordedTitle": "Recorded checks · 27–28 September 2026",
+    "detailTitle": "Why the fallback is conditional",
+    "presentation": {
+      "requiredDiagram": "sequenceDiagram\n participant V as Visitor\n participant R as Forwarding policy\n participant O as Origin\n V->>R: Request public.example.com\n R->>O: Connect to origin.example.com<br/>Host: public.example.com\n O-->>R: Response for the public website\n R-->>V: Response",
+      "requiredFlow": "The existing policy preserves the public website name in HTTP Host while connecting to a different origin hostname. Whether the origin requires that exact field is the contract to confirm.",
+      "differenceTitle": "Native forwarding or conditional fallback",
+      "difference": [
+        "If the origin accepts Host: origin.example.com and uses trusted X-Forwarded-Host for public URLs, native forwarding can work. An extra header cannot fix ingress that rejects the request before reading it, or change SNI or certificate identity.",
+        "If unadaptable ingress requires public.example.com in the actual Host field, the tested Node.js Function can set it independently. It can also control TLS identity and trust, but a separate SNI name or private CA has not been established as a customer need."
+      ],
+      "actorRoles": {
+        "E": "vercel",
+        "F": "vercel"
+      },
+      "implementationIntro": "Use the native rewrite when the origin accepts its destination Host. Only the second excerpt changes actual Host; these are alternative configurations, not an automatic retry.",
+      "implementationSources": [
         {
-          "title": "Compare the three TLS controls",
-          "text": "Click Trusted CA + correct name, Wrong name, then Untrusted CA. Read the output below the buttons: 200 with authorized=true, then 502 with the name error, then 502 with the trust error. Invalid cases must show originHttpResponseReceived=false."
+          "title": "Configuration: native forwarding",
+          "label": "Illustrative vercel.json · placeholder origin · not deployed",
+          "path": "vercel.json",
+          "code": "{\n  \"rewrites\": [{\n    \"source\": \"/:path*\",\n    \"destination\": \"https://origin.example.com/:path*\"\n  }]\n}\n"
         },
         {
-          "title": "Compare native forwarding",
-          "text": "Click Observe native forwarding. In the September 27 test it returned 200 despite the private, mismatched certificate. Keep this failed safe-rejection expectation separate from the successful custom checks."
+          "title": "Code: conditional Function fallback",
+          "label": "Adapted owned test excerpt · placeholder names · surrounding handler omitted",
+          "path": "03-origin-tls/lib/upstream.mjs",
+          "code": "https.request({\n  hostname: \"origin.example.com\", // connection destination\n  servername: \"origin.example.com\", // TLS name\n  headers: { host: \"public.example.com\" }, // HTTP website name\n  rejectUnauthorized: true,\n  // The test also supplies its dedicated CA and request options.\n});\n"
         }
       ],
-      "reset": "Each request gets a fresh run ID. The presenter must restart, redeploy and check the temporary origin shortly before this case; one tunnel session cannot cover the two-hour workshop."
+      "evidenceTitle": "Recorded checks and scope · 27–28 September 2026",
+      "decisionTitle": "Origin contract to confirm"
     }
   },
   "r28": {
+    "implementation": "Native configuration",
     "category": "TLS and transport",
-    "status": "workaround",
-    "scope": "Owned streaming and cancellation rechecked 27 September 2026. The table retains the 24 September measurements; live use needs the temporary origin to be started and checked.",
-    "title": "Does content arrive incrementally, and does cancellation reach the origin?",
-    "statusText": "Workaround · incremental origin delivery",
-    "note": "Custom proxy streams the origin body and propagates cancellation; required HTTP-version and buffering semantics need agreement.",
-    "intro": "The current configuration enables chunking, disables response buffering and sets outgoing HTTP/1.1. A streaming Function can forward the origin body as it arrives; this custom proxy also propagates client cancellation. Whether the exact HTTP-version setting or an explicit buffering switch must survive is a separate customer decision.",
-    "diagram": "sequenceDiagram\n participant B as Client\n participant F as Custom proxy\n participant O as Streaming origin\n B->>F: Request stream\n F->>O: Request with client abort signal\n loop Until completion or cancellation\n O-->>F: Next chunk\n F-->>B: Forward chunk\n end\n B->>F: Abort request in separate cancellation test\n F->>O: Abort upstream work\n Note over O: Stop observed after in-flight chunks",
-    "flow": "Logical streaming path. The complete eight-chunk stream and the 40-chunk cancellation case are separate recorded tests.",
-    "sectionTitle": "Observe incremental delivery and cancellation",
-    "paragraphs": [
-      "In the eight-chunk test, the first chunk arrived before the origin finished. In the separate cancellation case, the client stopped after two chunks; the origin stopped after six of forty with completed=false. Cancellation was not instantaneous."
+    "status": "supported",
+    "statusText": "Supported · native streaming",
+    "scope": "",
+    "title": "Can we stream responses from the origin?",
+    "note": "A native external rewrite forwards the response as it arrives. No relay Function is needed.",
+    "intro": "The origin sends the response in pieces. Vercel forwards those pieces to the browser without waiting for the whole response. A native external rewrite supports this; no Function or Middleware is needed.",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant V as Vercel CDN\n participant O as Origin\n B->>V: Request content\n V->>O: Forward request through an external rewrite\n loop As the origin produces each piece\n O-->>V: Next piece\n V-->>B: Forward it to the browser\n end\n O-->>V: Finish response\n V-->>B: Finish response",
+    "previousDiagram": [
+      "sequenceDiagram\n participant B as Client\n participant F as Custom proxy\n participant O as Streaming origin\n B->>F: Request stream\n F->>O: Request with client abort signal\n loop Until completion or cancellation\n O-->>F: Next chunk\n F-->>B: Forward chunk\n end\n B->>F: Abort request in separate cancellation test\n F->>O: Abort upstream work\n Note over O: Stop observed after in-flight chunks"
     ],
+    "flow": "The browser starts receiving content while the origin is still producing it. The test origin was reached through a temporary HTTPS tunnel.",
+    "sectionTitle": "Verified result",
+    "paragraphs": [
+      "The origin sent eight pieces, 600 milliseconds apart. The browser received seven before the origin finished. Plain responses, event streams and compressed responses all streamed through the native rewrite."
+    ],
+    "recorded": true,
+    "recordedTitle": "Recorded timing and test details",
     "table": {
-      "headers": ["Recorded case", "Observation"],
+      "headers": [
+        "Native rewrite test",
+        "First piece",
+        "Last piece",
+        "Pieces received before the origin finished"
+      ],
       "rows": [
-        ["Eight chunks, 300 ms cadence", "First arrival 1,966 ms; last arrival 4,065 ms"],
-        [
-          "Client cancellation after two chunks",
-          "Origin stopped after 6 of 40; completed=false"
-        ]
+        ["Plain response", "1.49 s", "5.56 s", "7 of 8"],
+        ["Event stream", "1.23 s", "5.42 s", "7 of 8"],
+        ["Gzip response", "1.05 s", "5.19 s", "7 of 8"],
+        ["Deliberately buffered origin", "5.26 s", "5.26 s", "0 of 8"]
       ]
     },
-    "detail": "Current documentation supports Function streaming and opt-in Node.js cancellation through supportsCancellation and request.signal. This proxy uses Node 24, maxDuration=60 and supportsCancellation=true. Tests use 8×300 ms and at most 40×300 ms, with local, raw-tunnel and hosted controls. They do not prove long sessions, instant abort, arbitrary backpressure or control of the client-facing HTTP version. The source settings are real; their required observable semantics still need agreement. A 30-second idle/recovery observation is not a lifetime guarantee.",
-    "decision": "Confirm whether incremental delivery is the required outcome, or whether forced HTTP/1.1 and explicit buffering controls are mandatory; set the maximum response lifetime for the selected route.",
-    "related": [
+    "observation": "Recorded 28 September 2026. Ten direct-origin and native-rewrite checks passed. The plain response needed no special buffering header and still streamed when Vercel applied Brotli compression. The buffered control confirmed the test detects data arriving only at the end. These timings describe this test, not a performance guarantee.",
+    "sources": [
       {
-        "id": "r03",
-        "label": "Origin TLS"
-      },
+        "title": "Configuration: forward to a streaming origin",
+        "label": "Same rewrite structure as the verified test; example hostname replaces the temporary origin address",
+        "path": "vercel.json",
+        "code": "{\n  \"rewrites\": [\n    {\n      \"source\": \"/stream\",\n      \"destination\": \"https://origin.example.com/stream\"\n    }\n  ]\n}"
+      }
+    ],
+    "detailTitle": "Scope of verification",
+    "detail": "The test used short, no-store responses from an owned origin, with no relay Function or Middleware. The browser used HTTP/2; the origin received HTTP/1.1. This proves incremental delivery, not control over the HTTP version on every connection. The existing Akamai HTTP/1.1 setting has not been established as a separate required outcome. Long-running streams and cancellation propagation were not part of this native test.",
+    "decision": "Use a native external rewrite to preserve streaming from the origin.",
+    "related": [
       {
         "id": "r27",
         "label": "WebSockets"
       }
     ],
-    "sources": [
-      {
-        "title": "Code: forward the abort signal and streaming body",
-        "label": "Owned test source · verified 27 September 2026 · formatting expanded",
-        "path": "03-origin-tls/api/proxy.mjs",
-        "first": 13,
-        "last": 14,
-        "code": "const { response, facts, diagnostic } = await upstream({\n  endpoint: process.env.RAW_TLS_URL,\n  token: process.env.ORIGIN_TOKEN,\n  mode,\n  host: u.searchParams.get('host'),\n  identity: u.searchParams.get('identity'),\n  ip: u.searchParams.get('ip') === '1',\n  path,\n  signal: request.signal,\n});\nif (streaming)\n  return new Response(Readable.toWeb(response), {\n    status: response.statusCode,\n    headers: {\n      'content-type': 'application/x-ndjson',\n      'cache-control': 'no-store',\n      'x-demo-run': run,\n    },\n  });\n"
-      }
-    ],
     "docs": [
       {
-        "label": "Streaming Functions · checked 27 Sep",
-        "url": "https://vercel.com/docs/functions/streaming-functions"
-      },
-      {
-        "label": "Node.js cancellation",
-        "url": "https://vercel.com/docs/functions/functions-api-reference#cancel-requests"
-      },
-      {
-        "label": "Runtime and plan duration limits",
-        "url": "https://vercel.com/docs/functions/limitations#max-duration"
+        "label": "External rewrites",
+        "url": "https://vercel.com/docs/routing/rewrites"
       }
     ],
-    "exercise": {
-      "url": "https://argos-ws-origin-tls.vercel.app/#r28",
-      "label": "Open streaming controls",
-      "intro": "After the presenter checks the origin, use the output under the streaming buttons. Read the arrival times while the response is still running.",
-      "steps": [
+    "diagramTitle": "Native origin streaming",
+    "presentation": {
+      "actorRoles": {
+        "V": "vercel"
+      },
+      "implementationIntro": "Forward this path to the streaming origin with a native external rewrite. This is the verified configuration structure with an example hostname; no relay Function or Middleware is involved.",
+      "implementationSources": [
         {
-          "title": "Stream the short response",
-          "text": "Click Stream 8 chunks. Timestamped lines should appear before the eighth line arrives; inspect arrival +…ms rather than just the final body."
-        },
-        {
-          "title": "Cancel the longer response",
-          "text": "Click Stream 40 chunks, then Abort client after two lines. The browser should report AbortError. Origin-side test evidence is required to show work stopped; the browser stopping alone is insufficient."
+          "title": "Configuration: forward to a streaming origin",
+          "label": "Same rewrite structure as the verified test; example hostname replaces the temporary origin address",
+          "path": "vercel.json",
+          "code": "{\n  \"rewrites\": [\n    {\n      \"source\": \"/stream\",\n      \"destination\": \"https://origin.example.com/stream\"\n    }\n  ]\n}"
         }
       ],
-      "reset": "A new stream gets a fresh run ID. Abort any active stream before starting another. If the tunnel has expired, the presenter must restart, redeploy and check it."
-    },
-    "observation": "Recorded 24 September: abort after two client chunks reached the origin after six of forty chunks. Extra in-flight chunks are visible; cancellation is not instantaneous."
+      "decisionTitle": "Native forwarding",
+      "evidenceTitle": "Recorded native streaming proof · 28 September 2026",
+      "evidenceScope": "Verified in Chrome on 28 September 2026. Recorded results below; the temporary test origin is currently stopped."
+    }
   },
   "r27": {
+    "implementation": "To confirm",
     "category": "TLS and transport",
     "status": "workaround",
-    "scope": "Owned relay rechecked 27 September 2026; September 24 results remain below. Live use needs presenter sign-in, an awake Mac and a checked temporary tunnel.",
-    "title": "Can the chat connection survive through the proposed relay?",
+    "scope": "",
+    "title": "Can we connect live chat to its existing backend?",
     "statusText": "Workaround · two-connection chat relay",
     "note": "Custom relay demonstrated; the assumed 30-second platform cutoff failed and the real chat contract is still needed.",
-    "intro": "The requirement is to keep the existing live-chat backend connected. A custom Function relay accepts the browser WebSocket and opens a second connection to that backend. The owned example demonstrates message forwarding; the actual chat hostname, authentication and recovery contract decide whether this architecture is appropriate.",
+    "intro": "First establish whether the browser can connect directly to the existing chat backend. If the customer needs a relay through Vercel, a custom Function can accept one WebSocket and open a second to the backend; this bounded sample demonstrates forwarding, not that a relay is necessary.",
     "diagram": "sequenceDiagram\n participant B as Browser\n participant R as Custom relay\n participant O as Owned WebSocket backend\n B->>R: Authenticated upgrade and subprotocol\n R->>O: Separate authenticated WebSocket connection\n O-->>R: Upstream connection ID\n R-->>B: Relay ID and upstream ID\n B->>R: Text or binary message\n R->>O: Forward message\n O-->>R: Echo\n R-->>B: Forward echo\n Note over B,O: Reconnect creates new connections, no hidden replay",
     "flow": "Two connections with application-managed forwarding and closure. This is not a transparent native passthrough demonstration.",
     "sectionTitle": "Compare the recorded connection behavior",
@@ -1636,22 +2137,46 @@
         }
       ],
       "reset": "Close the socket and use Reset view. If connectivity fails, the presenter checks or restarts the owned tunnel, redeploys when its endpoint changes, and retests."
+    },
+    "presentation": {
+      "requiredDiagram": "sequenceDiagram\n participant B as Browser\n participant O as Existing chat backend\n B->>O: Connect live chat with its authentication\n O-->>B: Accept WebSocket session\n B->>O: Chat message\n O-->>B: Chat response\n Note over B,O: Confirm whether this direct connection is allowed",
+      "requiredFlow": "The requested outcome is chat connectivity. Direct browser access is the first topology question, not an already validated customer solution.",
+      "actorRoles": {
+        "R": "vercel"
+      },
+      "difference": [
+        "A relay adds a second WebSocket connection and custom forwarding. Native rewrite did not upgrade in the tested path; that does not establish that the customer needs a relay.",
+        "Function lifetime and reconnect/state recovery matter. The configured 30-second platform cutoff was not observed by the 43-second test ceiling; the separate 25-second application close is not proof of that cutoff."
+      ],
+      "implementationIntro": "One actual browser-to-backend message handler from the owned relay. Socket creation, authentication, return forwarding and session management are omitted; the full recorded example remains below.",
+      "implementationSources": [
+        {
+          "path": "04-websockets/api/relay.mjs",
+          "title": "Forward a message on the second connection",
+          "label": "Owned source · 27 September 2026 · formatting expanded",
+          "first": 27,
+          "last": 27,
+          "code": "ws.on('message', (data, binary) => {\n  if (upstream.readyState !== WebSocket.OPEN)\n    return stop(1011, 'upstream unavailable');\n  if (upstream.bufferedAmount > 262144)\n    return stop(1013, 'slow upstream');\n  upstream.send(data, { binary });\n});"
+        }
+      ],
+      "decisionTitle": "Choose the customer connection path",
+      "evidenceTitle": "Relay walkthrough and recorded checks · 24–27 September 2026",
+      "evidenceScope": "Owned relay rechecked 27 September 2026; September 24 results remain below. Live use needs presenter sign-in, an awake Mac and a checked temporary tunnel. The temporary backend is stopped; this local page has not replayed it."
     }
   },
   "r10": {
+    "implementation": "To confirm",
     "category": "TLS and transport",
     "status": "confirmation",
     "title": "Can the response report the visitor’s actual TLS version and cipher?",
     "statusText": "Needs confirmation · exact visitor metadata",
     "note": "Exact visitor TLS/cipher unavailable in the tested interface; a supported authoritative source remains unconfirmed.",
-    "intro": "The current policy returns diagnostic headers for the visitor’s negotiated TLS version and cipher. In the tested Vercel interface, Function socket data did not provide that pair, and caller-supplied lookalike headers were untrusted. Origin TLS data answers a different question.",
-    "scope": "Raw hosted TLS 1.2/1.3 observations rechecked 27 September 2026. No replacement metadata source has been validated.",
-    "diagram": "sequenceDiagram\n participant C as TLS test client\n participant V as Vercel HTTPS entry\n participant F as Probe Function\n C->>V: Negotiate visitor TLS connection\n Note over C,V: Client records actual version and cipher\n V->>F: Forward HTTP request\n F->>F: Inspect available socket and headers\n F-->>C: No trustworthy exact visitor pair established",
-    "flow": "The TLS client connects to Vercel. No external-origin TLS connection is present in this test.",
-    "sectionTitle": "Compare client truth with Function-visible data",
-    "paragraphs": [
-      "Strict certificate-verified client connections recorded their negotiated version and cipher. The Function socket was plaintext and had no getProtocol/getCipher methods; HTTPS and fingerprint signals did not establish the exact negotiated pair."
-    ],
+    "intro": "The response should report the TLS version and cipher negotiated between the browser and Vercel. Whether Vercel can populate those headers natively with the actual connection values still needs confirmation.",
+    "scope": "",
+    "diagram": "sequenceDiagram\n participant B as Browser\n participant V as Vercel\n B->>V: Negotiate HTTPS connection\n Note over B,V: TLS version and cipher selected for this connection\n B->>V: HTTPS request\n V-->>B: Required response headers: Akamai-TLS and Akamai-CIPHER\n Note over B,V: Desired behavior, native header population is unconfirmed",
+    "flow": "The requested headers describe this browser connection, not a connection from Vercel to an origin.",
+    "sectionTitle": "Evidence so far",
+    "paragraphs": [],
     "table": {
       "headers": ["Client version", "Client cipher", "Function socket"],
       "rows": [
@@ -1659,25 +2184,16 @@
         ["TLSv1.3", "TLS_AES_128_GCM_SHA256", "protocol=null; cipher=null"]
       ]
     },
-    "observation": "In forged-header controls, Akamai-TLS and Akamai-CIPHER contained the caller’s FORGED values. Echoing those headers would not provide trustworthy diagnostics.",
-    "detail": "Current request-header documentation does not identify an authoritative negotiated TLS-version/cipher pair. Firewall JA3/JA4 hashes describe handshake fingerprints; they do not establish the exact selected pair required here. Both clean and forged-header tests used certificate-verified client sockets. This is an unmet outcome in the tested Function interface, with product-wide support still unconfirmed. Origin socket values, a user-agent guess or caller-supplied headers cannot substitute for visitor connection metadata.",
-    "decision": "Identify a supported, trustworthy source for the exact visitor TLS version and cipher, or agree with the header consumer that these diagnostic headers can be retired.",
+    "observation": "Strict certificate-verified client connections recorded their negotiated version and cipher. The Function socket was plaintext and had no getProtocol/getCipher methods; HTTPS and fingerprint signals did not establish the exact negotiated pair. In forged-header controls, Akamai-TLS and Akamai-CIPHER contained the caller’s FORGED values. Echoing those headers would not provide trustworthy diagnostics.",
+    "detail": "Documentation reviewed 27 September 2026 and the tested Function interface did not establish an authoritative source for the pair. Firewall JA3/JA4 hashes describe handshake fingerprints; they do not establish the exact selected pair required here. Both clean and forged-header tests used certificate-verified client sockets. This is an unmet outcome in the tested Function interface, with product-wide support still unconfirmed. Origin socket values, a user-agent guess or caller-supplied headers cannot substitute for visitor connection metadata.",
+    "decision": "Confirm whether native response-header configuration can use the negotiated visitor TLS version and cipher, and the exact supported interface. Missing Function access alone does not establish that native population is impossible.",
     "related": [
       {
         "id": "r03",
         "label": "Origin TLS controls"
       }
     ],
-    "sources": [
-      {
-        "title": "Code: inspect the Function socket",
-        "label": "Owned test source · verified 27 September 2026 · formatting expanded",
-        "path": "01-platform-gaps/api/probe.mjs",
-        "first": 6,
-        "last": 7,
-        "code": "const sock = req.socket;\nconst socketFacts = {\n  present: !!sock,\n  encrypted: sock?.encrypted ?? false,\n  getProtocolAvailable: typeof sock?.getProtocol === 'function',\n  getCipherAvailable: typeof sock?.getCipher === 'function',\n  protocol: sock?.getProtocol?.() ?? null,\n  cipher: sock?.getCipher?.() ?? null,\n};\n"
-      }
-    ],
+    "sources": [],
     "docs": [
       {
         "label": "Request headers · checked 27 Sep",
@@ -1687,6 +2203,10 @@
         "label": "TLS fingerprints",
         "url": "https://vercel.com/docs/vercel-firewall/firewall-concepts#ja3-and-ja4-tls-fingerprints"
       }
-    ]
+    ],
+    "previousDiagram": "sequenceDiagram\n participant C as TLS test client\n participant V as Vercel HTTPS entry\n participant F as Probe Function\n C->>V: Negotiate visitor TLS connection\n Note over C,V: Client records actual version and cipher\n V->>F: Forward HTTP request\n F->>F: Inspect available socket and headers\n F-->>C: No trustworthy exact visitor pair established",
+    "diagramTitle": "Our understanding of the requirement",
+    "recorded": true,
+    "recordedTitle": "Function diagnostic results · 27 September 2026"
   }
 }

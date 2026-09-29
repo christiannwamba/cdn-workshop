@@ -1,3 +1,4 @@
+import { CodeExample } from './page-presentation.jsx';
 import React, { useState } from 'react';
 import { CodeBlock } from './code-block.jsx';
 import proof from './r23-solution-observations.json';
@@ -26,6 +27,23 @@ function Table({ headings, rows }) {
     </div>
   );
 }
+// Focused slices of the preserved, dated source. No setup or authentication plumbing.
+const focusedCode = {
+  rewrite: proof.sources.rewrite.displayCode,
+  matcher: proof.sources.matcher.displayCode,
+  response: [
+    proof.sources.response.displayCode
+      .slice(
+        proof.sources.response.displayCode.indexOf('const contentType'),
+        proof.sources.response.displayCode.indexOf('// Explicitly'),
+      )
+      .trim(),
+    '// After validating the variant contract and preparing cache headers:',
+    proof.sources.response.displayCode
+      .slice(proof.sources.response.displayCode.indexOf('if (!removeVary'))
+      .trim(),
+  ].join('\n'),
+};
 function Source({ names, children }) {
   const [open, setOpen] = useState(false);
   return (
@@ -45,7 +63,7 @@ function Source({ names, children }) {
                 {source.path}:{source.first}–{source.last}
               </code>
             </p>
-            {open && <CodeBlock source={{ ...source, code: source.displayCode }} />}
+            {open && <CodeBlock source={{ ...source, code: focusedCode[name] }} />}
             <p className="small">
               File SHA-256: <code>{source.fileSha256}</code>
             </p>
@@ -53,196 +71,78 @@ function Source({ names, children }) {
         );
       })}
       <p className="small">
-        Formatting expanded for readability; no GitHub line link is supplied for this
-        separate test checkout.
+        Focused excerpts, with setup omitted and an explanatory comment added. Full source
+        ranges and hashes refer to the preserved test files.
       </p>
     </details>
   );
 }
-export function VarySolution({ base }) {
+export function VarySolution({ decision }) {
+  const rewrite = proof.sources.rewrite;
+  const response = proof.sources.response;
+  return (
+    <section className="implementation">
+      <h2>Implementation example</h2>
+      <h3>Middleware: select a separate cache entry for each language</h3>
+      <p>
+        Rewrite to an internal URL containing the selected language. The browser’s URL
+        stays the same.
+      </p>
+      <CodeExample source={rewrite} role="Middleware" code={focusedCode.rewrite} />
+      <h3>Function: choose whether to include Vary</h3>
+      <p>
+        On a cache miss, read the origin’s response type. <code>removeVary</code> matches
+        the configured response types; matching responses omit the header. The cache
+        entries are already separated by language.
+      </p>
+      <CodeExample source={response} role="Function" code={focusedCode.response} />
+      <p className="small">
+        Excerpts from the tested implementation. Origin fetch, validation and cache-header
+        setup are omitted from these focused excerpts.
+      </p>
+      <p>{decision}</p>
+      <details className="source">
+        <summary>Demo</summary>
+        <VaryDemo />
+      </details>
+    </section>
+  );
+}
+function VaryDemo() {
   return (
     <section>
-      <h2>Compare HTML and JSON at the same URL</h2>
-      <p className="small">
-        Recorded hosted test · 28 September 2026. These results do not rerun when you open
-        this page. The temporary origin is stopped; use the presenter steps below for a
-        live replay.
+      <h3>Change the response type at the same URL</h3>
+      <p>
+        Recorded 28 September 2026. The temporary origin is stopped; this is a recorded
+        demonstration. A live replay can be arranged separately.
       </p>
       <ol className="exercise">
+        <li>Return HTML from the origin and request English, French, English, French.</li>
         <li>
-          <h3>Change only the origin’s response type</h3>
-          <p>
-            The test first returned HTML, then JSON after the 20-second CDN lifetime
-            expired. The public URL and incoming headers stayed the same for each
-            language.
-          </p>
-          <Table
-            headings={[
-              'Origin response',
-              'Vary at client',
-              'English → French → English → French',
-              'Origin calls',
-            ]}
-            rows={proof.phases.map((p) => [
-              p.name,
-              p.requests[0].vary || 'Absent',
-              p.requests.map((r) => r.cache).join(' → '),
-              p.originCalls,
-            ])}
-          />
-          <p>
-            HTML matched the removal rule; JSON did not. Each phase made two origin calls.
-            Both repeats reused their own language’s body and fill ID.
-          </p>
-          <details className="source">
-            <summary>Per-request fills and independent origin records</summary>
-            <p>
-              One recorded public path for both phases: <code>{proof.samplePath}</code>.
-              The same <code>Content-Type: application/octet-stream</code> request header
-              was sent throughout; the origin’s local state selected the returned type.
-            </p>
-            {proof.phases.map((p) => (
-              <div key={p.name}>
-                <h3>
-                  {p.name}: {p.contentType}
-                </h3>
-                <Table
-                  headings={['Language', 'Cache', 'Fill ID', 'Vary at client']}
-                  rows={p.requests.map((r) => [
-                    r.language,
-                    r.cache,
-                    <code title={r.fill}>{r.fill.slice(0, 8)}</code>,
-                    r.vary || 'Absent',
-                  ])}
-                />
-              </div>
-            ))}
-            <p>
-              The independently read origin journal contains the four records below. No
-              new origin record was written for a HIT. There is no application cache; the
-              CDN-issued cache headers, reused body/fill IDs and journal counts are
-              checked together.
-            </p>
-            <pre>
-              <code>
-                {JSON.stringify(
-                  proof.phases.flatMap((p) => p.originEvents),
-                  null,
-                  2,
-                )}
-              </code>
-            </pre>
-            <p className="small">
-              Recorded {proof.recordedAt} to {proof.finishedAt}.{' '}
-              <a
-                href={proof.recordedDeployment}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Recorded deployment ↗
-              </a>{' '}
-              (existing deployment protection may require sign-in).
-            </p>
-          </details>
+          Let the cached response expire, change the origin to JSON, and repeat the same
+          URLs and request headers.
         </li>
-        <li>
-          <h3>Follow the two pieces of custom code</h3>
-          <p>
-            Middleware chooses a separate internal cache entry for each language. On a
-            MISS, the Function reads the origin’s actual response type and chooses whether
-            to include Vary before the response is stored.
-          </p>
-          <Source names={['rewrite']}>Code: select the language’s cache identity</Source>
-          <Source names={['matcher', 'response']}>
-            Code: match the origin Content-Type and choose Vary
-          </Source>
-          <p className="small">
-            Middleware runs for every request; origin fetch and response processing happen
-            on a MISS. A fresh HIT does not inspect the origin again. Removing Vary safely
-            depends on the explicit variant identity already being in place.
-          </p>
-        </li>
+        <li>Compare Vary, the cache result and the number of origin calls.</li>
       </ol>
-      <details className="source">
-        <summary>Replay HTML → JSON with the presenter</summary>
-        <p>
-          The configured response-type endpoint is <code>{base}</code>. It needs the
-          presenter’s owned temporary origin; opening an old sample URL alone will not
-          change its response type.
-        </p>
-        <p>
-          From the presenter’s <code>09-vary-response-type</code> test checkout, run:
-        </p>
-        <pre>
-          <code>{`npm start\nnpm run deploy\nnode scripts/verify.mjs smoke constant-input\nnpm run stop`}</code>
-        </pre>
-        <p>
-          The verifier creates one sample URL, sets HTML at the origin and sends
-          en/fr/en/fr. It waits 26 seconds, changes only the origin to JSON, then repeats
-          the same URL and headers. Look for PASS on both phases: MISS/MISS/HIT/HIT, two
-          origin calls per phase, Vary absent for HTML and retained for JSON. It saves
-          each response and the independent origin ledger under the printed evidence path.
-        </p>
-        <p className="small">
-          The deploy command targets only the owned response-type test project, refreshing
-          its temporary origin endpoint. Credentials stay in the test checkout and server
-          environment. No public state-control API or editable endpoint profile is exposed
-          here. Finish with stop; the origin also has a 55-minute watchdog.
-        </p>
-      </details>
-      <details className="source">
-        <summary>MIME patterns, cache boundaries and the native alternative</summary>
-        <p>
-          The tested case-insensitive prefixes are <code>text/html*</code>,{' '}
-          <code>text/css*</code>, <code>text/js*</code>,{' '}
-          <code>application/x-javascript*</code> and <code>image/x-icon*</code>. Literal{' '}
-          <code>text/js*</code> does not match <code>text/javascript</code> or{' '}
-          <code>application/javascript</code>. Confirm the customer’s exact exported rule
-          before widening it.
-        </p>
-        <Table
-          headings={['Actual origin Content-Type', 'Vary at client', 'Origin calls']}
-          rows={proof.typeMatrix.map((p) => [
-            p.contentType,
-            p.vary || 'Absent',
-            p.originCalls,
-          ])}
-        />
-        <p className="small">
-          Separate eight-type recorded matrix · 28 September 2026. Every row passed en
-          MISS → fr MISS → en HIT → fr HIT. Mixed case and parameters are included. Bodies
-          are diagnostic text, not an asset-rendering test.
-        </p>
-        <p>
-          This example supports only the declared Accept-Language variant contract.
-          Unexpected Vary dimensions or Set-Cookie are rejected. English/French are
-          illustrative, not a confirmed customer language requirement. Browser max-age=0
-          avoids a claim of long-lived downstream reuse without Vary.
-        </p>
-        <p>
-          The older native test removed Vary after CDN storage on known URL paths. That
-          remains a separate option when paths express the rule. It did not demonstrate
-          choosing by the origin’s returned type. No supported native arbitrary
-          origin-response Content-Type condition was established in this review.
-        </p>
-        <p>
-          <a
-            href="https://vercel.com/docs/project-configuration/vercel-json#conditional-matching-with-has-and-missing"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Native route conditions match incoming requests ↗
-          </a>{' '}
-          ·{' '}
-          <a
-            href="https://vercel.com/docs/caching/cdn-cache"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Vercel CDN cache variants ↗
-          </a>
-        </p>
-      </details>
+      <Table
+        headings={[
+          'Origin response',
+          'Vary at client',
+          'English → French → English → French',
+          'Origin calls',
+        ]}
+        rows={proof.phases.map((p) => [
+          p.name,
+          p.requests[0].vary || 'Absent',
+          p.requests.map((r) => r.cache).join(' → '),
+          p.originCalls,
+        ])}
+      />
+      <p>
+        HTML lost Vary; JSON kept it. Each language retained its own content, and each
+        phase made two origin calls. The decision used the origin’s response type, not an
+        incoming request header.
+      </p>
     </section>
   );
 }

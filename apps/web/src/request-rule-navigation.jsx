@@ -10,14 +10,14 @@ const topics = [
   'Legacy URLs',
   'Redirect ownership',
   'Request state',
-  'Conditions',
+  'WAF result',
 ];
 export function RequestRuleNavigation({ id }) {
   if (!requestRuleOrder.includes(id)) return null;
   return (
     <nav className="logging-nav" aria-label="Request and rule category">
       <p className="small">
-        Hosts and forwarding → redirects and ownership → state and rule order.
+        Hosts and forwarding → redirects and ownership → state and WAF results.
       </p>
       <div>
         {requestRuleOrder.map((r, i) => (
